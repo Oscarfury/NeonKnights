@@ -83,6 +83,124 @@
         }
       }
       
+      @keyframes heroicShimmer {
+        0%, 100% { 
+          background: linear-gradient(135deg, rgba(0,0,0,0.4), rgba(255,255,255,0.15), rgba(255,215,0,0.1));
+          box-shadow: 0 0 30px rgba(255,255,255,0.8), 0 0 60px rgba(255,215,0,0.6);
+        }
+        25% { 
+          background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(0,0,0,0.5), rgba(255,215,0,0.15));
+          box-shadow: 0 0 40px rgba(255,255,255,1.0), 0 0 80px rgba(255,215,0,0.8);
+        }
+        50% { 
+          background: linear-gradient(135deg, rgba(0,0,0,0.5), rgba(255,255,255,0.2), rgba(255,215,0,0.1));
+          box-shadow: 0 0 50px rgba(255,255,255,1.2), 0 0 100px rgba(255,215,0,1.0);
+        }
+        75% { 
+          background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(0,0,0,0.4), rgba(255,255,255,0.15));
+          box-shadow: 0 0 35px rgba(255,255,255,0.9), 0 0 70px rgba(255,215,0,0.7);
+        }
+      }
+      
+      @keyframes heroicBorder {
+        0%, 100% { 
+          border-image: linear-gradient(45deg, #000000, #ffffff, #ffd700, #000000) 1;
+        }
+        25% { 
+          border-image: linear-gradient(45deg, #ffffff, #ffd700, #000000, #ffffff) 1;
+        }
+        50% { 
+          border-image: linear-gradient(45deg, #ffd700, #000000, #ffffff, #ffd700) 1;
+        }
+        75% { 
+          border-image: linear-gradient(45deg, #000000, #ffffff, #ffd700, #000000) 1;
+        }
+      }
+      
+      @keyframes heroicSparkle {
+        0%, 100% { 
+          opacity: 0;
+          transform: scale(0) rotate(0deg);
+          filter: hue-rotate(0deg);
+        }
+        25% { 
+          opacity: 1;
+          transform: scale(1.2) rotate(90deg);
+          filter: hue-rotate(90deg);
+        }
+        50% { 
+          opacity: 1;
+          transform: scale(1) rotate(180deg);
+          filter: hue-rotate(180deg);
+        }
+        75% { 
+          opacity: 0.8;
+          transform: scale(0.8) rotate(270deg);
+          filter: hue-rotate(270deg);
+        }
+      }
+      
+      /* Radiant Aegis Fire Animations */
+      @keyframes flameMovement {
+        50% {
+          transform: scale(0.98,1.0) translate(0, 2px) rotate(-1deg);
+        }
+      }
+      
+      @keyframes flameDisappear {
+        0%{
+          transform: translate(0) rotate(180deg);
+        }
+        50% {
+           opacity: 1;
+        }
+        100% {
+          transform: translate(-10px, -40px) rotate(180deg);
+          opacity: 0;
+        }
+      }
+      
+      .radiant-flame {
+        animation-name: flameDisappear;
+        animation-duration: 2s;
+        animation-timing-function: linear;
+        animation-iteration-count: infinite;
+        opacity: 0.5;
+        transform-origin: 45% 45% 0;
+      }
+      
+      .radiant-flame.one {
+        animation-delay: 1s;
+        animation-duration: 3s;
+      }
+      
+      .radiant-flame.two{
+        animation-duration: 5s;
+        animation-delay: 1s;
+      }
+      
+      .radiant-flame-main {
+        animation-name: flameMovement;
+        animation-duration: 2s;
+        animation-timing-function: ease-in-out;
+        animation-iteration-count: infinite;
+      }
+      
+      .radiant-flame-main.one {
+        animation-duration: 2.2s;
+        animation-delay: 1s;
+      }
+      
+      .radiant-flame-main.two {
+        animation-duration: 2s;
+        animation-delay: 1s;
+      }
+      
+      .radiant-flame-main.three {
+        animation-duration: 2.1s;
+        animation-delay: 3s;
+      }
+      
       @keyframes zoomIn {
         from { transform: scale(0) rotate(360deg); opacity: 0; }
         to { transform: scale(1) rotate(0deg); opacity: 1; }
@@ -739,6 +857,18 @@
           color: '#ffffff'
         }, // Battle message system
         treasuryInterest: 0, // Interest accumulated from King's Treasury
+        undeadDragon: {
+          active: false,
+          x: CENTER.x,
+          y: CENTER.y,
+          hp: 0,
+          maxHp: 0,
+          damage: 0,
+          kills: 0,
+          flameLevel: 0,
+          lastFlameTime: 0
+        }, // Undead Dragon companion
+        dragonkinLord: false, // Whether Dragonkin Lord ability is purchased
       };
 
       // Save/Load
@@ -770,9 +900,10 @@
         const isMidas = midasLevel > 0;
         const isGoldenAngelic = isAngelic && isMidas; // Both upgrades purchased
         
-        // Calculate gold-based bonuses for Midas Knights
-        const goldMultiplier = isMidas ? Math.min(5, Math.max(1, Math.floor(game.gold / 100))) : 1; // +1 per 100 gold, max +5
-        const goldBonus = isMidas ? (goldMultiplier - 1) * 0.5 : 0; // +50% per gold tier
+        // Calculate gold-based bonuses for Midas Knights (only for midas or golden angelic)
+        const shouldGetGoldBonus = isMidas || isGoldenAngelic;
+        const goldMultiplier = shouldGetGoldBonus ? Math.min(5, Math.max(1, Math.floor(game.gold / 100))) : 1; // +1 per 100 gold, max +5
+        const goldBonus = shouldGetGoldBonus ? (goldMultiplier - 1) * 0.5 : 0; // +50% per gold tier
         
         // Spawn a friendly knight at the specified position
         const cavalry = {
@@ -796,7 +927,7 @@
           angelic: isAngelic || isGoldenAngelic, // Mark as angelic for healing logic
           midas: isMidas || isGoldenAngelic, // Mark as midas for gold bonus logic
           goldenAngelic: isGoldenAngelic, // Mark as golden angelic for special rendering
-          goldMultiplier: goldMultiplier // Store gold multiplier for kill rewards
+          goldMultiplier: shouldGetGoldBonus ? goldMultiplier : 1 // Store gold multiplier for kill rewards
         };
         
         game.enemies.push(cavalry); // Add to enemies array for easy management
@@ -942,6 +1073,28 @@
             spawnText(e.x, e.y-12, `-${Math.round(finalDamage)}`, damageColor, 0.6, 24);
             spawnParticles(e.x, e.y, e.glowColor, 15, 0.8);
             
+            // Dragonkin Lord - execute dragons with time slow sniper shots
+            if(isTimeSlow && e.type === 'dragon' && e.hp <= e.maxHp * 0.2 && game.dragonkinLord && !game.undeadDragon.active) {
+              // Execute the dragon and recruit it as Undead Dragon
+              e.dead = true;
+              
+              // Initialize Undead Dragon
+              game.undeadDragon.active = true;
+              game.undeadDragon.x = e.x;
+              game.undeadDragon.y = e.y;
+              game.undeadDragon.maxHp = 8000; // Base health
+              game.undeadDragon.hp = game.undeadDragon.maxHp;
+              game.undeadDragon.damage = 25; // Base damage
+              game.undeadDragon.kills = 0;
+              game.undeadDragon.flameLevel = 1;
+              game.undeadDragon.lastFlameTime = 0;
+              
+              spawnText(e.x, e.y-e.radius-30, 'EXECUTED!', '#ffd700', 2.0, 24);
+              spawnParticles(e.x, e.y, '#ffd700', 60, 2.0);
+              setBattleMessage('🐉 UNDEAD DRAGON RECRUITED!', 4.0, '#ffd700');
+              showAchievement('DRAGON EXECUTION!');
+            }
+            
             // Time Necromancy - convert enemies killed by time slow sniper shots
             if(isTimeSlow && e.hp <= 0 && game.upgrades.necromancy > 0) {
               const necroLevel = game.upgrades.necromancy;
@@ -980,14 +1133,14 @@
       
       function createFlameStream(x, y, dir) {
         const flameLevel = game.upgrades.flamecannon;
-        const baseRange = 51; // Reduced by 80% (from 255 to 51)
-        const baseWidth = 60; // Wider base for cone shape
+        const baseRange = 80; // Increased for more triangular shape
+        const baseWidth = 40; // Narrower base for more triangular shape
         const range = baseRange * (1 + flameLevel * 0.15); // +15% range per level
         const width = baseWidth * (1 + flameLevel * 0.15); // +15% width per level
         const baseDamage = 1 + flameLevel; // +1 base damage per level
         const stackMultiplier = 5 + flameLevel; // +1 stack multiplier per level
         
-        // Calculate cone-shaped flame area
+        // Calculate cone-shaped flame area (more triangular)
         const endX = x + Math.cos(dir) * range;
         const endY = y + Math.sin(dir) * range;
         
@@ -1005,8 +1158,8 @@
         
         // Create sputtering projectiles
         for(let i = 0; i < 3; i++) { // 3 sputtering projectiles
-          const sputterAngle = dir + (Math.random() - 0.5) * 0.3; // Random angle within cone
-          const sputterSpeed = 200 + Math.random() * 100; // Random speed
+          const sputterAngle = dir + (Math.random() - 0.5) * 0.4; // Slightly wider spread
+          const sputterSpeed = 250 + Math.random() * 150; // Faster sputters
           const sputterX = endX; // Start exactly from the tip of the flame cone
           const sputterY = endY;
           
@@ -1016,13 +1169,13 @@
             y: sputterY,
             vx: Math.cos(sputterAngle) * sputterSpeed,
             vy: Math.sin(sputterAngle) * sputterSpeed,
-            size: 4, // Increased size by 100% (from 2 to 4)
-            life: 1.0, // 1 second life
+            size: 4,
+            life: 1.2, // Slightly longer life
             baseDmg: 5, // Small damage
             color: '#ff0000',
             src: 'flamecannon',
             sputter: true, // Mark as sputtering projectile
-            burnStacks: baseDamage, // Apply burn stacks
+            burnStacks: 1, // Apply 1 burn stack per sputter
             trail: [] // Empty trail to prevent errors
           });
         }
@@ -1036,27 +1189,26 @@
           // Check if enemy is in the cone-shaped flame area
           const distToLine = distanceToLine(e.x, e.y, x, y, endX, endY);
           const distFromStart = Math.sqrt((e.x - x) * (e.x - x) + (e.y - y) * (e.y - y));
-          const distFromEnd = Math.sqrt((e.x - endX) * (e.x - endX) + (e.y - endY) * (e.y - endY));
           
-          // Cone shape: wider at the end, narrower at the start
-          const coneWidth = width * (distFromStart / range); // Width increases with distance
+          // More triangular cone shape: width increases linearly with distance
+          const coneWidth = width * (distFromStart / range);
           const hitRadius = e.radius + coneWidth * 0.5;
           
           // Check if enemy is within the cone and not behind the flame source
           if(distToLine < hitRadius && distFromStart <= range && distFromStart > 0) {
-            // Apply immediate base damage (15 + level bonus)
-            const immediateDamage = 15 + flameLevel;
+            // Apply immediate flamethrower damage (20 + level bonus)
+            const immediateDamage = 20 + flameLevel;
             e.hp -= immediateDamage;
             spawnText(e.x, e.y-25, `-${immediateDamage}`, '#ff0000', 0.8, 18);
             
-            // Apply fire damage stacks
+            // Apply fire damage stacks (1 stack per 0.3 seconds)
             if(!e.fireStacks) e.fireStacks = 0;
-            e.fireStacks += baseDamage; // Add stacks based on base damage
+            e.fireStacks += 1; // Add 1 stack per hit
             e.fireTimer = 0.3; // Start timer immediately so damage ticks right away
             
             // Visual effect
             spawnParticles(e.x, e.y, '#ff4400', 8, 0.6);
-            spawnText(e.x, e.y-12, `+${baseDamage}`, '#ff4400', 0.6, 16);
+            spawnText(e.x, e.y-12, `+1`, '#ff4400', 0.6, 16);
           }
         }
       }
@@ -1154,6 +1306,19 @@
         game.flameStreams = [];
         game.homingProjectiles = [];
         game.teleportCooldown = 0;
+        // Reset Dragonkin Lord and Undead Dragon for new game
+        game.dragonkinLord = false;
+        game.undeadDragon = {
+          active: false,
+          x: CENTER.x,
+          y: CENTER.y,
+          hp: 0,
+          maxHp: 0,
+          damage: 0,
+          kills: 0,
+          flameLevel: 0,
+          lastFlameTime: 0
+        };
         // Initialize Divine Aegis
         if(game.upgrades.divineaegis > 0) {
           const level = game.upgrades.divineaegis;
@@ -1179,7 +1344,35 @@
         }
       }
       function endWave(){ 
+        // Calculate gold from converted units before removing them
+        let convertedGold = 0;
+        const convertedUnits = game.enemies.filter(e => e.type === 'converted');
+        for(const unit of convertedUnits) {
+          // Calculate gold based on original enemy type
+          if(unit.originalType && ENEMY[unit.originalType]) {
+            let baseReward = ENEMY[unit.originalType].reward;
+            // Apply Midas Knights bonus if applicable
+            if(game.upgrades.midasknights > 0) {
+              const midasLevel = game.upgrades.midasknights;
+              baseReward *= (1 + midasLevel * 0.5); // +50% per level
+            }
+            // Apply King's Treasury bonus if applicable
+            if(game.upgrades.treasury > 0) {
+              const treasuryLevel = game.upgrades.treasury;
+              baseReward *= (1 + treasuryLevel * 0.5); // +50% per level
+            }
+            convertedGold += Math.floor(baseReward);
+          }
+        }
+        
+        // Grant gold for converted units
+        if(convertedGold > 0) {
+          game.gold += convertedGold;
+          toast(`💀 Converted units reward: +${convertedGold}g!`, 2000);
+        }
+        
         // Clear all friendly units (cavalry, angelic knights, and converted enemies) when wave ends
+        // Note: Undead Dragon is NOT cleared - it persists between waves
         game.enemies = game.enemies.filter(e => e.type !== 'cavalry' && e.type !== 'angelic' && e.type !== 'midas' && e.type !== 'goldenangelic' && e.type !== 'converted');
         
         // Reset cavalry cooldown between waves
@@ -1354,6 +1547,7 @@
         { key:'angelicknights', name:'Angelic Knights', desc:'Cavalry knights heal castle when dealing damage (+2s duration per level)', icon: '👼', requires: ['divineaegis', 'cavalry'] },
         { key:'midasknights', name:'Midas Knights', desc:'Golden knights grant x2 gold per kill (+1x per level, bonus stats based on gold)', icon: '💰', requires: ['cavalry', 'treasury'] },
         { key:'radiantaegis', name:'Radiant Aegis', desc:'Divine Aegis releases flame projectiles (+25% burn damage & projectile size per level)', icon: '✨', requires: ['divineaegis', 'oil'] },
+        { key:'dragonkinlord', name:'Dragonkin Lord', desc:'Execute dragons with time slow sniper shots to permanently recruit them as Undead Dragons', icon: '🐉', heroic: true, requires: ['necromancy'] },
       ]; }
 
       function buildUpgradeUI(){ 
@@ -1380,6 +1574,16 @@
             // Check if upgrade has requirements
             if(upgrade.requires) {
               return upgrade.requires.every(req => (game.upgrades[req]||0) > 0);
+            }
+            // Special check for Heroic abilities
+            if(upgrade.heroic) {
+              if(upgrade.key === 'dragonkinlord') {
+                // Dragonkin Lord requires Time Necromancy level 5 and can only be purchased once
+                const necroLevel = game.upgrades.necromancy || 0;
+                const hasDragonkin = game.dragonkinLord || false;
+                return necroLevel >= 5 && !hasDragonkin;
+              }
+              return false; // Other heroic abilities not implemented yet
             }
             return true;
           }
@@ -1618,6 +1822,15 @@
 
               }
               
+              // Activate Dragonkin Lord ability
+              if(u.key==='dragonkinlord'){ 
+                game.dragonkinLord = true;
+                // Visual upgrade effect
+                spawnParticles(CENTER.x, CENTER.y, '#ffd700', 50, 2.0);
+                setBattleMessage('🐉 DRAGONKIN LORD AWAKENED!', 4.0, '#ffd700');
+                showAchievement('DRAGONKIN LORD!');
+              }
+              
               // Update HUD immediately after fortification
               updateHUD();
               
@@ -1645,6 +1858,49 @@
               card.style.transform = 'translateY(0px) scale(1)';
               card.style.boxShadow = '0 0 20px rgba(255,255,255,0.6)';
               card.style.animation = 'shimmer 2s ease-in-out infinite, borderShimmer 3s ease-in-out infinite';
+            });
+          }
+          
+          // Add Heroic ability styling
+          if(u.heroic) {
+            card.style.background = 'linear-gradient(135deg, rgba(0,0,0,0.4), rgba(255,255,255,0.15), rgba(255,215,0,0.1))';
+            card.style.border = '3px solid';
+            card.style.borderImage = 'linear-gradient(45deg, #000000, #ffffff, #ffd700, #000000) 1';
+            card.style.boxShadow = '0 0 30px rgba(255,255,255,0.8), 0 0 60px rgba(255,215,0,0.6)';
+            card.style.animation = 'heroicShimmer 3s ease-in-out infinite, heroicBorder 4s ease-in-out infinite';
+            
+            // Add enhanced sparkle elements for heroic abilities
+            for(let i = 0; i < 12; i++) {
+              const sparkle = document.createElement('div');
+              sparkle.style.position = 'absolute';
+              sparkle.style.width = '12px';
+              sparkle.style.height = '12px';
+              sparkle.style.background = i % 3 === 0 ? '#ffffff' : i % 3 === 1 ? '#ffd700' : '#000000';
+              sparkle.style.borderRadius = '50%';
+              sparkle.style.boxShadow = `0 0 15px ${i % 3 === 0 ? '#ffffff' : i % 3 === 1 ? '#ffd700' : '#000000'}`;
+              sparkle.style.animation = `heroicSparkle 3s ease-in-out infinite ${i * 0.25}s`;
+              sparkle.style.pointerEvents = 'none';
+              
+              // Position sparkles in a more complex pattern
+              const angle = (i / 12) * Math.PI * 2;
+              const radius = 60 + (i % 3) * 20;
+              sparkle.style.left = `calc(50% + ${Math.cos(angle) * radius}px)`;
+              sparkle.style.top = `calc(50% + ${Math.sin(angle) * radius}px)`;
+              
+              card.appendChild(sparkle);
+            }
+            
+            // Enhanced hover effects for heroic abilities
+            card.addEventListener('mouseenter', () => {
+              card.style.transform = 'translateY(-12px) scale(1.05)';
+              card.style.boxShadow = '0 20px 80px rgba(255,255,255,1.0), 0 0 120px rgba(255,215,0,0.8)';
+              card.style.animation = 'heroicShimmer 1.5s ease-in-out infinite, heroicBorder 2s ease-in-out infinite';
+            });
+            
+            card.addEventListener('mouseleave', () => {
+              card.style.transform = 'translateY(0px) scale(1)';
+              card.style.boxShadow = '0 0 30px rgba(255,255,255,0.8), 0 0 60px rgba(255,215,0,0.6)';
+              card.style.animation = 'heroicShimmer 3s ease-in-out infinite, heroicBorder 4s ease-in-out infinite';
             });
           }
           
@@ -2965,6 +3221,62 @@
             if(game.upgrades.radiantaegis > 0) {
               spawnParticles(shieldX, shieldY, '#ffaa00', 20, 1.0);
               spawnText(shieldX, shieldY-60, 'RADIANT', '#ffaa00', 0.8, 16);
+              
+              // Create animated fire plume from the shield
+              const radiantLevel = game.upgrades.radiantaegis;
+              
+              // Calculate direction away from the absorbed projectile
+              const fireDir = Math.atan2(ep.y - shieldY, ep.x - shieldX);
+              const fireRange = 150 + radiantLevel * 25; // Longer range per level
+              const plumeWidth = 60 + radiantLevel * 10; // Wider plume per level
+              
+              // Create main fire plume
+              const endX = shieldX + Math.cos(fireDir) * fireRange;
+              const endY = shieldY + Math.sin(fireDir) * fireRange;
+              
+              if(!game.flameStreams) game.flameStreams = [];
+              game.flameStreams.push({
+                x1: shieldX, y1: shieldY, x2: endX, y2: endY,
+                width: plumeWidth,
+                life: 0.8, // Longer duration for fire effect
+                baseDamage: 1,
+                stackMultiplier: 1,
+                dir: fireDir,
+                range: fireRange,
+                fromRadiantAegis: true, // Mark as Radiant Aegis fire
+                radiantLevel: radiantLevel
+              });
+              
+              // Create sputtering embers from the edges of the plume
+              const sputterCount = 6 + radiantLevel * 2; // More sputters per level
+              
+              for(let j = 0; j < sputterCount; j++) {
+                // Calculate sputter position along the plume edge
+                const sputterT = Math.random(); // Random position along plume
+                const sputterX = shieldX + (endX - shieldX) * sputterT;
+                const sputterY = shieldY + (endY - shieldY) * sputterT;
+                
+                // Calculate perpendicular direction for outward sputters
+                const perpDir = fireDir + Math.PI/2; // Perpendicular to plume direction
+                const sputterAngle = perpDir + (Math.random() - 0.5) * 0.6; // Outward spread
+                const sputterSpeed = 300 + Math.random() * 200;
+                
+                if(!game.projectiles) game.projectiles = [];
+                game.projectiles.push({
+                  x: sputterX,
+                  y: sputterY,
+                  vx: Math.cos(sputterAngle) * sputterSpeed,
+                  vy: Math.sin(sputterAngle) * sputterSpeed,
+                  size: 5 + radiantLevel,
+                  life: 2.0,
+                  baseDmg: 8 + radiantLevel * 2,
+                  color: '#ffaa00',
+                  src: 'radiantaegis',
+                  sputter: true,
+                  burnStacks: 1,
+                  trail: []
+                });
+              }
             }
             
             ep.life = 0;
@@ -3385,6 +3697,146 @@
           }
         }
         
+        // Update Undead Dragon
+        if(game.undeadDragon.active) {
+          // Find nearest enemy to attack
+          let nearestEnemy = null;
+          let nearestDist = Infinity;
+          for(const e of game.enemies) {
+            if(e.dead || e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'goldenangelic' || e.type === 'converted') continue;
+            const dx = e.x - game.undeadDragon.x;
+            const dy = e.y - game.undeadDragon.y;
+            const dist = dx*dx + dy*dy;
+            if(dist < nearestDist) {
+              nearestDist = dist;
+              nearestEnemy = e;
+            }
+          }
+          
+          if(nearestEnemy) {
+            // Move towards nearest enemy
+            const dx = nearestEnemy.x - game.undeadDragon.x;
+            const dy = nearestEnemy.y - game.undeadDragon.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if(dist > 0) {
+              const speed = 25; // Increased from 20 to 25 (25% faster)
+              game.undeadDragon.x += (dx/dist) * speed * dt;
+              game.undeadDragon.y += (dy/dist) * speed * dt;
+            }
+            
+            // Attack if close enough (much longer range)
+            if(dist < 200) { // Increased from 100 to 200 for much longer range
+              // Flame cannon attack
+              game.undeadDragon.lastFlameTime += dt;
+              if(game.undeadDragon.lastFlameTime >= 2.0) { // Attack every 2 seconds
+                game.undeadDragon.lastFlameTime = 0;
+                
+                // Calculate direction to enemy
+                const dir = Math.atan2(dy, dx);
+                
+                // Create flame stream from undead dragon (more triangular)
+                const flameRange = 100 + game.undeadDragon.flameLevel * 15; // Longer range
+                const flameWidth = 30 + game.undeadDragon.flameLevel * 3; // Narrower base for triangular shape
+                const endX = game.undeadDragon.x + Math.cos(dir) * flameRange;
+                const endY = game.undeadDragon.y + Math.sin(dir) * flameRange;
+                
+                // Add flame stream to game state
+                if(!game.flameStreams) game.flameStreams = [];
+                game.flameStreams.push({
+                  x1: game.undeadDragon.x, y1: game.undeadDragon.y, x2: endX, y2: endY,
+                  width: flameWidth,
+                  life: 0.4,
+                  baseDamage: game.undeadDragon.flameLevel,
+                  stackMultiplier: game.undeadDragon.flameLevel,
+                  dir: dir,
+                  range: flameRange,
+                  fromUndeadDragon: true
+                });
+                
+                // Create sputtering projectiles from undead dragon
+                for(let i = 0; i < 4; i++) { // 4 sputtering projectiles
+                  const sputterAngle = dir + (Math.random() - 0.5) * 0.5; // Wider spread
+                  const sputterSpeed = 300 + Math.random() * 200; // Fast sputters
+                  const sputterX = endX;
+                  const sputterY = endY;
+                  
+                  if(!game.projectiles) game.projectiles = [];
+                  game.projectiles.push({
+                    x: sputterX,
+                    y: sputterY,
+                    vx: Math.cos(sputterAngle) * sputterSpeed,
+                    vy: Math.sin(sputterAngle) * sputterSpeed,
+                    size: 6,
+                    life: 1.5,
+                    baseDmg: 8,
+                    color: '#ffd700',
+                    src: 'undeaddragon',
+                    sputter: true,
+                    burnStacks: 1,
+                    trail: []
+                  });
+                }
+                
+                // Damage enemies in flame area
+                for(const e of game.enemies) {
+                  if(e.dead || e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'goldenangelic' || e.type === 'converted') continue;
+                  
+                  const distToLine = distanceToLine(e.x, e.y, game.undeadDragon.x, game.undeadDragon.y, endX, endY);
+                  const distFromStart = Math.sqrt((e.x - game.undeadDragon.x) * (e.x - game.undeadDragon.x) + (e.y - game.undeadDragon.y) * (e.y - game.undeadDragon.y));
+                  const coneWidth = flameWidth * (distFromStart / flameRange);
+                  const hitRadius = e.radius + coneWidth * 0.5;
+                  
+                  if(distToLine < hitRadius && distFromStart <= flameRange && distFromStart > 0) {
+                    // Apply flamethrower damage (20 + dragon damage)
+                    const damage = 20 + game.undeadDragon.damage;
+                    e.hp -= damage;
+                    spawnText(e.x, e.y-20, `-${damage}`, '#ffd700', 0.8, 16);
+                    spawnParticles(e.x, e.y, '#ffd700', 8, 0.6);
+                    
+                    // Apply burn stacks (1 stack per 0.3 seconds)
+                    if(!e.fireStacks) e.fireStacks = 0;
+                    e.fireStacks += 1;
+                    e.fireTimer = 0.3;
+                    
+                    // Track kills for the undead dragon
+                    if(e.hp <= 0) {
+                      game.undeadDragon.kills++;
+                      // Make undead dragon stronger with each kill
+                      game.undeadDragon.maxHp += 100;
+                      game.undeadDragon.hp = Math.min(game.undeadDragon.hp + 100, game.undeadDragon.maxHp);
+                      game.undeadDragon.damage += 2;
+                      game.undeadDragon.flameLevel += 0.5;
+                      
+                      // Grant gold to player
+                      let goldReward = 10 + game.undeadDragon.kills * 2;
+                      if(game.upgrades.midasknights > 0) {
+                        goldReward *= (1 + game.upgrades.midasknights * 0.5);
+                      }
+                      if(game.upgrades.treasury > 0) {
+                        goldReward *= (1 + game.upgrades.treasury * 0.5);
+                      }
+                      game.gold += Math.floor(goldReward);
+                      
+                      spawnText(game.undeadDragon.x, game.undeadDragon.y-30, `+${Math.floor(goldReward)}g`, '#ffd700', 1.0, 18);
+                      spawnText(game.undeadDragon.x, game.undeadDragon.y-50, 'POWER UP!', '#ffffff', 1.0, 16);
+                    }
+                  }
+                }
+              }
+            }
+          } else {
+            // No enemies, move towards castle center
+            const dx = CENTER.x - game.undeadDragon.x;
+            const dy = CENTER.y - game.undeadDragon.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if(dist > 0) {
+              const speed = 19; // Increased from 15 to 19 (25% faster)
+              game.undeadDragon.x += (dx/dist) * speed * dt;
+              game.undeadDragon.y += (dy/dist) * speed * dt;
+            }
+          }
+        }
+        
         // Update enemies
         for(let i=game.enemies.length-1;i>=0;i--){ 
           const e=game.enemies[i]; 
@@ -3691,42 +4143,124 @@
             const alpha = clamp(flame.life / 0.3, 0, 1);
             ctx.globalAlpha = alpha;
             
-            // Create fire-like gradient
-            const gradient = ctx.createLinearGradient(flame.x1, flame.y1, flame.x2, flame.y2);
-            gradient.addColorStop(0, '#ff8800'); // Orange at start
-            gradient.addColorStop(0.3, '#ff4400'); // Red-orange
-            gradient.addColorStop(0.7, '#ff2200'); // Dark red
-            gradient.addColorStop(1, '#ff0000'); // Red at end
-            
-            ctx.shadowColor = '#ff4400';
-            ctx.shadowBlur = 30;
-            ctx.strokeStyle = gradient;
-            
-            // Draw multiple lines for fire effect
-            for(let i = 0; i < 3; i++) {
-              const offset = (i - 1) * 2; // Slight offset for each line
-              const perpX = Math.cos(flame.dir + Math.PI/2) * offset;
-              const perpY = Math.sin(flame.dir + Math.PI/2) * offset;
+            // Special rendering for Radiant Aegis fire streams
+            if(flame.fromRadiantAegis) {
+              // Create a fire plume effect with stacked and overlapped flames
+              const pulseIntensity = Math.sin(game.bgPulse * 12) * 0.3 + 0.7;
+              const plumeScale = 1.0 + flame.radiantLevel * 0.2;
               
-              ctx.lineWidth = (flame.width || 40) * (1 - i * 0.2); // Decreasing width
-              ctx.beginPath();
-              ctx.moveTo(flame.x1 + perpX, flame.y1 + perpY);
-              ctx.lineTo(flame.x2 + perpX, flame.y2 + perpY);
-              ctx.stroke();
-            }
-            
-            // Add fire particles
-            for(let i = 0; i < 5; i++) {
-              const t = Math.random();
-              const px = flame.x1 + (flame.x2 - flame.x1) * t;
-              const py = flame.y1 + (flame.y2 - flame.y1) * t;
-              const perpX = Math.cos(flame.dir + Math.PI/2) * (Math.random() - 0.5) * flame.width * 0.3;
-              const perpY = Math.sin(flame.dir + Math.PI/2) * (Math.random() - 0.5) * flame.width * 0.3;
+              // Draw multiple overlapping flame layers to create a dense plume
+              for(let layer = 0; layer < 3; layer++) { // 3 overlapping layers
+                for(let i = 0; i < 12; i++) { // More flame elements per layer
+                  const t = i / 11;
+                  const px = flame.x1 + (flame.x2 - flame.x1) * t;
+                  const py = flame.y1 + (flame.y2 - flame.y1) * t;
+                  
+                  // Vary flame size and position for natural overlap
+                  const flameSize = (flame.width || 60) * (1 - t * 0.3) * plumeScale * (0.8 + layer * 0.2);
+                  const offsetX = (Math.random() - 0.5) * flameSize * 0.3;
+                  const offsetY = (Math.random() - 0.5) * flameSize * 0.3;
+                  
+                  ctx.save();
+                  ctx.translate(px + offsetX, py + offsetY);
+                  ctx.scale(flameSize / 60, flameSize / 60);
+                  
+                  // Animated flame effect with varying intensity
+                  const flameAlpha = alpha * (0.6 + Math.sin(game.bgPulse * 8 + i * 3 + layer * 2) * 0.3);
+                  
+                  // Main flame body (orange-red) - larger and more prominent
+                  ctx.shadowColor = '#ff4400';
+                  ctx.shadowBlur = 20 * pulseIntensity;
+                  ctx.fillStyle = `rgba(255, 68, 0, ${flameAlpha * 0.8})`;
+                  ctx.beginPath();
+                  ctx.moveTo(0, 0);
+                  ctx.quadraticCurveTo(-4, -15, -7, -25);
+                  ctx.quadraticCurveTo(-3, -20, 0, -30);
+                  ctx.quadraticCurveTo(3, -20, 7, -25);
+                  ctx.quadraticCurveTo(4, -15, 0, 0);
+                  ctx.fill();
+                  
+                  // Inner flame (yellow-orange)
+                  ctx.shadowBlur = 15 * pulseIntensity;
+                  ctx.fillStyle = `rgba(255, 128, 0, ${flameAlpha * 0.9})`;
+                  ctx.beginPath();
+                  ctx.moveTo(0, 0);
+                  ctx.quadraticCurveTo(-3, -12, -5, -20);
+                  ctx.quadraticCurveTo(-2, -16, 0, -24);
+                  ctx.quadraticCurveTo(2, -16, 5, -20);
+                  ctx.quadraticCurveTo(3, -12, 0, 0);
+                  ctx.fill();
+                  
+                  // Flame core (white-hot)
+                  ctx.shadowBlur = 8 * pulseIntensity;
+                  ctx.fillStyle = `rgba(255, 255, 255, ${flameAlpha * 0.8})`;
+                  ctx.beginPath();
+                  ctx.moveTo(0, 0);
+                  ctx.quadraticCurveTo(-1, -8, -2, -15);
+                  ctx.quadraticCurveTo(-1, -12, 0, -18);
+                  ctx.quadraticCurveTo(1, -12, 2, -15);
+                  ctx.quadraticCurveTo(1, -8, 0, 0);
+                  ctx.fill();
+                  
+                  ctx.restore();
+                }
+              }
               
-              ctx.fillStyle = `rgba(255, ${Math.floor(200 + Math.random() * 55)}, 0, ${alpha * 0.8})`;
-              ctx.beginPath();
-              ctx.arc(px + perpX, py + perpY, Math.random() * 3 + 1, 0, Math.PI * 2);
-              ctx.fill();
+              // Add floating embers around the plume
+              for(let i = 0; i < 8; i++) {
+                const t = Math.random();
+                const px = flame.x1 + (flame.x2 - flame.x1) * t;
+                const py = flame.y1 + (flame.y2 - flame.y1) * t;
+                const perpX = Math.cos(flame.dir + Math.PI/2) * (Math.random() - 0.5) * (flame.width || 60) * 0.4;
+                const perpY = Math.sin(flame.dir + Math.PI/2) * (Math.random() - 0.5) * (flame.width || 60) * 0.4;
+                
+                const emberSize = 2 + Math.random() * 3;
+                const emberAlpha = alpha * (0.4 + Math.sin(game.bgPulse * 10 + i * 2) * 0.3);
+                
+                ctx.fillStyle = `rgba(255, 200, 0, ${emberAlpha})`;
+                ctx.beginPath();
+                ctx.arc(px + perpX, py + perpY, emberSize, 0, Math.PI * 2);
+                ctx.fill();
+              }
+            } else {
+              // Regular flame cannon effect
+              // Create fire-like gradient
+              const gradient = ctx.createLinearGradient(flame.x1, flame.y1, flame.x2, flame.y2);
+              gradient.addColorStop(0, '#ff8800'); // Orange at start
+              gradient.addColorStop(0.3, '#ff4400'); // Red-orange
+              gradient.addColorStop(0.7, '#ff2200'); // Dark red
+              gradient.addColorStop(1, '#ff0000'); // Red at end
+              
+              ctx.shadowColor = '#ff4400';
+              ctx.shadowBlur = 30;
+              ctx.strokeStyle = gradient;
+              
+              // Draw multiple lines for fire effect
+              for(let i = 0; i < 3; i++) {
+                const offset = (i - 1) * 2; // Slight offset for each line
+                const perpX = Math.cos(flame.dir + Math.PI/2) * offset;
+                const perpY = Math.sin(flame.dir + Math.PI/2) * offset;
+                
+                ctx.lineWidth = (flame.width || 40) * (1 - i * 0.2); // Decreasing width
+                ctx.beginPath();
+                ctx.moveTo(flame.x1 + perpX, flame.y1 + perpY);
+                ctx.lineTo(flame.x2 + perpX, flame.y2 + perpY);
+                ctx.stroke();
+              }
+              
+              // Add fire particles
+              for(let i = 0; i < 5; i++) {
+                const t = Math.random();
+                const px = flame.x1 + (flame.x2 - flame.x1) * t;
+                const py = flame.y1 + (flame.y2 - flame.y1) * t;
+                const perpX = Math.cos(flame.dir + Math.PI/2) * (Math.random() - 0.5) * flame.width * 0.3;
+                const perpY = Math.sin(flame.dir + Math.PI/2) * (Math.random() - 0.5) * flame.width * 0.3;
+                
+                ctx.fillStyle = `rgba(255, ${Math.floor(200 + Math.random() * 55)}, 0, ${alpha * 0.8})`;
+                ctx.beginPath();
+                ctx.arc(px + perpX, py + perpY, Math.random() * 3 + 1, 0, Math.PI * 2);
+                ctx.fill();
+              }
             }
             
             ctx.shadowBlur = 0;
@@ -3851,41 +4385,74 @@
           
           ctx.stroke();
           
-          // Radiant Aegis: Add sputtering flame effects along the shield (always visible)
+          // Radiant Aegis: Add animated fire effects along the shield (always visible)
           if(isRadiant) {
             const radiantLevel = game.upgrades.radiantaegis;
-            const flameCount = 3 + radiantLevel; // More flames per level
+            const flameCount = 2 + radiantLevel; // Fewer but more detailed flames per level
             
             for(let i = 0; i < flameCount; i++) {
               const flamePos = (i / (flameCount - 1)) * 2 - 1; // -1 to 1 across shield
               const flameX = flamePos * halfWidth * 0.8;
               const flameY = -shieldSize * curveAmount * 0.5;
+              const flameScale = 0.3 + radiantLevel * 0.1; // Scale based on level
               
-              // Enhanced flame particle effect - always visible
-              const flameSize = 4 + radiantLevel * 1.5; // Larger flames
-              const flameAlpha = Math.sin(game.bgPulse * 15 + i * 3) * 0.2 + 0.8; // Higher base alpha, more intense pulsing
+              // Create animated fire effect using SVG-style paths
+              ctx.save();
+              ctx.translate(flameX, flameY);
+              ctx.scale(flameScale, flameScale);
               
-              // Outer flame glow
+              // Animated flame effect with pulsing
+              const pulseIntensity = Math.sin(game.bgPulse * 8 + i * 2) * 0.3 + 0.7;
+              const flameAlpha = Math.sin(game.bgPulse * 15 + i * 3) * 0.2 + 0.8;
+              
+              // Main flame body (orange-red)
               ctx.shadowColor = '#ff4400';
-              ctx.shadowBlur = 20;
+              ctx.shadowBlur = 15 * pulseIntensity;
               ctx.fillStyle = `rgba(255, 68, 0, ${flameAlpha})`;
               ctx.beginPath();
-              ctx.arc(flameX, flameY, flameSize, 0, Math.PI * 2);
+              ctx.moveTo(0, 0);
+              ctx.quadraticCurveTo(-5, -15, -8, -25);
+              ctx.quadraticCurveTo(-3, -20, 0, -30);
+              ctx.quadraticCurveTo(3, -20, 8, -25);
+              ctx.quadraticCurveTo(5, -15, 0, 0);
               ctx.fill();
               
-              // Middle flame layer
-              ctx.shadowBlur = 10;
+              // Inner flame (yellow-orange)
+              ctx.shadowBlur = 10 * pulseIntensity;
               ctx.fillStyle = `rgba(255, 128, 0, ${flameAlpha * 0.9})`;
               ctx.beginPath();
-              ctx.arc(flameX, flameY, flameSize * 0.8, 0, Math.PI * 2);
+              ctx.moveTo(0, 0);
+              ctx.quadraticCurveTo(-3, -12, -5, -20);
+              ctx.quadraticCurveTo(-2, -16, 0, -24);
+              ctx.quadraticCurveTo(2, -16, 5, -20);
+              ctx.quadraticCurveTo(3, -12, 0, 0);
               ctx.fill();
               
-              // Inner flame core (white hot)
-              ctx.shadowBlur = 0;
+              // Flame core (white-hot)
+              ctx.shadowBlur = 5 * pulseIntensity;
               ctx.fillStyle = `rgba(255, 255, 255, ${flameAlpha * 0.7})`;
               ctx.beginPath();
-              ctx.arc(flameX, flameY, flameSize * 0.5, 0, Math.PI * 2);
+              ctx.moveTo(0, 0);
+              ctx.quadraticCurveTo(-1, -8, -2, -15);
+              ctx.quadraticCurveTo(-1, -12, 0, -18);
+              ctx.quadraticCurveTo(1, -12, 2, -15);
+              ctx.quadraticCurveTo(1, -8, 0, 0);
               ctx.fill();
+              
+              // Add floating embers
+              for(let j = 0; j < 3; j++) {
+                const emberX = (Math.random() - 0.5) * 20;
+                const emberY = -Math.random() * 30 - 10;
+                const emberSize = 1 + Math.random() * 2;
+                const emberAlpha = Math.sin(game.bgPulse * 10 + j * 2) * 0.3 + 0.4;
+                
+                ctx.fillStyle = `rgba(255, 200, 0, ${emberAlpha})`;
+                ctx.beginPath();
+                ctx.arc(emberX, emberY, emberSize, 0, Math.PI * 2);
+                ctx.fill();
+              }
+              
+              ctx.restore();
             }
           }
           
@@ -4309,6 +4876,51 @@
         ctx.shadowBlur = 5;
         ctx.fillRect(e.x-w/2, e.y-e.radius-12, w*r, h);
         ctx.shadowBlur = 0;
+        
+        // Render Undead Dragon
+        if(game.undeadDragon.active) {
+          const pulseIntensity = Math.sin(game.bgPulse * 6) * 0.4 + 0.6;
+          
+          // Pulsing black/white glow
+          ctx.shadowColor = '#ffffff';
+          ctx.shadowBlur = 30 * pulseIntensity;
+          
+          // Main body - black with white border
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(game.undeadDragon.x-26, game.undeadDragon.y-16, 52, 32);
+          
+          // White border
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 3;
+          ctx.strokeRect(game.undeadDragon.x-26, game.undeadDragon.y-16, 52, 32);
+          
+          // Wings
+          ctx.beginPath();
+          ctx.moveTo(game.undeadDragon.x-26, game.undeadDragon.y);
+          ctx.lineTo(game.undeadDragon.x-40, game.undeadDragon.y-20);
+          ctx.lineTo(game.undeadDragon.x-26, game.undeadDragon.y-16);
+          ctx.moveTo(game.undeadDragon.x+26, game.undeadDragon.y);
+          ctx.lineTo(game.undeadDragon.x+40, game.undeadDragon.y-20);
+          ctx.lineTo(game.undeadDragon.x+26, game.undeadDragon.y-16);
+          ctx.fill();
+          
+          // Undead Dragon HP bar
+          const dragonR = clamp(game.undeadDragon.hp/game.undeadDragon.maxHp,0,1);
+          const dragonW = 52, dragonH = 6;
+          ctx.fillStyle = 'rgba(0,0,0,0.7)';
+          ctx.fillRect(game.undeadDragon.x-dragonW/2, game.undeadDragon.y-30, dragonW, dragonH);
+          ctx.fillStyle = dragonR > 0.5 ? '#00ff00' : dragonR > 0.2 ? '#ffff00' : '#ff00ff';
+          ctx.shadowColor = ctx.fillStyle;
+          ctx.shadowBlur = 8;
+          ctx.fillRect(game.undeadDragon.x-dragonW/2, game.undeadDragon.y-30, dragonW * dragonR, dragonH);
+          ctx.shadowBlur = 0;
+          
+          // Kill counter
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 12px Orbitron';
+          ctx.textAlign = 'center';
+          ctx.fillText(`${game.undeadDragon.kills} kills`, game.undeadDragon.x, game.undeadDragon.y-40);
+        }
         
         // Name label for special enemies
         if(e.type === 'dragon' || e.type === 'wizard'){
