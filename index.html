@@ -19,8 +19,8 @@
       }
       
       @keyframes neonPulse {
-        0%, 100% { filter: brightness(1) drop-shadow(0 0 20px var(--neon-pink)); }
-        50% { filter: brightness(1.3) drop-shadow(0 0 40px var(--neon-blue)); }
+        0%, 100% { filter: brightness(1) drop-shadow(0 0 20px #ffffff); }
+        50% { filter: brightness(1.3) drop-shadow(0 0 40px #cccccc); }
       }
       
       @keyframes neonGlow {
@@ -29,13 +29,58 @@
       }
       
       @keyframes textGlow {
-        0%, 100% { text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff; }
-        50% { text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 30px #00ffff; }
+        0%, 100% { text-shadow: 0 0 10px #ffffff, 0 0 20px #ffffff, 0 0 30px #ffffff; }
+        50% { text-shadow: 0 0 10px #cccccc, 0 0 20px #cccccc, 0 0 30px #cccccc; }
       }
       
       @keyframes float {
         0%, 100% { transform: translateY(0px); }
         50% { transform: translateY(-10px); }
+      }
+      
+      @keyframes shimmer {
+        0%, 100% { 
+          background: linear-gradient(135deg, rgba(0,0,0,0.3), rgba(255,255,255,0.1));
+          box-shadow: 0 0 20px rgba(255,255,255,0.6);
+        }
+        25% { 
+          background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(0,0,0,0.4));
+          box-shadow: 0 0 30px rgba(255,255,255,0.8);
+        }
+        50% { 
+          background: linear-gradient(135deg, rgba(0,0,0,0.4), rgba(255,255,255,0.2));
+          box-shadow: 0 0 40px rgba(255,255,255,1.0);
+        }
+        75% { 
+          background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(0,0,0,0.3));
+          box-shadow: 0 0 25px rgba(255,255,255,0.7);
+        }
+      }
+      
+      @keyframes sparkle {
+        0%, 100% { 
+          opacity: 0;
+          transform: scale(0) rotate(0deg);
+        }
+        50% { 
+          opacity: 1;
+          transform: scale(1) rotate(180deg);
+        }
+      }
+      
+      @keyframes borderShimmer {
+        0%, 100% { 
+          border-image: linear-gradient(45deg, #000000, #ffffff, #000000) 1;
+        }
+        25% { 
+          border-image: linear-gradient(45deg, #ffffff, #000000, #ffffff) 1;
+        }
+        50% { 
+          border-image: linear-gradient(45deg, #000000, #ffffff, #000000) 1;
+        }
+        75% { 
+          border-image: linear-gradient(45deg, #ffffff, #000000, #ffffff) 1;
+        }
       }
       
       @keyframes zoomIn {
@@ -103,14 +148,14 @@
       }
       
       .panel { 
-        background: linear-gradient(135deg, rgba(255,0,255,0.1), rgba(0,255,255,0.1));
+        background: linear-gradient(135deg, rgba(0,0,0,0.3), rgba(255,255,255,0.1));
         border: 2px solid;
-        border-image: linear-gradient(45deg, #ff00ff, #00ffff) 1;
+        border-image: linear-gradient(45deg, #000000, #ffffff) 1;
         border-radius: 15px; 
         backdrop-filter: blur(10px); 
         box-shadow: 
-          0 0 30px rgba(255,0,255,0.5),
-          inset 0 0 20px rgba(0,255,255,0.2);
+          0 0 30px rgba(255,255,255,0.6),
+          inset 0 0 20px rgba(255,255,255,0.2);
         animation: neonPulse 4s ease-in-out infinite;
       }
       
@@ -127,7 +172,7 @@
       }
       
       .stats strong { 
-        color: var(--neon-pink); 
+        color: #ffffff; 
         text-shadow: 0 0 10px currentColor;
       }
       
@@ -230,16 +275,16 @@
       .modal { 
         width: min(980px, 92vw); 
         max-height: min(660px, 78vh); 
-        background: linear-gradient(135deg, #1a0033, #0a0014);
+        background: linear-gradient(135deg, #000000, #1a1a1a);
         border: 3px solid;
-        border-image: linear-gradient(45deg, #ff00ff, #00ffff, #ff00ff) 1;
+        border-image: linear-gradient(45deg, #000000, #ffffff, #000000) 1;
         border-radius: 20px; 
         display: grid; 
         grid-template-rows: auto 1fr auto; 
         box-shadow: 
-          0 0 60px rgba(255,0,255,0.6),
-          0 0 120px rgba(0,255,255,0.3),
-          inset 0 0 60px rgba(255,0,255,0.1);
+          0 0 60px rgba(255,255,255,0.6),
+          0 0 120px rgba(255,255,255,0.3),
+          inset 0 0 60px rgba(255,255,255,0.1);
         pointer-events: auto;
         animation: zoomIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
       }
@@ -249,15 +294,15 @@
         display: flex; 
         justify-content: center; 
         align-items: center; 
-        border-bottom: 2px solid rgba(255,0,255,0.3);
-        background: linear-gradient(90deg, rgba(255,0,255,0.1), rgba(0,255,255,0.1));
+        border-bottom: 2px solid rgba(255,255,255,0.3);
+        background: linear-gradient(90deg, rgba(0,0,0,0.3), rgba(255,255,255,0.1));
       }
       
       .modal .head h2 { 
         margin: 0; 
         font-size: 32px; 
         font-weight: 900;
-        background: linear-gradient(45deg, #ff00ff, #00ffff);
+        background: linear-gradient(45deg, #ffffff, #cccccc);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         animation: textGlow 2s ease-in-out infinite;
@@ -283,14 +328,14 @@
       }
       
       .modal .body::-webkit-scrollbar-thumb {
-        background: linear-gradient(45deg, #ff00ff, #00ffff);
+        background: linear-gradient(45deg, #000000, #ffffff);
         border-radius: 10px;
       }
       
       .card { 
-        background: linear-gradient(135deg, rgba(255,0,255,0.1), rgba(0,255,255,0.05));
+        background: linear-gradient(135deg, rgba(0,0,0,0.3), rgba(255,255,255,0.1));
         border: 2px solid;
-        border-image: linear-gradient(45deg, #ff00ff, #00ffff) 1;
+        border-image: linear-gradient(45deg, #000000, #ffffff) 1;
         border-radius: 15px; 
         padding: 24px; 
         display: grid; 
@@ -315,14 +360,14 @@
       
       .card:hover {
         transform: translateY(-5px) scale(1.02);
-        box-shadow: 0 10px 40px rgba(255,0,255,0.4);
-        background: linear-gradient(135deg, rgba(255,0,255,0.2), rgba(0,255,255,0.1));
+        box-shadow: 0 10px 40px rgba(255,255,255,0.6);
+        background: linear-gradient(135deg, rgba(0,0,0,0.4), rgba(255,255,255,0.2));
       }
       
       .card .title { 
         font-weight: 900;
         font-size: 18px;
-        color: var(--neon-pink);
+        color: #ffffff;
         text-shadow: 0 0 10px currentColor;
         text-transform: uppercase;
         letter-spacing: 1px;
@@ -330,7 +375,7 @@
       
       .card .desc { 
         grid-column: 1 / -1; 
-        color: var(--neon-blue);
+        color: #cccccc;
         font-size: 14px;
         text-shadow: 0 0 5px currentColor;
       }
@@ -347,8 +392,8 @@
         display: flex; 
         justify-content: space-between; 
         align-items: center; 
-        border-top: 2px solid rgba(0,255,255,0.3);
-        background: linear-gradient(90deg, rgba(0,255,255,0.1), rgba(255,0,255,0.1));
+        border-top: 2px solid rgba(255,255,255,0.3);
+        background: linear-gradient(90deg, rgba(0,0,0,0.3), rgba(255,255,255,0.1));
       }
       
       .toast { 
@@ -496,6 +541,11 @@
       @keyframes gradientShift {
         0%, 100% { background-position: 0% 50%; }
         50% { background-position: 100% 50%; }
+      }
+      
+      @keyframes textGlow {
+        0%, 100% { text-shadow: 0 0 10px #ffffff, 0 0 20px #ffffff, 0 0 30px #ffffff; }
+        50% { text-shadow: 0 0 15px #ffffff, 0 0 25px #ffffff, 0 0 35px #ffffff; }
       }
       
       .subtitle {
@@ -718,6 +768,7 @@
         const midasLevel = game.upgrades.midasknights || 0;
         const isAngelic = angelicLevel > 0;
         const isMidas = midasLevel > 0;
+        const isGoldenAngelic = isAngelic && isMidas; // Both upgrades purchased
         
         // Calculate gold-based bonuses for Midas Knights
         const goldMultiplier = isMidas ? Math.min(5, Math.max(1, Math.floor(game.gold / 100))) : 1; // +1 per 100 gold, max +5
@@ -736,22 +787,23 @@
           damage: 15 * (1 + goldBonus),
           heading: 0,
           dead: false,
-          color: isAngelic ? '#000000' : isMidas ? '#ffd700' : '#00ff88', // Black for angelic, gold for midas, green for regular
-          glowColor: isAngelic ? '#ffffff' : isMidas ? '#ffd700' : '#00ff88', // White glow for angelic, gold for midas
-          type: isAngelic ? 'angelic' : isMidas ? 'midas' : 'cavalry',
+          color: isGoldenAngelic ? '#ffd700' : isAngelic ? '#000000' : isMidas ? '#ffd700' : '#00ff88', // Golden for golden angelic, black for angelic, gold for midas, green for regular
+          glowColor: isGoldenAngelic ? '#ffd700' : isAngelic ? '#ffffff' : isMidas ? '#ffd700' : '#00ff88', // Golden glow for golden angelic, white glow for angelic, gold for midas
+          type: isGoldenAngelic ? 'goldenangelic' : isAngelic ? 'angelic' : isMidas ? 'midas' : 'cavalry',
           target: null,
-          life: isAngelic ? (10.0 + angelicLevel * 2.0) : isMidas ? (10.0 + midasLevel * 1.0) : 10.0, // +2s per level for angelic, +1s per level for midas
+          life: isGoldenAngelic ? (10.0 + angelicLevel * 2.0 + midasLevel * 1.0) : isAngelic ? (10.0 + angelicLevel * 2.0) : isMidas ? (10.0 + midasLevel * 1.0) : 10.0, // Combined bonuses for golden angelic
           wobble: rand(0, Math.PI*2),
-          angelic: isAngelic, // Mark as angelic for healing logic
-          midas: isMidas, // Mark as midas for gold bonus logic
+          angelic: isAngelic || isGoldenAngelic, // Mark as angelic for healing logic
+          midas: isMidas || isGoldenAngelic, // Mark as midas for gold bonus logic
+          goldenAngelic: isGoldenAngelic, // Mark as golden angelic for special rendering
           goldMultiplier: goldMultiplier // Store gold multiplier for kill rewards
         };
         
         game.enemies.push(cavalry); // Add to enemies array for easy management
-        const spawnColor = isAngelic ? '#ffffff' : isMidas ? '#ffd700' : '#00ff88';
+        const spawnColor = isGoldenAngelic ? '#ffd700' : isAngelic ? '#ffffff' : isMidas ? '#ffd700' : '#00ff88';
         spawnParticles(cavalry.x, cavalry.y, spawnColor, 20, 1.0);
-        const message = isAngelic ? '👼 ANGELIC KNIGHTS!' : isMidas ? '💰 MIDAS KNIGHTS!' : '⚔️ CAVALRY CHARGE!';
-        const messageColor = isAngelic ? '#ffffff' : isMidas ? '#ffd700' : '#00ff88';
+        const message = isGoldenAngelic ? '👼💰 GOLDEN ANGELIC KNIGHTS!' : isAngelic ? '👼 ANGELIC KNIGHTS!' : isMidas ? '💰 MIDAS KNIGHTS!' : '⚔️ CAVALRY CHARGE!';
+        const messageColor = isGoldenAngelic ? '#ffd700' : isAngelic ? '#ffffff' : isMidas ? '#ffd700' : '#00ff88';
         setBattleMessage(message, 2.0, messageColor);
       }
 
@@ -771,9 +823,25 @@
       // Projectiles
       function makeProjectile(x,y,dir,stats){ 
         let speed = 540*(1+0.25*game.upgrades.rapid); 
-        let baseLife = 1.2;
         let pierce = game.upgrades.piercing>0 ? 1+game.upgrades.piercing : 0;
         let baseDmg = 18*(1+0.35*game.upgrades.crit);
+        
+        // Calculate distance to screen edge to ensure projectiles reach the edge
+        const cosDir = Math.cos(dir);
+        const sinDir = Math.sin(dir);
+        
+        // Calculate distance to each screen edge
+        let distToEdge = Infinity;
+        if(cosDir > 0) distToEdge = Math.min(distToEdge, (W - x) / cosDir);
+        if(cosDir < 0) distToEdge = Math.min(distToEdge, (0 - x) / cosDir);
+        if(sinDir > 0) distToEdge = Math.min(distToEdge, (H - y) / sinDir);
+        if(sinDir < 0) distToEdge = Math.min(distToEdge, (0 - y) / sinDir);
+        
+        // Add some buffer to ensure it goes off screen
+        distToEdge = Math.max(distToEdge, 0) + 50;
+        
+        // Calculate life based on distance and speed
+        let baseLife = distToEdge / speed;
         
         // Check for time slow sniper first (takes priority over regular sniper upgrade)
         const isTimeSlow = game.dtScale < 1; // Check if time slow is active
@@ -1112,7 +1180,10 @@
       }
       function endWave(){ 
         // Clear all friendly units (cavalry, angelic knights, and converted enemies) when wave ends
-        game.enemies = game.enemies.filter(e => e.type !== 'cavalry' && e.type !== 'angelic' && e.type !== 'midas' && e.type !== 'converted');
+        game.enemies = game.enemies.filter(e => e.type !== 'cavalry' && e.type !== 'angelic' && e.type !== 'midas' && e.type !== 'goldenangelic' && e.type !== 'converted');
+        
+        // Reset cavalry cooldown between waves
+        game.cavalryTimer = 0;
         
         // Pay out interest from King's Treasury
         if(game.upgrades.treasury > 0 && game.treasuryInterest > 0) {
@@ -1356,6 +1427,28 @@
             card.style.border = '2px solid';
             card.style.borderImage = 'linear-gradient(45deg, #000000, #ffffff) 1';
             card.style.boxShadow = '0 0 20px rgba(255,255,255,0.6)';
+            card.style.animation = 'shimmer 2s ease-in-out infinite, borderShimmer 3s ease-in-out infinite';
+            
+            // Add sparkle elements
+            for(let i = 0; i < 6; i++) {
+              const sparkle = document.createElement('div');
+              sparkle.style.position = 'absolute';
+              sparkle.style.width = '8px';
+              sparkle.style.height = '8px';
+              sparkle.style.background = '#ffffff';
+              sparkle.style.borderRadius = '50%';
+              sparkle.style.boxShadow = '0 0 10px #ffffff';
+              sparkle.style.animation = `sparkle 2s ease-in-out infinite ${i * 0.3}s`;
+              sparkle.style.pointerEvents = 'none';
+              
+              // Position sparkles around the card
+              const angle = (i / 6) * Math.PI * 2;
+              const radius = 80;
+              sparkle.style.left = `calc(50% + ${Math.cos(angle) * radius}px)`;
+              sparkle.style.top = `calc(50% + ${Math.sin(angle) * radius}px)`;
+              
+              card.appendChild(sparkle);
+            }
           }
           
           // Add neon black/white glow for Radiant Aegis
@@ -1364,6 +1457,28 @@
             card.style.border = '2px solid';
             card.style.borderImage = 'linear-gradient(45deg, #000000, #ffffff) 1';
             card.style.boxShadow = '0 0 20px rgba(255,255,255,0.6)';
+            card.style.animation = 'shimmer 2s ease-in-out infinite, borderShimmer 3s ease-in-out infinite';
+            
+            // Add sparkle elements
+            for(let i = 0; i < 6; i++) {
+              const sparkle = document.createElement('div');
+              sparkle.style.position = 'absolute';
+              sparkle.style.width = '8px';
+              sparkle.style.height = '8px';
+              sparkle.style.background = '#ffffff';
+              sparkle.style.borderRadius = '50%';
+              sparkle.style.boxShadow = '0 0 10px #ffffff';
+              sparkle.style.animation = `sparkle 2s ease-in-out infinite ${i * 0.3}s`;
+              sparkle.style.pointerEvents = 'none';
+              
+              // Position sparkles around the card
+              const angle = (i / 6) * Math.PI * 2;
+              const radius = 80;
+              sparkle.style.left = `calc(50% + ${Math.cos(angle) * radius}px)`;
+              sparkle.style.top = `calc(50% + ${Math.sin(angle) * radius}px)`;
+              
+              card.appendChild(sparkle);
+            }
           }
           
           // Add golden glow for Midas Knights
@@ -1383,7 +1498,23 @@
             desc = `Thicker walls + heal castle for +${healAmount} HP`;
           }
           
-          content.innerHTML = `<div class="title" style="margin-bottom:8px;">${u.name}</div><div class="desc" style="margin-bottom:8px;">${desc}</div>`; 
+          // Special styling for combo ability titles
+          let titleStyle = '';
+          if(u.key === 'angelicknights' || u.key === 'radiantaegis') {
+            titleStyle = `
+              background: linear-gradient(45deg, #000000, #ffffff, #000000);
+              background-size: 200% 200%;
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+              animation: textGlow 2s ease-in-out infinite, gradientShift 3s ease-in-out infinite;
+              font-weight: 900;
+              text-shadow: 0 0 15px #ffffff;
+              position: relative;
+              z-index: 10;
+            `;
+          }
+          
+          content.innerHTML = `<div class="title" style="margin-bottom:8px; ${titleStyle}">${u.name}</div><div class="desc" style="margin-bottom:8px;">${desc}</div>`; 
           
           // Level pill in bottom left
           const levelPill = document.createElement('span');
@@ -1393,6 +1524,16 @@
           levelPill.style.bottom = '16px';
           levelPill.style.left = '16px';
           levelPill.style.margin = '0';
+          
+          // Special styling for combo ability level pills
+          if(u.key === 'angelicknights' || u.key === 'radiantaegis') {
+            levelPill.style.background = 'linear-gradient(135deg, rgba(0,0,0,0.8), rgba(255,255,255,0.3))';
+            levelPill.style.border = '1px solid #ffffff';
+            levelPill.style.color = '#ffffff';
+            levelPill.style.textShadow = '0 0 10px #ffffff';
+            levelPill.style.animation = 'neonPulse 1.5s ease-in-out infinite';
+            levelPill.style.boxShadow = '0 0 15px rgba(255,255,255,0.8)';
+          }
           
           const btn=document.createElement('button'); 
           btn.textContent=`${cost}g`; 
@@ -1469,6 +1610,22 @@
           card.appendChild(content); 
           card.appendChild(levelPill);
           card.appendChild(btn); 
+          
+          // Add special hover effects for combo abilities
+          if(u.key === 'angelicknights' || u.key === 'radiantaegis') {
+            card.addEventListener('mouseenter', () => {
+              card.style.transform = 'translateY(-8px) scale(1.03)';
+              card.style.boxShadow = '0 15px 50px rgba(255,255,255,0.9)';
+              card.style.animation = 'shimmer 1s ease-in-out infinite, borderShimmer 1.5s ease-in-out infinite';
+            });
+            
+            card.addEventListener('mouseleave', () => {
+              card.style.transform = 'translateY(0px) scale(1)';
+              card.style.boxShadow = '0 0 20px rgba(255,255,255,0.6)';
+              card.style.animation = 'shimmer 2s ease-in-out infinite, borderShimmer 3s ease-in-out infinite';
+            });
+          }
+          
           body.appendChild(card);
         }
         picks.forEach(addCard);
@@ -1820,6 +1977,7 @@
             p.explosive = p.explosive || power>0.6; 
             p.size = 3 + Math.floor(power*4);
             p.color = power>0.6 ? '#ff00ff' : '#00ffff';
+            p.powershot = true; // Mark as powershot for shield breaking
           } 
           if(game.player.wall===0) p.baseDmg*=1.2; // North bonus
           game.projectiles.push(p); 
@@ -2062,7 +2220,7 @@
       function allDefeated(){ 
         // Require at least one enemy to have spawned to avoid instant wave completion
         // Only count actual enemies, not friendly units (cavalry, angelic knights, converted)
-        const actualEnemies = game.enemies.filter(e => e.type !== 'cavalry' && e.type !== 'angelic' && e.type !== 'midas' && e.type !== 'converted');
+        const actualEnemies = game.enemies.filter(e => e.type !== 'cavalry' && e.type !== 'angelic' && e.type !== 'midas' && e.type !== 'goldenangelic' && e.type !== 'converted');
         return game._spawnedAny && (!game._spawns || game._spawns.length===0) && actualEnemies.every(e=>e.dead); 
       }
 
@@ -2327,6 +2485,86 @@
           return;
         }
         
+        // Golden Angelic Knight behavior (combines both angelic healing and midas gold bonuses)
+        if(e.type === 'goldenangelic') {
+          e.life -= dt;
+          if(e.life <= 0) {
+            e.dead = true;
+            spawnParticles(e.x, e.y, '#ffd700', 15, 0.8);
+            return;
+          }
+          
+          // Initialize healing cooldown if not exists
+          if(e.healCooldown === undefined) e.healCooldown = 0;
+          e.healCooldown -= dt;
+          
+          // Find target enemy to attack (same logic as other cavalry)
+          let targetEnemy = null;
+          let targetDist = Infinity;
+          
+          for(const enemy of game.enemies) {
+            if(enemy.dead || enemy.type === 'cavalry' || enemy.type === 'angelic' || enemy.type === 'midas' || enemy.type === 'goldenangelic') continue;
+            const dx = enemy.x - e.x;
+            const dy = enemy.y - e.y;
+            const dist = dx*dx + dy*dy;
+            
+            const angle = Math.atan2(dy, dx);
+            const preferredAngle = (e.x + e.y) % (Math.PI * 2);
+            const angleDiff = Math.abs(angle - preferredAngle);
+            
+            const score = dist + angleDiff * 1000;
+            if(score < targetDist) {
+              targetDist = score;
+              targetEnemy = enemy;
+            }
+          }
+          
+          if(targetEnemy) {
+            // Move towards target enemy
+            const dx = targetEnemy.x - e.x;
+            const dy = targetEnemy.y - e.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if(dist > 0) {
+              e.x += (dx/dist) * e.speed * dt;
+              e.y += (dy/dist) * e.speed * dt;
+            }
+            
+            // Attack if close enough and heal castle
+            if(dist < 30) {
+              const damageDealt = e.damage * dt * 2;
+              targetEnemy.hp -= damageDealt;
+              // Track who killed the enemy for Midas bonus
+              if(targetEnemy.hp <= 0) {
+                targetEnemy.killedBy = e;
+              }
+              
+              // Heal castle for the damage dealt (with cooldown)
+              if(e.healCooldown <= 0) {
+                const healAmount = 8; // Enhanced healing for golden angelic
+                game.castleHp = Math.min(game.castleHp + healAmount, game.castleMax);
+                spawnText(e.x, e.y-20, `+${healAmount}`, '#ffd700', 1.0, 16);
+                spawnParticles(e.x, e.y, '#ffd700', 8, 0.6); // Golden healing particles
+                e.healCooldown = 0.4; // Faster healing cooldown
+              }
+              
+              spawnParticles(targetEnemy.x, targetEnemy.y, '#ffd700', 3, 0.3);
+            }
+          } else {
+            // No enemies, move towards castle center
+            const dx = CENTER.x - e.x;
+            const dy = CENTER.y - e.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if(dist > 0) {
+              e.x += (dx/dist) * e.speed * 0.5 * dt;
+              e.y += (dy/dist) * e.speed * 0.5 * dt;
+            }
+          }
+          
+          // Animation wobble with pulsing golden glow
+          e.wobble += dt * 3;
+          return;
+        }
+        
         // Regular enemy behavior
         // Check for nearby cavalry, angelic knights, or midas knights to attack (but not converted units)
         let nearestCavalry = null;
@@ -2579,16 +2817,25 @@
             if(e.type==='knight' && (e.shieldHp==null || e.shieldHp>0)){ 
               const inAngle = Math.acos( clamp(( (p.vx*-1)*Math.cos(e.heading) + (p.vy*-1)*Math.sin(e.heading) )/(Math.hypot(p.vx,p.vy)||1), -1, 1) ); 
               if(inAngle < e.blockAngle){ 
-                // Hit the shield instead of the body
-                e.shieldHp = (e.shieldHp==null? Math.round(60*DIFFICULTY.ENEMY_HP_MULT) : e.shieldHp) - p.baseDmg*0.8; 
-                spawnParticles(p.x,p.y,'#00ffff',8,0.6); 
-                sfx.hit(); 
-                p.life=0; 
-                if(e.shieldHp<=0){ 
-                  // Show "blocked" text above the mob instead of toast
-                  spawnText(e.x, e.y-e.radius-15, 'blocked', '#ffffff', 1.2, 16, true);
+                // Powershots break through shields
+                if(p.powershot) {
+                  e.shieldHp = 0;
+                  spawnText(e.x, e.y-e.radius-15, 'SHIELD BROKEN!', '#ff00ff', 1.0, 18);
+                  spawnParticles(p.x,p.y,'#ff00ff',12,0.8); 
+                  sfx.hit(); 
+                  // Continue with normal damage to the enemy
+                } else {
+                  // Hit the shield instead of the body
+                  e.shieldHp = (e.shieldHp==null? Math.round(60*DIFFICULTY.ENEMY_HP_MULT) : e.shieldHp) - p.baseDmg*0.8; 
+                  spawnParticles(p.x,p.y,'#00ffff',8,0.6); 
+                  sfx.hit(); 
+                  p.life=0; 
+                  if(e.shieldHp<=0){ 
+                    // Show "blocked" text above the mob instead of toast
+                    spawnText(e.x, e.y-e.radius-15, 'blocked', '#ffffff', 1.2, 16, true);
+                  }
+                  break; 
                 }
-                break; 
               } 
             }
             
