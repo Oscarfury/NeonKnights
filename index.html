@@ -1,0 +1,4430 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>⚔️ NEON KNIGHTS: Castle Defense ⚔️</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+      
+      :root {
+        --neon-pink: #ff00ff;
+        --neon-blue: #00ffff;
+        --neon-purple: #bf00ff;
+        --neon-yellow: #ffff00;
+        --dark-bg: #0a0014;
+        --panel-bg: #1a0033;
+        --gold: #ffd700;
+        --text: #ffffff;
+      }
+      
+      @keyframes neonPulse {
+        0%, 100% { filter: brightness(1) drop-shadow(0 0 20px var(--neon-pink)); }
+        50% { filter: brightness(1.3) drop-shadow(0 0 40px var(--neon-blue)); }
+      }
+      
+      @keyframes neonGlow {
+        0%, 100% { box-shadow: 0 0 20px #ff00ff, inset 0 0 20px rgba(255,0,255,0.1); }
+        50% { box-shadow: 0 0 40px #00ffff, inset 0 0 40px rgba(0,255,255,0.1); }
+      }
+      
+      @keyframes textGlow {
+        0%, 100% { text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff; }
+        50% { text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 30px #00ffff; }
+      }
+      
+      @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+      }
+      
+      @keyframes zoomIn {
+        from { transform: scale(0) rotate(360deg); opacity: 0; }
+        to { transform: scale(1) rotate(0deg); opacity: 1; }
+      }
+      
+
+      
+      html, body { 
+        height: 100%; 
+        margin: 0; 
+        background: linear-gradient(135deg, #0a0014 0%, #1a0033 50%, #0a0014 100%);
+        color: var(--text); 
+        font-family: 'Orbitron', monospace;
+        overflow: hidden;
+        position: relative;
+      }
+      
+      body::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: 
+          radial-gradient(circle at 20% 50%, rgba(255,0,255,0.1) 0%, transparent 50%),
+          radial-gradient(circle at 80% 50%, rgba(0,255,255,0.1) 0%, transparent 50%);
+        animation: float 8s ease-in-out infinite;
+        pointer-events: none;
+      }
+      
+      .wrap { 
+        position: relative; 
+        width: 100vw; 
+        height: 100vh; 
+        display: grid; 
+        place-items: center; 
+      }
+      
+      canvas { 
+        width: min(100vw, 1400px); 
+        height: min(75vh, 900px); 
+        max-width: 1400px; 
+        max-height: 900px; 
+        aspect-ratio: 14 / 9; 
+        display: block; 
+        border-radius: 20px; 
+        border: 3px solid;
+        border-image: linear-gradient(45deg, #ff00ff, #00ffff, #ff00ff) 1;
+        animation: neonGlow 3s ease-in-out infinite;
+        background: radial-gradient(ellipse at center, #1a0033 0%, #0a0014 100%);
+      }
+      
+      .hud { 
+        position: absolute; 
+        top: 16px; 
+        left: 50%; 
+        transform: translateX(-50%); 
+        width: min(1600px, 98vw); 
+        display: grid; 
+        grid-template-columns: 1fr auto; 
+        gap: 10px; 
+        align-items: center; 
+        pointer-events: none; 
+        z-index: 200;
+      }
+      
+      .panel { 
+        background: linear-gradient(135deg, rgba(255,0,255,0.1), rgba(0,255,255,0.1));
+        border: 2px solid;
+        border-image: linear-gradient(45deg, #ff00ff, #00ffff) 1;
+        border-radius: 15px; 
+        backdrop-filter: blur(10px); 
+        box-shadow: 
+          0 0 30px rgba(255,0,255,0.5),
+          inset 0 0 20px rgba(0,255,255,0.2);
+        animation: neonPulse 4s ease-in-out infinite;
+      }
+      
+      .stats { 
+        pointer-events: auto; 
+        display: grid; 
+        grid-auto-flow: column; 
+        gap: 20px; 
+        padding: 12px 16px; 
+        font-size: 14px; 
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      
+      .stats strong { 
+        color: var(--neon-pink); 
+        text-shadow: 0 0 10px currentColor;
+      }
+      
+      .bar { 
+        width: 240px; 
+        height: 12px; 
+        background: rgba(0,0,0,0.5); 
+        border: 2px solid var(--neon-blue); 
+        border-radius: 999px; 
+        overflow: hidden; 
+        box-shadow: inset 0 0 10px rgba(0,255,255,0.3);
+        position: relative;
+      }
+      
+      .bar > div { 
+        height: 100%; 
+        background: linear-gradient(90deg, #00ff00, #ffff00, #ff00ff);
+        transform-origin: left center;
+        box-shadow: 0 0 20px currentColor;
+        position: relative;
+      }
+      
+      .bar > div::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        animation: float 2s linear infinite;
+      }
+      
+      .btns { 
+        pointer-events: auto; 
+        display: flex; 
+        gap: 10px; 
+        padding: 10px; 
+      }
+      
+      button { 
+        background: linear-gradient(135deg, #ff00ff, #8000ff);
+        border: 2px solid var(--neon-pink);
+        border-radius: 12px; 
+        color: white; 
+        padding: 10px 16px; 
+        cursor: pointer; 
+        font-weight: 900;
+        font-family: 'Orbitron', monospace;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s;
+        text-shadow: 0 0 10px rgba(255,255,255,0.5);
+      }
+      
+      button::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(45deg, #ff00ff, #00ffff, #ff00ff);
+        border-radius: 12px;
+        opacity: 0;
+        z-index: -1;
+        transition: opacity 0.3s;
+      }
+      
+      button:hover::before {
+        opacity: 1;
+        animation: neonPulse 1s ease-in-out infinite;
+      }
+      
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(255,0,255,0.5);
+      }
+      
+      button.primary { 
+        background: linear-gradient(135deg, #00ffff, #0080ff);
+        border-color: var(--neon-blue);
+        animation: float 3s ease-in-out infinite;
+      }
+      
+      button:disabled { 
+        opacity: .5; 
+        cursor: not-allowed;
+        animation: none;
+      }
+      
+      .overlay { 
+        position: absolute; 
+        inset: 0; 
+        display: none; 
+        place-items: center;
+        background: radial-gradient(ellipse at center, rgba(0,0,0,0.8), rgba(0,0,0,0.95));
+        z-index: 100;
+      }
+      
+      .modal { 
+        width: min(980px, 92vw); 
+        max-height: min(660px, 78vh); 
+        background: linear-gradient(135deg, #1a0033, #0a0014);
+        border: 3px solid;
+        border-image: linear-gradient(45deg, #ff00ff, #00ffff, #ff00ff) 1;
+        border-radius: 20px; 
+        display: grid; 
+        grid-template-rows: auto 1fr auto; 
+        box-shadow: 
+          0 0 60px rgba(255,0,255,0.6),
+          0 0 120px rgba(0,255,255,0.3),
+          inset 0 0 60px rgba(255,0,255,0.1);
+        pointer-events: auto;
+        animation: zoomIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      }
+      
+      .modal .head { 
+        padding: 20px 24px; 
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+        border-bottom: 2px solid rgba(255,0,255,0.3);
+        background: linear-gradient(90deg, rgba(255,0,255,0.1), rgba(0,255,255,0.1));
+      }
+      
+      .modal .head h2 { 
+        margin: 0; 
+        font-size: 32px; 
+        font-weight: 900;
+        background: linear-gradient(45deg, #ff00ff, #00ffff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: textGlow 2s ease-in-out infinite;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+      }
+      
+      .modal .body { 
+        padding: 20px; 
+        display: grid; 
+        grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); 
+        gap: 16px; 
+        overflow: auto;
+      }
+      
+      .modal .body::-webkit-scrollbar {
+        width: 10px;
+      }
+      
+      .modal .body::-webkit-scrollbar-track {
+        background: rgba(0,0,0,0.5);
+        border-radius: 10px;
+      }
+      
+      .modal .body::-webkit-scrollbar-thumb {
+        background: linear-gradient(45deg, #ff00ff, #00ffff);
+        border-radius: 10px;
+      }
+      
+      .card { 
+        background: linear-gradient(135deg, rgba(255,0,255,0.1), rgba(0,255,255,0.05));
+        border: 2px solid;
+        border-image: linear-gradient(45deg, #ff00ff, #00ffff) 1;
+        border-radius: 15px; 
+        padding: 24px; 
+        display: grid; 
+        grid-template-columns: 1fr auto; 
+        gap: 16px; 
+        align-items: start;
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+        min-height: 120px;
+      }
+      
+      .card::before {
+        content: '⚔️';
+        position: absolute;
+        right: 10px;
+        top: 10px;
+        font-size: 24px;
+        opacity: 0.3;
+        animation: float 3s ease-in-out infinite;
+      }
+      
+      .card:hover {
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 10px 40px rgba(255,0,255,0.4);
+        background: linear-gradient(135deg, rgba(255,0,255,0.2), rgba(0,255,255,0.1));
+      }
+      
+      .card .title { 
+        font-weight: 900;
+        font-size: 18px;
+        color: var(--neon-pink);
+        text-shadow: 0 0 10px currentColor;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      
+      .card .desc { 
+        grid-column: 1 / -1; 
+        color: var(--neon-blue);
+        font-size: 14px;
+        text-shadow: 0 0 5px currentColor;
+      }
+      
+      .card .cost { 
+        color: var(--gold);
+        font-weight: 900;
+        font-size: 20px;
+        text-shadow: 0 0 15px currentColor;
+      }
+      
+      .modal .foot { 
+        padding: 16px 20px; 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        border-top: 2px solid rgba(0,255,255,0.3);
+        background: linear-gradient(90deg, rgba(0,255,255,0.1), rgba(255,0,255,0.1));
+      }
+      
+      .toast { 
+        position: absolute; 
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        display: grid; 
+        gap: 10px;
+        z-index: 1000;
+        pointer-events: none; /* Allow clicks to pass through */
+        width: 100%;
+        text-align: center;
+      }
+      
+      .toast > div { 
+        background: linear-gradient(135deg, #ff00ff, #8000ff);
+        border: 2px solid var(--neon-pink);
+        padding: 7px 10px; 
+        border-radius: 8px;
+        color: white;
+        font-weight: 700;
+        font-size: 0.6em;
+        text-transform: uppercase;
+        animation: toastIn 0.3s ease-out;
+        box-shadow: 0 0 30px rgba(255,0,255,0.6);
+        transform-origin: center;
+        text-align: center;
+      }
+      
+      .intel-box {
+        position: absolute;
+        bottom: -200px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 1400px;
+        height: 240px;
+        background: linear-gradient(135deg, rgba(255,0,255,0.15), rgba(0,255,255,0.1));
+        border: 2px solid;
+        border-image: linear-gradient(45deg, #ff00ff, #00ffff) 1;
+        border-radius: 15px;
+        padding: 20px;
+        z-index: 100;
+        transition: bottom 0.5s ease-in-out;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 0 40px rgba(255,0,255,0.4);
+      }
+      
+      .intel-box.show {
+        bottom: 20px;
+      }
+      
+      .intel-title {
+        color: #ff00ff;
+        text-shadow: 0 0 10px #ff00ff;
+        font-size: 18px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 15px;
+        text-align: center;
+      }
+      
+      .intel-content {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      
+      .intel-enemy {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: rgba(0,0,0,0.3);
+        border-radius: 10px;
+        border: 1px solid rgba(255,0,255,0.3);
+        min-width: 200px;
+      }
+      
+      .intel-enemy canvas {
+        width: 50px;
+        height: 50px;
+        border: 2px solid;
+        border-radius: 8px;
+        background: rgba(0,0,0,0.5);
+      }
+      
+      .intel-enemy-info {
+        flex: 1;
+      }
+      
+      .intel-enemy-name {
+        color: #ffffff;
+        font-weight: bold;
+        font-size: 14px;
+        margin-bottom: 4px;
+      }
+      
+      .intel-enemy-desc {
+        color: #8ff;
+        font-size: 12px;
+        line-height: 1.3;
+      }
+      
+      .intel-enemy-count {
+        color: #ffffff;
+        font-weight: bold;
+        font-size: 16px;
+        text-align: center;
+        min-width: 40px;
+      }
+      
+      .pill {
+        background: linear-gradient(135deg, rgba(0,255,255,0.2), rgba(255,0,255,0.2));
+        border: 1px solid var(--neon-blue);
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 11px;
+        text-shadow: 0 0 5px currentColor;
+        white-space: nowrap; /* avoid wrapping Lv 0 */
+        font-feature-settings: 'zero' 0; /* avoid slashed zero rendering */
+        min-width: fit-content;
+        display: inline-block;
+      }
+      
+      /* Epic Title Screen */
+      .epic-title {
+        font-size: 48px;
+        font-weight: 900;
+        background: linear-gradient(45deg, #ff00ff, #00ffff, #ffff00, #ff00ff);
+        background-size: 300% 300%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: textGlow 2s ease-in-out infinite, gradientShift 3s ease-in-out infinite;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 4px;
+        margin: 20px 0;
+      }
+      
+      @keyframes gradientShift {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+      }
+      
+      .subtitle {
+        text-align: center;
+        color: var(--neon-blue);
+        text-shadow: 0 0 10px currentColor;
+        font-size: 16px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 30px;
+      }
+      
+      /* Achievement popup */
+      .achievement {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, #ff00ff, #00ffff);
+        padding: 20px 40px;
+        border-radius: 20px;
+        color: white;
+        font-size: 24px;
+        font-weight: 900;
+        text-transform: uppercase;
+        animation: zoomIn 0.5s ease-out;
+        box-shadow: 0 0 60px rgba(255,0,255,0.8);
+        z-index: 1000;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <canvas id="game" width="1400" height="900"></canvas>
+      <div class="hud">
+        <div class="panel stats">
+          <div>⚔️ <strong>Wave</strong>: <span id="uiWave">1</span></div>
+          <div>💰 <strong>Gold</strong>: <span id="uiGold">0</span>g</div>
+          <div id="uiInterest" style="display: none;">💎 <strong>Interest</strong>: <span id="uiInterestValue">0</span>g</div>
+          <div class="bar"><div id="uiHpBar"></div></div>
+          <div>🏰 <strong>Castle</strong>: <span id="uiHpText">100/100</span></div>
+          <div>⭐ <strong>Score</strong>: <span id="uiScore">0</span> · <span id="uiCombo">x1</span></div>
+          <div>👑 High: <span id="uiHigh">0</span></div>
+        </div>
+        <div class="panel btns">
+          <button id="btnPause">⏸️ Pause</button>
+          <button id="btnReset">🔄 Reset</button>
+        </div>
+      </div>
+      <div id="overlay" class="overlay">
+        <div class="modal">
+          <div class="head">
+            <div>
+              <h2 id="ovTitle">Neon Knights</h2>
+              <div id="ovSub" class="subtitle">Defend the realm with style</div>
+            </div>
+
+          </div>
+          <div id="ovBody" class="body"></div>
+          <div class="foot">
+            <div id="ovTips" style="color: var(--neon-blue); text-shadow: 0 0 5px currentColor;"></div>
+            <div>
+              <button id="btnContinue" class="primary">⚔️ Battle!</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="toast" class="toast"></div>
+      <div id="intelBox" class="intel-box" style="display: none;">
+        <div class="intel-title">⚔️ NEXT WAVE</div>
+        <div class="intel-content"></div>
+      </div>
+    </div>
+
+    <script>
+      'use strict';
+
+      // ============================
+      // Core Config
+      // ============================
+      const canvas = document.getElementById('game');
+      const ctx = canvas.getContext('2d');
+
+      const W = canvas.width, H = canvas.height;
+      const CENTER = { x: W/2, y: H/2 + 40 };
+      const CASTLE = { r: 140, maxHpBase: 100 };
+
+      const STATE = { MENU: 'MENU', PLAY: 'PLAY', UPGRADE: 'UPGRADE', PAUSE: 'PAUSE', OVER: 'OVER' };
+      const DIFFICULTY = { ENEMY_HP_MULT: 0.3 }; // 30% of original HP (reduce by 70%)
+
+      // ============================
+      // Utils
+      // ============================
+      const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+      const lerp = (a, b, t) => a + (b - a) * t;
+      const rand = (a,b) => Math.random() * (b - a) + a;
+      const randInt = (a,b) => Math.floor(rand(a,b+1));
+
+      class V2 {
+        constructor(x=0,y=0){ this.x=x; this.y=y; }
+        copy(){ return new V2(this.x,this.y); }
+        add(v){ this.x+=v.x; this.y+=v.y; return this; }
+        sub(v){ this.x-=v.x; this.y-=v.y; return this; }
+        scale(s){ this.x*=s; this.y*=s; return this; }
+        len(){ return Math.hypot(this.x,this.y); }
+        norm(){ const l=this.len()||1; this.x/=l; this.y/=l; return this; }
+        static sub(a,b){ return new V2(a.x-b.x,a.y-b.y); }
+        static fromAngle(a, len=1){ return new V2(Math.cos(a)*len, Math.sin(a)*len); }
+      }
+
+      // ============================
+      // Audio (Web Audio with pitch variance)
+      // ============================
+      const AudioBus = { ctx:null, master:null, ui:null, sfx:null };
+      function initAudio(){ if(!AudioBus.ctx){ const AC = window.AudioContext||window.webkitAudioContext; if(AC){ const ctx=new AC(); AudioBus.ctx=ctx; const m=ctx.createGain();m.gain.value=0.7;m.connect(ctx.destination); AudioBus.master=m; const ui=ctx.createGain();ui.gain.value=0.8;ui.connect(m); AudioBus.ui=ui; const sfx=ctx.createGain();sfx.gain.value=1.0;sfx.connect(m); AudioBus.sfx=sfx; } } }
+      function tone(bus, freq=440, dur=0.06, type='square', gain=0.05){ if(!AudioBus.ctx) return; const ctx=AudioBus.ctx; const osc=ctx.createOscillator(); const g=ctx.createGain(); osc.type=type; osc.frequency.value=freq*(0.92+Math.random()*0.16); g.gain.value=gain; osc.connect(g).connect(AudioBus[bus]||AudioBus.master); const t=ctx.currentTime; osc.start(t); g.gain.exponentialRampToValueAtTime(0.0001, t+dur); osc.stop(t+dur+0.01); }
+      const sfx = { 
+        shoot:()=>tone('sfx', 980, 0.05, 'sawtooth', 0.06), 
+        hit:()=>tone('sfx', 620, 0.05, 'sine', 0.07), 
+        death:()=>tone('sfx', 200, 0.1, 'square', 0.08), 
+        coin:()=>tone('sfx', 1200, 0.05, 'triangle', 0.05), 
+        ui:()=>tone('ui', 520, 0.04, 'sine', 0.05),
+        powerup:()=>tone('sfx', 1400, 0.08, 'sawtooth', 0.06),
+        timeSlow:()=>tone('sfx', 300, 0.1, 'sine', 0.04)
+      };
+
+      // ============================
+      // Input
+      // ============================
+      const mouse = { x:0, y:0, down:false, rdown:false };
+      canvas.addEventListener('mousemove', e=>{ const r=canvas.getBoundingClientRect(); mouse.x = (e.clientX - r.left) * (canvas.width/r.width); mouse.y = (e.clientY - r.top) * (canvas.height/r.height); });
+      canvas.addEventListener('mousedown', (e)=>{ initAudio(); if(e.button===2){ mouse.rdown=true; } else { mouse.down=true; sfx.ui(); } });
+      canvas.addEventListener('mouseup', (e)=>{ if(e.button===2){ mouse.rdown=false; } else { mouse.down=false; } });
+      canvas.addEventListener('contextmenu', (e)=>{ e.preventDefault(); });
+      canvas.addEventListener('touchstart', e=>{ initAudio(); const t=e.touches[0]; const r=canvas.getBoundingClientRect(); mouse.x=(t.clientX-r.left)*(canvas.width/r.width); mouse.y=(t.clientY-r.top)*(canvas.height/r.height); mouse.down=true; sfx.ui(); e.preventDefault(); }, { passive:false });
+      canvas.addEventListener('touchmove', e=>{ const t=e.touches[0]; const r=canvas.getBoundingClientRect(); mouse.x=(t.clientX-r.left)*(canvas.width/r.width); mouse.y=(t.clientY-r.top)*(canvas.height/r.height); e.preventDefault(); }, { passive:false });
+      canvas.addEventListener('touchend', ()=>{ mouse.down=false; });
+      const KEYS = new Set();
+      window.addEventListener('keydown', e=>{ if(e.key==='Escape'){ togglePause(); } KEYS.add(e.key.toLowerCase()); });
+      window.addEventListener('keyup', e=>{ KEYS.delete(e.key.toLowerCase()); });
+
+      // ============================
+      // Game Data
+      // ============================
+      const ui = { wave: byId('uiWave'), gold: byId('uiGold'), hpbar: byId('uiHpBar'), hptext: byId('uiHpText'), score: byId('uiScore'), combo: byId('uiCombo'), high: byId('uiHigh'), overlay: byId('overlay'), ovTitle: byId('ovTitle'), ovSub: byId('ovSub'), ovBody: byId('ovBody'), btnPause: byId('btnPause'), btnReset: byId('btnReset'), btnContinue: byId('btnContinue'), toast: byId('toast'), interest: byId('uiInterest'), interestValue: byId('uiInterestValue') };
+
+      const SAVE_KEY = 'neon-knights-save-v1';
+              function defaultUpgrades(){ return { multishot:0, piercing:0, explosive:0, rapid:0, crit:0, ballista:0, oil:0, treasury:0, fort:0, sniper:0, poison:0, cavalry:0, boomerang:0, necromancy:0, flamecannon:0, homingstrike:0, divineaegis:0, angelicknights:0, midasknights:0, radiantaegis:0 }; }
+      const game = {
+        state: STATE.MENU,
+        last: performance.now(),
+        dt: 0,
+        wave: 1,
+        score: 0,
+        high: 0,
+        gold: 100,
+        castleHp: CASTLE.maxHpBase,
+        castleMax: CASTLE.maxHpBase,
+        enemies: [],
+        projectiles: [],
+        eProjectiles: [],
+        particles: [],
+        texts: [],
+        coins: [],
+        combo: 1,
+        comboTimer: 0,
+        stamina: 1,
+        upgrades: defaultUpgrades(),
+        nextWave: [],
+        shake: 0,
+        player: { wall: 0, x: CENTER.x, y: CENTER.y - CASTLE.r + 8, rate: 0.36 },
+        bgPulse: 0,
+        powerShotReady: false,
+        powerShotTimer: 0,
+        turretAngles: [0, 0, 0, 0], // Track current turret angles for smooth rotation
+        cavalryTimer: 0, // Cavalry charge cooldown
+        teleportCooldown: 0, // WASD teleport cooldown
+        divineAegis: {
+          active: false,
+          hp: 0,
+          maxHp: 0,
+          respawnTimer: 0,
+          size: 0,
+          angle: 0,
+          divineAegisAngle: 0 // Adjustable rotation angle for shield orientation
+        }, // Divine Aegis shield
+        battleMessage: {
+          text: '',
+          timer: 0,
+          color: '#ffffff'
+        }, // Battle message system
+        treasuryInterest: 0, // Interest accumulated from King's Treasury
+      };
+
+      // Save/Load
+      (function initSave(){ const raw = localStorage.getItem(SAVE_KEY); if(raw){ try{ const s=JSON.parse(raw); game.high=s.high||0; game.upgrades=Object.assign(defaultUpgrades(), s.upgrades||{}); }catch{} } updateHUD(); })();
+      function persist(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify({ high: game.high, upgrades: game.upgrades })); }catch{} }
+
+      // ============================
+      // Entities
+      // ============================
+      function spawnText(x,y,text,color='#fff',life=0.8,size=16,italic=false){ game.texts.push({ x, y, vy: -30, text, color, life, total:life, size, italic }); }
+      function spawnParticles(x,y,color,count=16,spread=1){ for(let i=0;i<count;i++){ game.particles.push({ x, y, vx: rand(-120,120)*spread, vy: rand(-140,0)*spread, life: rand(0.4,0.8), color, size: rand(2,5), glow: true }); } }
+      function spawnCoins(x,y,count=6){ for(let i=0;i<count;i++){ game.coins.push({ x, y, vx: rand(-110,110), vy: rand(-160,-60), life: 1.2, size: rand(3,5), rot: rand(0, Math.PI*2) }); } }
+
+      // Enemies - Medieval Themed
+      function enemySpawnEdge(){ const edge = randInt(0,3); const M = 60; if(edge===0) return { x: rand(M,W-M), y: -M, side:'N' }; if(edge===1) return { x: W+M, y: rand(M,H-M), side:'E' }; if(edge===2) return { x: rand(M,W-M), y: H+M, side:'S' }; return { x: -M, y: rand(M,H-M), side:'W' }; }
+
+      function makeEnemy(type, hpScale=1){
+        const p = enemySpawnEdge();
+        const base = ENEMY[type];
+        const hp = Math.round(base.hp * hpScale * DIFFICULTY.ENEMY_HP_MULT);
+        return { type, x:p.x, y:p.y, side:p.side, vx:0, vy:0, speed: base.speed, radius: base.radius, hp, maxHp: hp, damage: base.damage, reward: base.reward, heading: Math.atan2(CENTER.y-p.y, CENTER.x-p.x), blockAngle: base.blockAngle||0, healTimer: 0, split: base.split||0, dead:false, color: base.color, wobble: rand(0,Math.PI*2), invisible: base.invisible||false, flyer: base.flyer||false, necro: base.necro||false, bomber: base.bomber||false, glowColor: base.glowColor } 
+      }
+      
+      function spawnCavalry(x = game.player.x, y = game.player.y){
+        // Check if Angelic Knights or Midas Knights upgrade is active
+        const angelicLevel = game.upgrades.angelicknights || 0;
+        const midasLevel = game.upgrades.midasknights || 0;
+        const isAngelic = angelicLevel > 0;
+        const isMidas = midasLevel > 0;
+        
+        // Calculate gold-based bonuses for Midas Knights
+        const goldMultiplier = isMidas ? Math.min(5, Math.max(1, Math.floor(game.gold / 100))) : 1; // +1 per 100 gold, max +5
+        const goldBonus = isMidas ? (goldMultiplier - 1) * 0.5 : 0; // +50% per gold tier
+        
+        // Spawn a friendly knight at the specified position
+        const cavalry = {
+          x: x,
+          y: y,
+          vx: 0,
+          vy: 0,
+          speed: 80 * (1 + goldBonus), // Fast movement with gold bonus
+          radius: 16,
+          hp: 100 * (1 + goldBonus),
+          maxHp: 100 * (1 + goldBonus),
+          damage: 15 * (1 + goldBonus),
+          heading: 0,
+          dead: false,
+          color: isAngelic ? '#000000' : isMidas ? '#ffd700' : '#00ff88', // Black for angelic, gold for midas, green for regular
+          glowColor: isAngelic ? '#ffffff' : isMidas ? '#ffd700' : '#00ff88', // White glow for angelic, gold for midas
+          type: isAngelic ? 'angelic' : isMidas ? 'midas' : 'cavalry',
+          target: null,
+          life: isAngelic ? (10.0 + angelicLevel * 2.0) : isMidas ? (10.0 + midasLevel * 1.0) : 10.0, // +2s per level for angelic, +1s per level for midas
+          wobble: rand(0, Math.PI*2),
+          angelic: isAngelic, // Mark as angelic for healing logic
+          midas: isMidas, // Mark as midas for gold bonus logic
+          goldMultiplier: goldMultiplier // Store gold multiplier for kill rewards
+        };
+        
+        game.enemies.push(cavalry); // Add to enemies array for easy management
+        const spawnColor = isAngelic ? '#ffffff' : isMidas ? '#ffd700' : '#00ff88';
+        spawnParticles(cavalry.x, cavalry.y, spawnColor, 20, 1.0);
+        const message = isAngelic ? '👼 ANGELIC KNIGHTS!' : isMidas ? '💰 MIDAS KNIGHTS!' : '⚔️ CAVALRY CHARGE!';
+        const messageColor = isAngelic ? '#ffffff' : isMidas ? '#ffd700' : '#00ff88';
+        setBattleMessage(message, 2.0, messageColor);
+      }
+
+      const ENEMY = {
+        squire:  { hp: 50, speed: 45, damage: 5, reward: 8, radius: 16, color: '#ff00ff', glowColor: '#ff00ff', name: 'Squire' },
+        knight:  { hp: 80, speed: 35, damage: 6, reward: 12, radius: 18, color: '#00ffff', glowColor: '#00ffff', blockAngle: Math.PI*0.55, name: 'Knight' },
+        rogue:   { hp: 40, speed: 50, damage: 8, reward: 14, radius: 14, color: '#bf00ff', glowColor: '#bf00ff', invisible:true, name: 'Rogue' },
+        lancer:  { hp: 70, speed: 32, damage: 5, reward: 16, radius: 16, color: '#ffff00', glowColor: '#ffff00', bomber:true, name: 'Lancer' },
+        pegasus: { hp: 50, speed: 48, damage: 7, reward: 12, radius: 14, color: '#00ff88', glowColor: '#00ff88', flyer:true, name: 'Pegasus' },
+        cleric:  { hp: 65, speed: 38, damage: 5, reward: 12, radius: 15, color: '#88ff00', glowColor: '#88ff00', name: 'Cleric' },
+        wizard:  { hp: 85, speed: 30, damage: 5, reward: 18, radius: 18, color: '#ff88ff', glowColor: '#ff88ff', necro:true, name: 'Wizard' },
+        jester:  { hp: 70, speed: 40, damage: 5, reward: 10, radius: 16, color: '#ff8800', glowColor: '#ff8800', split: 2, name: 'Jester' },
+        page:    { hp: 25, speed: 52, damage: 3, reward: 3, radius: 12, color: '#ffff88', glowColor: '#ffff88', name: 'Page' },
+        dragon:  { hp: 6600, speed: 25, damage: 18, reward: 80, radius: 26, color: '#ff0088', glowColor: '#ff0088', name: 'DRAGON' },
+      };
+
+      // Projectiles
+      function makeProjectile(x,y,dir,stats){ 
+        let speed = 540*(1+0.25*game.upgrades.rapid); 
+        let baseLife = 1.2;
+        let pierce = game.upgrades.piercing>0 ? 1+game.upgrades.piercing : 0;
+        let baseDmg = 18*(1+0.35*game.upgrades.crit);
+        
+        // Check for time slow sniper first (takes priority over regular sniper upgrade)
+        const isTimeSlow = game.dtScale < 1; // Check if time slow is active
+        if(isTimeSlow) {
+          // Create instant line effect for time slow sniper shots
+          createSniperLine(x, y, dir, baseDmg * 2, true);
+          return null; // Return null to indicate no projectile should be created
+        }
+        
+        // Regular sniper upgrade - instant line shot mechanics
+        if(game.upgrades.sniper > 0) {
+          // Create instant line effect instead of projectile
+          createSniperLine(x, y, dir, baseDmg * 3, false);
+          return null; // Return null to indicate no projectile should be created
+        }
+        
+        // Flame Cannon upgrade - constant fire stream
+        if(game.upgrades.flamecannon > 0) {
+          createFlameStream(x, y, dir);
+          return null; // Return null to indicate no projectile should be created
+        }
+        
+        // Homing Strike upgrade - seeking projectile that speeds up
+        if(game.upgrades.homingstrike > 0) {
+          createHomingStrike(x, y, dir);
+          return null; // Return null to indicate no projectile should be created
+        }
+        
+        const vx = Math.cos(dir)*speed, vy = Math.sin(dir)*speed; 
+        
+        // Boomerang upgrade - large projectile that returns
+        const boomerangLevel = game.upgrades.boomerang || 0;
+        const isBoomerang = boomerangLevel > 0;
+        const boomerangSize = isBoomerang ? 6 + boomerangLevel * 2 : 3; // +2 size per level
+        const boomerangDamage = isBoomerang ? baseDmg * (1 + boomerangLevel * 0.85) : baseDmg; // +85% damage per level (increased from 50%)
+        
+        return { 
+          x, y, vx, vy, 
+          life: baseLife, 
+          size: boomerangSize, 
+          trail: [], 
+          pierce: pierce, 
+          explosive: game.upgrades.explosive>0, 
+          baseDmg: boomerangDamage, 
+          crit: game.upgrades.crit>0, 
+          hitSet:new Set(), 
+          color: isTimeSlow ? '#ffff00' : (isBoomerang ? '#ff8800' : '#00ffff'), // Orange for boomerang
+          poison: game.upgrades.poison>0, // Add poison property
+          timeSlow: isTimeSlow, // Mark as time slow projectile
+          sniper: false, // No longer a sniper projectile
+          boomerang: isBoomerang, // Mark as boomerang projectile
+          originX: x, // Store origin for return path
+          originY: y,
+          returnPhase: false // Track if projectile is returning
+        }; 
+      }
+      
+      function createSniperLine(x, y, dir, damage, isTimeSlow = false) {
+        // Create a line that extends from the player to the edge of the screen
+        const lineLength = Math.max(W, H) * 2; // Long enough to reach screen edge
+        const endX = x + Math.cos(dir) * lineLength;
+        const endY = y + Math.sin(dir) * lineLength;
+        
+        // Sniper upgrade increases damage and width
+        const sniperLevel = game.upgrades.sniper || 0;
+        const finalDamage = damage * (1 + sniperLevel * 0.5); // +50% damage per level
+        const lineWidth = 6 + sniperLevel * 2; // +2 pixels width per level
+        
+        // Add line to game state for rendering
+        if(!game.sniperLines) game.sniperLines = [];
+        game.sniperLines.push({
+          x1: x, y1: y, x2: endX, y2: endY,
+          life: 0.3, // Fade out quickly
+          damage: finalDamage,
+          isTimeSlow: isTimeSlow,
+          width: lineWidth
+        });
+        
+        // Damage all enemies in the line's path
+        for(const e of game.enemies) {
+          if(e.dead) continue;
+          if(e.invisible && !(game.player.wall===2)) continue;
+          if(e.type === 'cavalry') continue; // Cavalry is immune to sniper damage
+          
+          // Check if enemy is close to the line
+          const dist = distanceToLine(e.x, e.y, x, y, endX, endY);
+          const hitRadius = e.radius + 5 + (lineWidth - 6) * 0.5; // Wider lines hit more easily
+          if(dist < hitRadius) {
+            // Instant kill shields
+            if(e.type === 'knight' && (e.shieldHp == null || e.shieldHp > 0)) {
+              e.shieldHp = 0;
+              spawnText(e.x, e.y-e.radius-15, 'SHIELD BROKEN!', '#ff0000', 1.0, 18);
+            }
+            
+            // Apply damage
+            e.hp -= finalDamage;
+            const damageColor = isTimeSlow ? '#ffff00' : '#ff00ff';
+            spawnText(e.x, e.y-12, `-${Math.round(finalDamage)}`, damageColor, 0.6, 24);
+            spawnParticles(e.x, e.y, e.glowColor, 15, 0.8);
+            
+            // Time Necromancy - convert enemies killed by time slow sniper shots
+            if(isTimeSlow && e.hp <= 0 && game.upgrades.necromancy > 0) {
+              const necroLevel = game.upgrades.necromancy;
+              const statBonus = 1 + necroLevel * 0.25; // +25% stats per level
+              
+              // Convert the enemy to friendly
+              e.dead = false;
+              e.maxHp = e.maxHp * statBonus;
+              e.hp = e.maxHp; // Set to 100% health after conversion
+              e.damage = e.damage * statBonus;
+              e.speed = e.speed * 1.6; // +60% speed
+              e.originalType = e.type; // Store original type before changing
+              e.type = 'converted';
+              e.color = '#00ff88';
+              e.glowColor = '#00ff88';
+              e.invisible = false; // Ensure they are visible
+              
+              spawnText(e.x, e.y-e.radius-25, 'CONVERTED!', '#00ff88', 1.0, 20);
+              spawnParticles(e.x, e.y, '#00ff88', 30, 1.0);
+              setBattleMessage('💀 ENEMY CONVERTED!', 2.5, '#00ff88');
+            }
+            
+            // Apply poison if active
+            if(game.upgrades.poison > 0) {
+              if(!e.poisonStacks) e.poisonStacks = 0;
+              e.poisonStacks = e.poisonStacks + 1; // Infinite stacking
+              e.poisonTimer = 0;
+              spawnParticles(e.x, e.y, '#00ff00', 6, 0.4);
+            }
+            
+            sfx.hit();
+            game.shake = Math.min(12, game.shake + 3);
+          }
+        }
+      }
+      
+      function createFlameStream(x, y, dir) {
+        const flameLevel = game.upgrades.flamecannon;
+        const baseRange = 51; // Reduced by 80% (from 255 to 51)
+        const baseWidth = 60; // Wider base for cone shape
+        const range = baseRange * (1 + flameLevel * 0.15); // +15% range per level
+        const width = baseWidth * (1 + flameLevel * 0.15); // +15% width per level
+        const baseDamage = 1 + flameLevel; // +1 base damage per level
+        const stackMultiplier = 5 + flameLevel; // +1 stack multiplier per level
+        
+        // Calculate cone-shaped flame area
+        const endX = x + Math.cos(dir) * range;
+        const endY = y + Math.sin(dir) * range;
+        
+        // Add flame stream to game state for rendering
+        if(!game.flameStreams) game.flameStreams = [];
+        game.flameStreams.push({
+          x1: x, y1: y, x2: endX, y2: endY,
+          width: width,
+          life: 0.3, // Short duration
+          baseDamage: baseDamage,
+          stackMultiplier: stackMultiplier,
+          dir: dir, // Store direction for cone calculation
+          range: range // Store range for cone calculation
+        });
+        
+        // Create sputtering projectiles
+        for(let i = 0; i < 3; i++) { // 3 sputtering projectiles
+          const sputterAngle = dir + (Math.random() - 0.5) * 0.3; // Random angle within cone
+          const sputterSpeed = 200 + Math.random() * 100; // Random speed
+          const sputterX = endX + Math.cos(sputterAngle) * 10; // Start from the end of the flame
+          const sputterY = endY + Math.sin(sputterAngle) * 10;
+          
+          if(!game.projectiles) game.projectiles = [];
+          game.projectiles.push({
+            x: sputterX,
+            y: sputterY,
+            vx: Math.cos(sputterAngle) * sputterSpeed,
+            vy: Math.sin(sputterAngle) * sputterSpeed,
+            size: 4, // Increased size by 100% (from 2 to 4)
+            life: 1.0, // 1 second life
+            baseDmg: 5, // Small damage
+            color: '#ff0000',
+            src: 'flamecannon',
+            sputter: true, // Mark as sputtering projectile
+            burnStacks: baseDamage, // Apply burn stacks
+            trail: [] // Empty trail to prevent errors
+          });
+        }
+        
+        // Damage all enemies in the flame area
+        for(const e of game.enemies) {
+          if(e.dead) continue;
+          if(e.invisible && !(game.player.wall===2)) continue;
+          if(e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'converted') continue; // Don't damage friendly units
+          
+          // Check if enemy is in the cone-shaped flame area
+          const distToLine = distanceToLine(e.x, e.y, x, y, endX, endY);
+          const distFromStart = Math.sqrt((e.x - x) * (e.x - x) + (e.y - y) * (e.y - y));
+          const distFromEnd = Math.sqrt((e.x - endX) * (e.x - endX) + (e.y - endY) * (e.y - endY));
+          
+          // Cone shape: wider at the end, narrower at the start
+          const coneWidth = width * (distFromStart / range); // Width increases with distance
+          const hitRadius = e.radius + coneWidth * 0.5;
+          
+          // Check if enemy is within the cone and not behind the flame source
+          if(distToLine < hitRadius && distFromStart <= range && distFromStart > 0) {
+            // Apply immediate base damage (15 + level bonus)
+            const immediateDamage = 15 + flameLevel;
+            e.hp -= immediateDamage;
+            spawnText(e.x, e.y-25, `-${immediateDamage}`, '#ff0000', 0.8, 18);
+            
+            // Apply fire damage stacks
+            if(!e.fireStacks) e.fireStacks = 0;
+            e.fireStacks += baseDamage; // Add stacks based on base damage
+            e.fireTimer = 0.3; // Start timer immediately so damage ticks right away
+            
+            // Visual effect
+            spawnParticles(e.x, e.y, '#ff4400', 8, 0.6);
+            spawnText(e.x, e.y-12, `+${baseDamage}`, '#ff4400', 0.6, 16);
+          }
+        }
+      }
+      
+      function createHomingStrike(x, y, dir) {
+        const homingLevel = game.upgrades.homingstrike;
+        const baseSpeed = 200; // Slow initial speed
+        const baseDamage = 25 + homingLevel * 6; // Base 25 + 6 per level
+        const baseRadius = 60 + homingLevel * 15; // Base 60 + 15 per level
+        const maxSpeed = 800 + homingLevel * 200; // Max speed increases with level
+        const acceleration = 300 + homingLevel * 100; // Acceleration increases with level
+        
+        // Create homing projectile
+        if(!game.projectiles) game.projectiles = [];
+        game.projectiles.push({
+          x: x,
+          y: y,
+          vx: Math.cos(dir) * baseSpeed,
+          vy: Math.sin(dir) * baseSpeed,
+          size: 5,
+          life: 4.0, // Long life for seeking
+          baseDmg: baseDamage,
+          color: '#ff00ff',
+          src: 'homingstrike',
+          homing: true, // Mark as homing projectile
+          currentSpeed: baseSpeed,
+          maxSpeed: maxSpeed,
+          acceleration: acceleration,
+          explosionRadius: baseRadius,
+          target: null, // Will be set during update
+          trail: []
+        });
+        
+        setBattleMessage('🎯 HOMING STRIKE!', 1.5, '#ff00ff');
+      }
+      
+      function distanceToLine(px, py, x1, y1, x2, y2) {
+        // Calculate distance from point (px,py) to line segment (x1,y1) to (x2,y2)
+        const A = px - x1;
+        const B = py - y1;
+        const C = x2 - x1;
+        const D = y2 - y1;
+        
+        const dot = A * C + B * D;
+        const lenSq = C * C + D * D;
+        let param = -1;
+        
+        if(lenSq !== 0) param = dot / lenSq;
+        
+        let xx, yy;
+        if(param < 0) {
+          xx = x1;
+          yy = y1;
+        } else if(param > 1) {
+          xx = x2;
+          yy = y2;
+        } else {
+          xx = x1 + param * C;
+          yy = y1 + param * D;
+        }
+        
+        const dx = px - xx;
+        const dy = py - yy;
+        return Math.sqrt(dx * dx + dy * dy);
+      }
+
+      // ============================
+      // Game Flow
+      // ============================
+      function startGame(){ 
+        game.state = STATE.PLAY; 
+        game.wave=1; 
+        game.gold=100; 
+        game.score=0; 
+        game.castleMax = CASTLE.maxHpBase; 
+        CASTLE.r = 140; 
+        game.upgrades = defaultUpgrades(); 
+        applyFortifications(); 
+        game.castleHp = game.castleMax; 
+        game.enemies.length=0; 
+        game.projectiles.length=0; 
+        game.eProjectiles.length=0; 
+        game.particles.length=0; 
+        game.texts.length=0; 
+        game.coins.length=0; 
+        game.player.wall=0; 
+        game._endQueued=false; 
+        game._spawnedAny=false; 
+        game.powerShotReady = false;
+        game.powerShotTimer = 0;
+        game.turretAngles = [0, 0, 0, 0];
+        game.cavalryTimer = 0;
+        game.sniperReloadTimer = 0;
+        game.sniperLines = [];
+        game.flameStreams = [];
+        game.homingProjectiles = [];
+        game.teleportCooldown = 0;
+        // Initialize Divine Aegis
+        if(game.upgrades.divineaegis > 0) {
+          const level = game.upgrades.divineaegis;
+          const radiantLevel = game.upgrades.radiantaegis || 0;
+          game.divineAegis.active = true;
+          game.divineAegis.maxHp = 100 + level * 25; // Base 100 + 25 per level
+          game.divineAegis.hp = game.divineAegis.maxHp;
+          // Size scales with both Divine Aegis and Radiant Aegis levels
+          game.divineAegis.size = 48 + level * 12 + radiantLevel * 8; // Base 48 + 12 per level + 8 per radiant level
+          game.divineAegis.respawnTimer = 0;
+
+        }
+        updatePlayerPos(); 
+        planAndStartWave(); 
+        game.last=performance.now(); 
+        requestAnimationFrame(loop); 
+        
+        // Hide intel box when game starts
+        const intelBox = document.getElementById('intelBox');
+        if(intelBox) {
+          intelBox.style.display = 'none';
+          intelBox.style.bottom = '-200px';
+        }
+      }
+      function endWave(){ 
+        // Clear all friendly units (cavalry, angelic knights, and converted enemies) when wave ends
+        game.enemies = game.enemies.filter(e => e.type !== 'cavalry' && e.type !== 'angelic' && e.type !== 'midas' && e.type !== 'converted');
+        
+        // Pay out interest from King's Treasury
+        if(game.upgrades.treasury > 0 && game.treasuryInterest > 0) {
+          const interestPayout = Math.floor(game.treasuryInterest);
+          game.gold += interestPayout;
+          game.treasuryInterest = 0; // Reset interest
+          toast(`💎 Interest paid: +${interestPayout}g!`, 2000);
+        }
+        
+        game.state = STATE.UPGRADE; 
+        game.wave++; 
+        planNextWave(); 
+        buildUpgradeUI(); 
+        showOverlay(true); 
+        persist(); 
+        
+        // Show intel box when entering shop phase
+        const intelBox = document.getElementById('intelBox');
+        if(intelBox) {
+          intelBox.style.display = 'block';
+          intelBox.style.bottom = '20px';
+        }
+      }
+      function gameOver(){ game.state = STATE.OVER; game.high = Math.max(game.high, Math.floor(game.score)); persist(); buildGameOverUI(); showOverlay(true); }
+      function togglePause(){ if(game.state===STATE.PLAY){ game.state=STATE.PAUSE; showOverlay(true); buildPauseUI(); } else if(game.state===STATE.PAUSE){ showOverlay(false); game.state=STATE.PLAY; game.last=performance.now(); requestAnimationFrame(loop); } }
+
+      function planNextWave(){ const w = game.wave; const hpScale = Math.pow(1.10, w-1); const list=[]; const boss = (w%5===0);
+        
+        // Progressive enemy introduction - one new type every 3-4 waves
+        const getAvailableEnemies = (wave) => {
+          if(wave <= 1) return ['squire'];
+          if(wave <= 3) return ['squire', 'knight'];
+          if(wave <= 6) return ['squire', 'knight', 'lancer'];
+          if(wave <= 9) return ['squire', 'knight', 'lancer', 'pegasus'];
+          if(wave <= 12) return ['squire', 'knight', 'lancer', 'pegasus', 'cleric'];
+          if(wave <= 15) return ['squire', 'knight', 'lancer', 'pegasus', 'cleric', 'jester'];
+          return ['squire', 'knight', 'lancer', 'pegasus', 'cleric', 'jester', 'wizard'];
+        };
+        
+        if(w===1){ 
+          // Tutorial wave - fewer enemies, slower, but more health
+          for(let i=0;i<6;i++) list.push({type:'squire', hpScale: hpScale * 1.5}); 
+          setBattleMessage('⚔️ THE SQUIRES APPROACH!', 3.0, '#ff00ff');
+        }
+        else if(w===2){ 
+          // Introduction to knights
+          for(let i=0;i<6;i++) list.push({type:'squire', hpScale}); 
+          for(let i=0;i<4;i++) list.push({type:'knight', hpScale}); 
+          setBattleMessage('🛡️ KNIGHTS JOIN THE BATTLE!', 3.0, '#00ffff');
+        }
+        else if(w===3){ 
+          // More knights
+          for(let i=0;i<4;i++) list.push({type:'squire', hpScale}); 
+          for(let i=0;i<6;i++) list.push({type:'knight', hpScale}); 
+          setBattleMessage('🛡️ KNIGHT FORMATION!', 3.0, '#00ffff');
+        }
+        else if(w===4){ 
+          // Introduction to lancers
+          for(let i=0;i<5;i++) list.push({type:'squire', hpScale}); 
+          for(let i=0;i<3;i++) list.push({type:'knight', hpScale}); 
+          for(let i=0;i<2;i++) list.push({type:'lancer', hpScale}); 
+          setBattleMessage('🗡️ LANCERS CHARGE!', 3.0, '#ffff00');
+        }
+        else if(w===5){ 
+          // Boss wave
+          list.push({type:'dragon', hpScale}); 
+          for(let i=0;i<8;i++) list.push({type:'squire', hpScale});
+          setBattleMessage('🐉 DRAGON AWAKENS!', 4.0, '#ff0088');
+          showAchievement('BOSS BATTLE!');
+        }
+        else if(w===6){ 
+          // More lancers
+          for(let i=0;i<4;i++) list.push({type:'squire', hpScale}); 
+          for(let i=0;i<3;i++) list.push({type:'knight', hpScale}); 
+          for(let i=0;i<4;i++) list.push({type:'lancer', hpScale}); 
+          setBattleMessage('🗡️ LANCER ASSAULT!', 3.0, '#ffff00');
+        }
+        else if(w===7){ 
+          // Introduction to pegasus
+          for(let i=0;i<4;i++) list.push({type:'squire', hpScale}); 
+          for(let i=0;i<3;i++) list.push({type:'knight', hpScale}); 
+          for(let i=0;i<2;i++) list.push({type:'lancer', hpScale}); 
+          for(let i=0;i<2;i++) list.push({type:'pegasus', hpScale}); 
+          setBattleMessage('🦅 PEGASUS FLYERS!', 3.0, '#00ff88');
+        }
+        else if(w===10){ 
+          // Introduction to clerics
+          for(let i=0;i<4;i++) list.push({type:'squire', hpScale}); 
+          for(let i=0;i<3;i++) list.push({type:'knight', hpScale}); 
+          for(let i=0;i<2;i++) list.push({type:'lancer', hpScale}); 
+          for(let i=0;i<2;i++) list.push({type:'pegasus', hpScale}); 
+          for(let i=0;i<2;i++) list.push({type:'cleric', hpScale}); 
+          setBattleMessage('💚 CLERICS ARRIVE!', 3.0, '#88ff00');
+        }
+        else if(w===13){ 
+          // Introduction to jesters
+          for(let i=0;i<4;i++) list.push({type:'squire', hpScale}); 
+          for(let i=0;i<3;i++) list.push({type:'knight', hpScale}); 
+          for(let i=0;i<2;i++) list.push({type:'lancer', hpScale}); 
+          for(let i=0;i<2;i++) list.push({type:'pegasus', hpScale}); 
+          for(let i=0;i<2;i++) list.push({type:'cleric', hpScale}); 
+          for(let i=0;i<2;i++) list.push({type:'jester', hpScale}); 
+          setBattleMessage('🃏 JESTERS PERFORM!', 3.0, '#ff8800');
+        }
+        else if(w===16){ 
+          // Introduction to wizards
+          for(let i=0;i<4;i++) list.push({type:'squire', hpScale}); 
+          for(let i=0;i<3;i++) list.push({type:'knight', hpScale}); 
+          for(let i=0;i<2;i++) list.push({type:'lancer', hpScale}); 
+          for(let i=0;i<2;i++) list.push({type:'pegasus', hpScale}); 
+          for(let i=0;i<2;i++) list.push({type:'cleric', hpScale}); 
+          for(let i=0;i<2;i++) list.push({type:'jester', hpScale}); 
+          for(let i=0;i<1;i++) list.push({type:'wizard', hpScale}); 
+          setBattleMessage('⭐ WIZARDS CAST!', 3.0, '#ff88ff');
+        }
+        else if(boss){ 
+          // Boss wave
+          list.push({type:'dragon', hpScale}); 
+          for(let i=0;i<8;i++) list.push({type:'squire', hpScale});
+          setBattleMessage('🐉 DRAGON AWAKENS!', 4.0, '#ff0088');
+          showAchievement('BOSS BATTLE!');
+        }
+        else { 
+          // Random waves with progressive enemy types
+          const options = getAvailableEnemies(w);
+          const enemyCount = 8 + Math.floor(w * 1.2);
+          for(let i=0;i<enemyCount;i++) 
+            list.push({type: options[randInt(0,options.length-1)], hpScale}); 
+        }
+        game.nextWave = list;
+      }
+      
+      function planAndStartWave(){ planNextWave(); spawnWave(game.nextWave); }
+      function spawnWave(list){
+        // Stagger spawns, but make the first enemy appear very quickly
+        let t = 0.02; // even faster first spawn for immediate feedback
+        const baseGap = game.wave === 1 ? 0.25 : 0.12; // slower for wave 1
+        const jitter = game.wave === 1 ? 0.15 : 0.06;  // more jitter for wave 1
+        game._spawns = [];
+        for (const s of list) {
+          t += baseGap + rand(0, jitter);
+          game._spawns.push({ s, t });
+        }
+        game._spawnedAny = false;
+      }
+
+      // ============================
+      // Upgrades UI and Logic
+      // ============================
+      function upgradeDefs(){ return [
+        { key:'multishot', name:'Multi-Arrow', desc:'Fire +1 arrow per level', icon: '→' },
+        { key:'piercing',  name:'Piercing Shot', desc:'Arrows pierce +1 enemy per level', icon: '→' },
+        { key:'explosive', name:'Explosive Tips', desc:'Arrows explode on impact', icon: '→' },
+        { key:'rapid',     name:'Rapid Fire', desc:'+25% arrow speed & fire rate per level', icon: '→' },
+        { key:'crit',      name:'Critical Strike', desc:'+35% damage & +15% combo per level', icon: '→' },
+        { key:'ballista',  name:'Royal Turrets', desc:'Auto-firing turrets (1 tower per level)', icon: '→' },
+        { key:'oil',       name:'Electric Moat', desc:'Electric rings that burn enemies', icon: '→' },
+        { key:'treasury',  name:'King\'s Treasury', desc:'+50% gold per kill & 10% Interest per level', icon: '→' },
+        { key:'fort',      name:'Tower Fortifications', desc:'+25% max HP & heal per level', icon: '→' },
+        { key:'sniper',    name:'Sniper Shot', desc:'3x damage piercing beam (+50% damage & width per level)', icon: '→', primordial: true },
+        { key:'poison',    name:'Poison Arrow', desc:'Apply infinite stacking poison damage', icon: '→' },
+        { key:'cavalry',   name:'Cavalry Charge', desc:'WASD spawns X knights (X = level)', icon: '→' },
+        { key:'boomerang', name:'Boomerang Blade', desc:'Large projectile that returns (+50% size & damage per level)', icon: '↩', primordial: true },
+        { key:'necromancy', name:'Time Necromancy', desc:'Time slow kills convert enemies (+2s duration & +25% stats per level)', icon: '💀' },
+        { key:'flamecannon', name:'Flame Cannon', desc:'Constant fire stream (+15% range/width, +1 base damage, +1 stack multiplier per level)', icon: '🔥', primordial: true },
+        { key:'homingstrike', name:'Homing Strike', desc:'Seeking projectile that speeds up and explodes (+25% damage, speed & radius per level)', icon: '🎯', primordial: true },
+        { key:'divineaegis', name:'Divine Aegis', desc:'Semi-circle shield that absorbs projectiles (+25% size & health per level)', icon: '🛡️' },
+        { key:'angelicknights', name:'Angelic Knights', desc:'Cavalry knights heal castle when dealing damage (+2s duration per level)', icon: '👼', requires: ['divineaegis', 'cavalry'] },
+        { key:'midasknights', name:'Midas Knights', desc:'Golden knights grant x2 gold per kill (+1x per level, bonus stats based on gold)', icon: '💰', requires: ['cavalry', 'treasury'] },
+        { key:'radiantaegis', name:'Radiant Aegis', desc:'Divine Aegis releases flame projectiles (+25% burn damage & projectile size per level)', icon: '✨', requires: ['divineaegis', 'oil'] },
+      ]; }
+
+      function buildUpgradeUI(){ 
+        const body = ui.ovBody; 
+        body.innerHTML=''; 
+        ui.ovTitle.textContent = '⚔️ CHOOSE YOUR POWER'; 
+        ui.ovSub.textContent = `Wave ${game.wave} approaches! Select an upgrade:`; 
+        console.log('Building upgrade UI, wave:', game.wave);
+        
+        // Ensure next wave is planned
+        if (!game.nextWave || game.nextWave.length === 0) {
+          planNextWave();
+        }
+        
+        const defs = upgradeDefs(); 
+        const picks = []; 
+        const pool = defs.filter(d=>d.key!=='fort');
+        
+        // Filter out primordial upgrades that conflict with already selected ones
+        const primordialKeys = defs.filter(d => d.primordial).map(d => d.key);
+        const anyPrimordialTaken = primordialKeys.some(k => (game.upgrades[k]||0) > 0);
+        const availablePool = pool.filter(upgrade => {
+          if (!upgrade.primordial) {
+            // Check if upgrade has requirements
+            if(upgrade.requires) {
+              return upgrade.requires.every(req => (game.upgrades[req]||0) > 0);
+            }
+            return true;
+          }
+          return !anyPrimordialTaken;
+        });
+        
+        while(picks.length<5 && availablePool.length > 0){ 
+          const c = availablePool[randInt(0,availablePool.length-1)]; 
+          if(!picks.includes(c)) {
+            picks.push(c);
+            
+            // If this is a primordial upgrade, remove ALL other primordial upgrades from available pool
+            if(c.primordial) {
+              for(let i = availablePool.length - 1; i >= 0; i--) {
+                if(availablePool[i].primordial) {
+                  availablePool.splice(i, 1);
+                }
+              }
+            }
+          } 
+        }
+        // Render a helper to make adding cards simpler
+        function addCard(u){
+          const level = game.upgrades[u.key]||0; 
+          const cost = Math.floor(50 + level * 25); // Base cost + level scaling
+          
+          const card = document.createElement('div'); 
+          card.className='card'; 
+          card.style.display = 'flex';
+          card.style.flexDirection = 'column';
+          card.style.gap = '12px';
+          card.style.position = 'relative';
+          
+          // Add golden glow for primordial upgrades
+          if(u.primordial) {
+            card.style.background = 'linear-gradient(135deg, rgba(255,215,0,0.2), rgba(192,192,192,0.1))';
+            card.style.border = '2px solid';
+            card.style.borderImage = 'linear-gradient(45deg, #ffd700, #c0c0c0) 1';
+            card.style.boxShadow = '0 0 20px rgba(255,215,0,0.6)';
+          }
+          
+          // Add black/white neon glow for Angelic Knights
+          if(u.key === 'angelicknights') {
+            card.style.background = 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(255,255,255,0.1))';
+            card.style.border = '2px solid';
+            card.style.borderImage = 'linear-gradient(45deg, #000000, #ffffff) 1';
+            card.style.boxShadow = '0 0 20px rgba(255,255,255,0.6)';
+          }
+          
+          // Add neon black/white glow for Radiant Aegis
+          if(u.key === 'radiantaegis') {
+            card.style.background = 'linear-gradient(135deg, rgba(0,0,0,0.3), rgba(255,255,255,0.1))';
+            card.style.border = '2px solid';
+            card.style.borderImage = 'linear-gradient(45deg, #000000, #ffffff) 1';
+            card.style.boxShadow = '0 0 20px rgba(255,255,255,0.6)';
+          }
+          
+          // Add golden glow for Midas Knights
+          if(u.key === 'midasknights') {
+            card.style.background = 'linear-gradient(135deg, rgba(255,215,0,0.3), rgba(255,255,255,0.1))';
+            card.style.border = '2px solid';
+            card.style.borderImage = 'linear-gradient(45deg, #ffd700, #ffffff) 1';
+            card.style.boxShadow = '0 0 20px rgba(255,215,0,0.8)';
+          }
+          
+          const content = document.createElement('div'); 
+          content.style.flex = '1';
+          // Dynamic description for fortifications
+          let desc = u.desc;
+          if(u.key === 'fort') {
+            const healAmount = 15 + 5*level;
+            desc = `Thicker walls + heal castle for +${healAmount} HP`;
+          }
+          
+          content.innerHTML = `<div class="title" style="margin-bottom:8px;">${u.name}</div><div class="desc" style="margin-bottom:8px;">${desc}</div>`; 
+          
+          // Level pill in bottom left
+          const levelPill = document.createElement('span');
+          levelPill.className = 'pill';
+          levelPill.textContent = `Level ${level}`;
+          levelPill.style.position = 'absolute';
+          levelPill.style.bottom = '16px';
+          levelPill.style.left = '16px';
+          levelPill.style.margin = '0';
+          
+          const btn=document.createElement('button'); 
+          btn.textContent=`${cost}g`; 
+          btn.style.position = 'absolute';
+          btn.style.bottom = '16px';
+          btn.style.right = '16px';
+          btn.style.margin = '0';
+          const refreshBtnState = ()=>{
+            const canAfford = game.gold >= cost;
+            btn.disabled = !canAfford;
+            if(!canAfford){
+              btn.style.background = 'linear-gradient(135deg, #aa0000, #880000)';
+              btn.style.borderColor = '#ff4444';
+              btn.style.color = '#ffffff';
+              btn.style.opacity = '0.9';
+            } else {
+              btn.style.background = '';
+              btn.style.borderColor = '';
+              btn.style.color = '';
+              btn.style.opacity = '';
+            }
+          };
+          refreshBtnState();
+          btn.addEventListener('click',()=>{ 
+            if(game.gold >= cost) {
+              game.gold -= cost;
+              game.upgrades[u.key]=(game.upgrades[u.key]||0)+1; 
+              sfx.powerup(); 
+              updateHUD(); 
+              persist(); 
+              toast(`${u.name} UPGRADED!`, 1500);
+              if(u.key==='fort'){ 
+                console.log('Applying fortifications, level before:', game.upgrades.fort);
+                applyFortifications(); 
+                console.log('Fortifications applied, new castle HP:', game.castleHp, '/', game.castleMax);
+              }
+              
+              // Initialize Divine Aegis when first purchased
+              if(u.key==='divineaegis'){ 
+                const level = game.upgrades.divineaegis;
+                const radiantLevel = game.upgrades.radiantaegis || 0;
+                game.divineAegis.active = true;
+                game.divineAegis.maxHp = 100 + level * 25;
+                game.divineAegis.hp = game.divineAegis.maxHp;
+                // Size scales with both Divine Aegis and Radiant Aegis levels
+                game.divineAegis.size = 48 + level * 12 + radiantLevel * 8; // Base 48 + 12 per level + 8 per radiant level
+                game.divineAegis.respawnTimer = 0;
+
+              }
+              
+              // Update Divine Aegis when Radiant Aegis is purchased
+              if(u.key==='radiantaegis'){ 
+                const level = game.upgrades.divineaegis;
+                const radiantLevel = game.upgrades.radiantaegis;
+                // Update size to include Radiant Aegis scaling
+                game.divineAegis.size = 48 + level * 12 + radiantLevel * 8;
+                // Visual upgrade effect
+                spawnParticles(CENTER.x, CENTER.y, '#ff0000', 30, 1.5);
+                setBattleMessage('✨ RADIANT AEGIS ACTIVATED!', 3.0, '#ff0000');
+
+              }
+              
+              // Update HUD immediately after fortification
+              updateHUD();
+              
+              // Rebuild the UI to show updated costs and descriptions
+              buildUpgradeUI();
+            } else {
+              toast('Not enough gold!', 1000);
+              refreshBtnState();
+            }
+          }); 
+          
+          card.appendChild(content); 
+          card.appendChild(levelPill);
+          card.appendChild(btn); 
+          body.appendChild(card);
+        }
+        picks.forEach(addCard);
+        // Always include Fortifications as a guaranteed option
+        addCard(defs.find(d=>d.key==='fort')); 
+
+        // Show intel box outside the game window
+        const intelBox = document.getElementById('intelBox');
+        console.log('Intel box found:', intelBox);
+        if (!intelBox) {
+          console.error('Intel box not found!');
+          return;
+        }
+        const intelContent = intelBox.querySelector('.intel-content');
+        console.log('Intel content found:', intelContent);
+        if (!intelContent) {
+          console.error('Intel content not found!');
+          return;
+        }
+        intelContent.innerHTML = '';
+        
+        // Enhanced Enemy Intel card with visual representations
+        const preview = document.createElement('div');
+        preview.className = 'card';
+        preview.style.gridColumn = '1 / -1';
+        preview.style.background = 'linear-gradient(135deg, rgba(255,0,255,0.15), rgba(0,255,255,0.1))';
+        preview.style.border = '2px solid';
+        preview.style.borderImage = 'linear-gradient(45deg, #ff00ff, #00ffff) 1';
+        
+        // Add title
+        const title = document.createElement('div');
+        title.className = 'title';
+        title.style.color = '#ff00ff';
+        title.style.textShadow = '0 0 10px #ff00ff';
+        title.textContent = '🔍 ENEMY INTEL';
+        preview.appendChild(title);
+        
+        const counts = (()=>{ 
+          const c={}; 
+          console.log('game.nextWave:', game.nextWave);
+          if(game.nextWave && game.nextWave.length > 0) {
+            game.nextWave.forEach(s=> c[s.type]=(c[s.type]||0)+1 ); 
+          }
+          console.log('counts object:', c);
+          return c; 
+        })();
+        
+        const createEnemyVisual = (type) => {
+          const e = ENEMY[type];
+          const size = 40;
+          const canvas = document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+          canvas.style.border = '2px solid ' + e.color;
+          canvas.style.borderRadius = '8px';
+          canvas.style.margin = '0 8px';
+          canvas.style.background = 'rgba(0,0,0,0.3)';
+          
+          const ctx = canvas.getContext('2d');
+          ctx.translate(size/2, size/2);
+          
+          // Draw enemy sprite based on type
+          ctx.shadowColor = e.color;
+          ctx.shadowBlur = 8;
+          
+          if(type === 'squire') {
+            ctx.fillStyle = e.color;
+            ctx.beginPath();
+            ctx.arc(0, 0, 12, 0, Math.PI*2);
+            ctx.fill();
+            // Sword
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, -12);
+            ctx.lineTo(0, 12);
+            ctx.stroke();
+          } else if(type === 'knight') {
+            ctx.fillStyle = e.color;
+            ctx.beginPath();
+            ctx.arc(0, 0, 12, 0, Math.PI*2);
+            ctx.fill();
+            // Shield
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-8, -8);
+            ctx.lineTo(8, -8);
+            ctx.closePath();
+            ctx.fill();
+          } else if(type === 'lancer') {
+            ctx.fillStyle = e.color;
+            ctx.fillRect(-10, -10, 20, 20);
+            // Lance
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, -15);
+            ctx.stroke();
+          } else if(type === 'pegasus') {
+            ctx.fillStyle = e.color;
+            ctx.beginPath();
+            ctx.moveTo(0, -12);
+            ctx.lineTo(8, 8);
+            ctx.lineTo(-8, 8);
+            ctx.closePath();
+            ctx.fill();
+            // Wings
+            ctx.strokeStyle = e.color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-8, 0);
+            ctx.lineTo(-12, -6);
+            ctx.moveTo(8, 0);
+            ctx.lineTo(12, -6);
+            ctx.stroke();
+          } else if(type === 'cleric') {
+            ctx.fillStyle = e.color;
+            ctx.fillRect(-10, -10, 20, 20);
+            // Cross
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-2, -8, 4, 16);
+            ctx.fillRect(-8, -2, 16, 4);
+          } else if(type === 'wizard') {
+            ctx.fillStyle = e.color;
+            ctx.beginPath();
+            ctx.arc(0, 0, 12, 0, Math.PI*2);
+            ctx.fill();
+            // Star
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            for(let i=0; i<5; i++) {
+              const a = (Math.PI*2/5)*i - Math.PI/2;
+              const x = Math.cos(a)*8;
+              const y = Math.sin(a)*8;
+              if(i===0) ctx.moveTo(x,y);
+              else ctx.lineTo(x,y);
+            }
+            ctx.closePath();
+            ctx.stroke();
+          } else if(type === 'jester') {
+            ctx.fillStyle = e.color;
+            ctx.beginPath();
+            ctx.arc(0, 0, 12, 0, Math.PI*2);
+            ctx.fill();
+            // Hat points
+            ctx.fillStyle = '#ffffff';
+            for(let i=0; i<3; i++) {
+              const a = (Math.PI*2/3)*i;
+              ctx.beginPath();
+              ctx.arc(Math.cos(a)*8, Math.sin(a)*8, 2, 0, Math.PI*2);
+              ctx.fill();
+            }
+          } else if(type === 'dragon') {
+            ctx.fillStyle = e.color;
+            ctx.fillRect(-12, -8, 24, 16);
+            // Wings
+            ctx.beginPath();
+            ctx.moveTo(-12, 0);
+            ctx.lineTo(-18, -10);
+            ctx.lineTo(-12, -8);
+            ctx.moveTo(12, 0);
+            ctx.lineTo(18, -10);
+            ctx.lineTo(12, -8);
+            ctx.fill();
+          }
+          
+          ctx.shadowBlur = 0;
+          return canvas;
+        };
+        
+        const describe = (t)=>{
+          const e=ENEMY[t];
+          const lines=[];
+          if(t==='squire') lines.push('⚔️ Basic melee fighter');
+          if(t==='knight') lines.push('🛡️ Shielded front — break shield or flank');
+          if(t==='lancer') lines.push('🗡️ Throws arcing spears');
+          if(t==='pegasus') lines.push('🦅 Flies over moat');
+          if(t==='cleric') lines.push('💚 Heals nearby allies');
+          if(t==='wizard') lines.push('⭐ Raises fallen once');
+          if(t==='jester') lines.push('🃏 Splits into Pages on death');
+          if(t==='dragon') lines.push('🐉 Boss — very tough');
+          return lines.join(' · ');
+        };
+        
+        // Create enemy intel entries for external box
+        const enemyTypes = Object.keys(counts);
+        console.log('Enemy intel - counts:', counts, 'types:', enemyTypes);
+        
+        if(enemyTypes.length > 0) {
+          enemyTypes.forEach(k => {
+            const visual = createEnemyVisual(k);
+            const entry = document.createElement('div');
+            entry.className = 'intel-enemy';
+            
+            // Set canvas border color to match enemy color
+            visual.style.borderColor = ENEMY[k].color;
+            
+            const info = document.createElement('div');
+            info.className = 'intel-enemy-info';
+            
+            const name = document.createElement('div');
+            name.className = 'intel-enemy-name';
+            name.style.color = ENEMY[k].color;
+            name.style.textShadow = `0 0 5px ${ENEMY[k].color}`;
+            name.textContent = ENEMY[k].name;
+            
+            const desc = document.createElement('div');
+            desc.className = 'intel-enemy-desc';
+            desc.textContent = describe(k);
+            
+            const count = document.createElement('div');
+            count.className = 'intel-enemy-count';
+            count.textContent = `${counts[k]}x`;
+            
+            info.appendChild(name);
+            info.appendChild(desc);
+            entry.appendChild(visual);
+            entry.appendChild(info);
+            entry.appendChild(count);
+            
+            intelContent.appendChild(entry);
+          });
+          
+          // Show the intel box
+          intelBox.classList.add('show');
+          console.log('Intel box should be visible now');
+          
+          // Force show for debugging
+          intelBox.style.display = 'block';
+          intelBox.style.bottom = '20px';
+        } else {
+          // Fallback - show some basic enemy info
+          const fallbackVisual = createEnemyVisual('squire');
+          fallbackVisual.style.borderColor = ENEMY.squire.color;
+          
+          const fallbackEntry = document.createElement('div');
+          fallbackEntry.className = 'intel-enemy';
+          
+          const fallbackInfo = document.createElement('div');
+          fallbackInfo.className = 'intel-enemy-info';
+          
+          const fallbackName = document.createElement('div');
+          fallbackName.className = 'intel-enemy-name';
+          fallbackName.style.color = ENEMY.squire.color;
+          fallbackName.style.textShadow = `0 0 5px ${ENEMY.squire.color}`;
+          fallbackName.textContent = 'Enemy Forces';
+          
+          const fallbackDesc = document.createElement('div');
+          fallbackDesc.className = 'intel-enemy-desc';
+          fallbackDesc.textContent = '⚔️ Prepare for battle!';
+          
+          fallbackInfo.appendChild(fallbackName);
+          fallbackInfo.appendChild(fallbackDesc);
+          fallbackEntry.appendChild(fallbackVisual);
+          fallbackEntry.appendChild(fallbackInfo);
+          
+          intelContent.appendChild(fallbackEntry);
+          intelBox.classList.add('show');
+          
+          // Force show for debugging
+          intelBox.style.display = 'block';
+          intelBox.style.bottom = '20px';
+        }
+        
+
+      }
+      
+      function buildGameOverUI(){ 
+        ui.ovBody.innerHTML = `
+          <div class="card" style="grid-column:1/-1">
+            <div class="epic-title">GAME OVER</div>
+            <div class="desc" style="text-align:center; font-size:18px;">
+              The castle has fallen!<br><br>
+              👑 Final Score: ${Math.floor(game.score)}<br>
+              ⚔️ Waves Survived: ${game.wave-1}<br>
+              🏆 High Score: ${Math.floor(game.high)}
+            </div>
+          </div>`; 
+        ui.ovTitle.textContent='💀 DEFEAT'; 
+        ui.ovSub.textContent='The kingdom mourns your loss...'; 
+        ui.next.textContent=''; 
+      }
+      
+      function buildPauseUI(){
+        ui.ovTitle.textContent = '⏸️ PAUSED';
+        ui.ovSub.textContent = 'The battle awaits your return...';
+        ui.ovBody.innerHTML = `
+          <div class="card" style="grid-column:1/-1">
+            <div class="title">⚔️ CONTROLS</div>
+            <div class="desc">
+              1/2/3/4 or WASD - Teleport between walls<br>
+              Mouse - Aim & shoot<br>
+              Right Click - Charge shot<br>
+              Shift - Slow motion (sniper shots + 150% speed)<br>
+              ESC - Pause
+            </div>
+          </div>`;
+      }
+      
+      function showOverlay(show){ 
+        ui.overlay.style.display = show? 'grid':'none'; 
+        
+        // Keep HUD visible during shop phase
+        const hud = document.querySelector('.hud');
+        if(hud) {
+          hud.style.opacity = '1'; // Always fully visible
+          hud.style.pointerEvents = show ? 'none' : 'auto';
+        }
+      }
+
+      // ============================
+      // Shooting & Player Mechanics
+      // ============================
+      let shootTimer = 0, charge = 0, charging = false, lastWall = 0;
+      function getNearestEnemy(pt){ 
+        let best=null,bd=Infinity; 
+        for(const e of game.enemies){ 
+          if(e.dead) continue; 
+          if(e.invisible && !(game.player.wall===2)) continue; 
+          if(e.type === 'cavalry' || e.type === 'converted') continue; // Don't target friendly units
+          const d=(e.x-pt.x)*(e.x-pt.x)+(e.y-pt.y)*(e.y-pt.y); 
+          if(d<bd){bd=d; best=e;} 
+        } 
+        console.log('getNearestEnemy called from:', pt.x, pt.y, 'found:', best ? best.type : 'none');
+        return best; 
+      }
+      
+      function fire(origin, power=0){ 
+        // Aim strictly at the mouse position (no auto-targeting)
+        const dir = Math.atan2(mouse.y-origin.y, mouse.x-origin.x); 
+        const count = 1 + (game.upgrades.multishot||0); 
+        // Much narrower spread for sniper shots
+        const isSniper = game.upgrades.sniper > 0 || game.dtScale < 1;
+        const spread = isSniper ? 
+          Math.min(Math.PI/60, 0.005 + 0.002*(count-1)) : // Very narrow for sniper
+          Math.min(Math.PI/12, 0.03 + 0.02*(count-1)); // Normal spread 
+        for(let i=0;i<count;i++){ 
+          const off = (i-(count-1)/2) * spread; 
+          const p = makeProjectile(origin.x, origin.y, dir+off, {}); 
+          
+          // Skip if makeProjectile returned null (sniper line effect)
+          if(!p) continue;
+          
+          p.src = 'player';
+          if(power>0.2){ 
+            p.baseDmg *= 1 + power*2.0; 
+            p.explosive = p.explosive || power>0.6; 
+            p.size = 3 + Math.floor(power*4);
+            p.color = power>0.6 ? '#ff00ff' : '#00ffff';
+          } 
+          if(game.player.wall===0) p.baseDmg*=1.2; // North bonus
+          game.projectiles.push(p); 
+          
+          // Special particle effect for time slow shots
+          if(p.timeSlow) {
+            spawnParticles(origin.x, origin.y, '#ffff00', 8, 0.6);
+          }
+        }
+        sfx.shoot(); 
+      }
+      
+      function updatePlayerPos(){ 
+        const angle = [ -Math.PI/2, Math.PI/2, 0, Math.PI ][game.player.wall]; 
+        const pos = V2.fromAngle(angle, CASTLE.r-8); 
+        game.player.x = CENTER.x + pos.x; 
+        game.player.y = CENTER.y + pos.y; 
+      }
+      
+      function handleControls(dt){ 
+        // Wall teleportation
+        if(KEYS.has('1')||KEYS.has('w')){ 
+          if(game.player.wall !== 0 && game.teleportCooldown <= 0){
+            lastWall = game.player.wall;
+            game.player.wall=0; 
+            updatePlayerPos(); 
+            teleportFx();
+          }
+        }
+        if(KEYS.has('2')||KEYS.has('s')){ 
+          if(game.player.wall !== 1 && game.teleportCooldown <= 0){
+            lastWall = game.player.wall;
+            game.player.wall=1; 
+            updatePlayerPos(); 
+            teleportFx();
+          }
+        }
+        if(KEYS.has('3')||KEYS.has('d')){ 
+          if(game.player.wall !== 2 && game.teleportCooldown <= 0){
+            lastWall = game.player.wall;
+            game.player.wall=2; 
+            updatePlayerPos(); 
+            teleportFx();
+          }
+        }
+        if(KEYS.has('4')||KEYS.has('a')){ 
+          if(game.player.wall !== 3 && game.teleportCooldown <= 0){
+            lastWall = game.player.wall;
+            game.player.wall=3; 
+            updatePlayerPos(); 
+            teleportFx();
+          }
+        }
+        // Slow motion
+        if(KEYS.has('shift')){ 
+          if(game.stamina>0){ 
+            if(game.dtScale === 1) {
+              sfx.timeSlow(); // Play sound when time slow activates
+            }
+            game.dtScale=0.4; 
+            game.stamina=Math.max(0, game.stamina - dt*0.35); 
+          } else game.dtScale=1; 
+        } else { 
+          game.dtScale=1; 
+          game.stamina=Math.min(1, game.stamina + dt*0.25); 
+        }
+      }
+      
+      function teleportFx(){ 
+        // Check teleport cooldown
+        if(game.teleportCooldown > 0) {
+          return; // Don't allow teleport if on cooldown
+        }
+        
+        // Set cooldown
+        game.teleportCooldown = 1.0; // 1 second cooldown
+        
+        // Lightning effect between walls
+        for(let i=0;i<20;i++){
+          const t = i/20;
+          const x = lerp(game.player.x, CENTER.x, t) + rand(-10,10);
+          const y = lerp(game.player.y, CENTER.y, t) + rand(-10,10);
+          spawnParticles(x, y, '#00ffff', 2, 0.3);
+          spawnParticles(x, y, '#ff00ff', 2, 0.3);
+        }
+        spawnParticles(game.player.x, game.player.y, '#00ffff', 20, 1.0); 
+        spawnParticles(game.player.x, game.player.y, '#ff00ff', 20, 1.0); 
+        game.shake=Math.max(game.shake,6);
+        
+        // Enable power shot after teleporting
+        game.powerShotReady = true;
+        game.powerShotTimer = 2.0; // 2 seconds to use the power shot
+        
+        // Cavalry charge (if upgrade is active and cooldown is ready)
+        if(game.upgrades.cavalry > 0 && game.cavalryTimer <= 0) {
+          // Spawn multiple cavalry based on upgrade level
+          const cavalryCount = game.upgrades.cavalry;
+          for(let i = 0; i < cavalryCount; i++) {
+            // Spawn cavalry at slightly different positions around the player
+            const angle = (i / cavalryCount) * Math.PI * 2;
+            const offsetX = Math.cos(angle) * 20;
+            const offsetY = Math.sin(angle) * 20;
+            spawnCavalry(game.player.x + offsetX, game.player.y + offsetY);
+          }
+          game.cavalryTimer = 10.0; // 10 second cooldown
+        }
+      }
+      
+      function handleShooting(dt){ 
+        shootTimer-=dt*(game.player.wall===1? 1.25:1); // South speed bonus
+        
+        // Power shot timer (after WASD teleport)
+        if(game.powerShotTimer) {
+          game.powerShotTimer -= dt;
+          if(game.powerShotTimer <= 0) {
+            game.powerShotReady = false;
+            game.powerShotTimer = 0;
+          }
+        }
+        
+        // Cavalry timer
+        if(game.cavalryTimer > 0) {
+          game.cavalryTimer -= dt;
+        }
+        
+        // Update teleport cooldown
+        if(game.teleportCooldown > 0) {
+          game.teleportCooldown -= dt;
+        }
+        
+        // Sniper reload timer
+        if(game.sniperReloadTimer > 0) {
+          game.sniperReloadTimer -= dt;
+        }
+        
+        if(mouse.rdown){ 
+          charging=true; 
+          charge=Math.min(1, charge + dt*0.8); 
+        }
+        else if(charging){ 
+          fire({x:game.player.x,y:game.player.y}, charge); 
+          charging=false; 
+          charge=0; 
+        }
+        if(mouse.down && shootTimer<=0){ 
+          // Check sniper reload timer
+          if(game.upgrades.sniper > 0 && game.sniperReloadTimer > 0) {
+            return; // Can't fire while reloading
+          }
+          
+          // Check time slow sniper reload timer
+          if(game.dtScale < 1 && game.sniperReloadTimer > 0) {
+            return; // Can't fire time slow sniper while reloading
+          }
+          
+          shootTimer = Math.max(0.08, game.player.rate - 0.04*(game.upgrades.rapid||0)); 
+          
+          // Check if power shot is ready (after WASD)
+          if(game.powerShotReady) {
+            fire({x:game.player.x,y:game.player.y}, 1.0); // Full purple power shot
+            game.powerShotReady = false;
+            game.powerShotTimer = 0;
+            setBattleMessage('⚡ POWER SHOT!', 1.5, '#ff00ff');
+          } else {
+            fire({x:game.player.x,y:game.player.y}, 0); // Normal shot
+          }
+          
+          // Set sniper reload timer (for both sniper upgrade and time slow)
+          if(game.upgrades.sniper > 0 || game.dtScale < 1) {
+            game.sniperReloadTimer = 1.0; // 1 second reload
+          }
+        }
+      }
+
+      // Auto-firing castle turrets (Ballista upgrade)
+      function ballistaThink(dt){
+        const lvl = game.upgrades.ballista||0; if(lvl<=0) return;
+        // Support up to 8 turrets: E, W, N, S, NE, SE, SW, NW
+        const maxTurrets = (lvl > 4) ? 8 : 4;
+        if(!ballistaThink._t || ballistaThink._t.length < maxTurrets) ballistaThink._t = new Array(maxTurrets).fill(0).map((v,i)=> (ballistaThink._t && ballistaThink._t[i])||0);
+        if(!ballistaThink._flash || ballistaThink._flash.length < maxTurrets) ballistaThink._flash = new Array(maxTurrets).fill(0).map((v,i)=> (ballistaThink._flash && ballistaThink._flash[i])||0);
+        const angles = [ 
+          -Math.PI/2,  // 0 N
+           Math.PI/2,  // 1 S
+           0,          // 2 E
+           Math.PI,    // 3 W
+          -Math.PI/4,  // 4 NE
+           Math.PI/4,  // 5 SE
+           3*Math.PI/4,// 6 SW
+          -3*Math.PI/4 // 7 NW
+        ];
+        // Fire order prioritizes cardinals first, then diagonals
+        const order = [2,3,0,1,4,5,6,7]; // E,W,N,S,NE,SE,SW,NW
+        const baseRate = 2.6; // slower baseline
+        const rate = Math.max(1.6, baseRate - 0.3*(lvl-1));
+        const activeCount = Math.min(lvl, maxTurrets);
+        for(let k=0;k<activeCount;k++){
+          const i = order[k];
+          ballistaThink._t[i]-=dt; ballistaThink._flash[i]=Math.max(0, ballistaThink._flash[i]-dt);
+          if(ballistaThink._t[i]>0) continue;
+          const pos = V2.fromAngle(angles[i], CASTLE.r-10);
+          const turretPos = { x: CENTER.x+pos.x, y: CENTER.y+pos.y };
+          const t = getNearestEnemy(turretPos);
+          ballistaThink._t[i]= (t? rate : 0.25);
+          if(!t) continue;
+          const dir = Math.atan2(t.y-turretPos.y, t.x-turretPos.x);
+          
+          // Fire from cannon tip (25 pixels in the direction the turret is facing)
+          const cannonTipX = turretPos.x + Math.cos(dir) * 25;
+          const cannonTipY = turretPos.y + Math.sin(dir) * 25;
+          const p = makeProjectile(cannonTipX, cannonTipY, dir, {});
+          if(p) { // Check if projectile was created (not null for sniper shots)
+            p.baseDmg = 12 + 6*lvl; p.crit=false; p.explosive=false; p.pierce=0; p.color = '#a0ffff'; p.src='turret';
+            game.projectiles.push(p);
+          }
+          spawnParticles(cannonTipX, cannonTipY, '#00ffff', 4, 0.4);
+          ballistaThink._flash[i]=0.12;
+        }
+      }
+
+      // ============================
+      // Wave Spawning & Enemy Behavior
+      // ============================
+      function trySpawn(dt){ 
+        if(!game._spawns) return; 
+        for(let i=game._spawns.length-1;i>=0;i--){ 
+          const s=game._spawns[i]; 
+          s.t-=dt; 
+          if(s.t<=0){ 
+            const enemy = makeEnemy(s.s.type, s.s.hpScale);
+            game.enemies.push(enemy); 
+            game._spawns.splice(i,1);
+            game._spawnedAny = true;
+            // Spawn effect
+            spawnParticles(enemy.x, enemy.y, enemy.glowColor, 12, 0.8);
+          } 
+        } 
+      }
+      
+      function allDefeated(){ 
+        // Require at least one enemy to have spawned to avoid instant wave completion
+        // Only count actual enemies, not friendly units (cavalry, angelic knights, converted)
+        const actualEnemies = game.enemies.filter(e => e.type !== 'cavalry' && e.type !== 'angelic' && e.type !== 'midas' && e.type !== 'converted');
+        return game._spawnedAny && (!game._spawns || game._spawns.length===0) && actualEnemies.every(e=>e.dead); 
+      }
+
+      function enemyUpdate(e, dt){ 
+        // Converted enemy behavior (friendly enemies that attack other enemies)
+        if(e.type === 'converted') {
+          // Health decay - 10% per second
+          e.hp -= e.maxHp * 0.1 * dt;
+          if(e.hp <= 0) {
+            e.dead = true;
+            spawnParticles(e.x, e.y, '#00ff88', 15, 0.8);
+            return;
+          }
+          
+          // Find nearest enemy to attack
+          let nearestEnemy = null;
+          let nearestDist = Infinity;
+          for(const enemy of game.enemies) {
+            if(enemy.dead || enemy.type === 'cavalry' || enemy.type === 'converted') continue;
+            const dx = enemy.x - e.x;
+            const dy = enemy.y - e.y;
+            const dist = dx*dx + dy*dy;
+            if(dist < nearestDist) {
+              nearestDist = dist;
+              nearestEnemy = enemy;
+            }
+          }
+          
+          if(nearestEnemy) {
+            // Move towards nearest enemy
+            const dx = nearestEnemy.x - e.x;
+            const dy = nearestEnemy.y - e.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if(dist > 0) {
+              e.x += (dx/dist) * e.speed * dt;
+              e.y += (dy/dist) * e.speed * dt;
+            }
+            
+            // Attack if close enough
+            if(dist < 30) {
+              nearestEnemy.hp -= e.damage * dt * 2;
+              spawnParticles(nearestEnemy.x, nearestEnemy.y, '#00ff88', 3, 0.3);
+            }
+          }
+          
+          // Animation wobble
+          e.wobble += dt * 3;
+          return;
+        }
+        
+        // Cavalry behavior (friendly knight that attacks enemies)
+        if(e.type === 'cavalry') {
+          e.life -= dt;
+          if(e.life <= 0) {
+            e.dead = true;
+            spawnParticles(e.x, e.y, '#00ff88', 15, 0.8);
+            return;
+          }
+          
+          // Find target enemy to attack (each cavalry gets a different target)
+          let targetEnemy = null;
+          let targetDist = Infinity;
+          
+          // Use cavalry's position to determine which enemy to target
+          // This creates a simple targeting system where cavalry spread out
+          for(const enemy of game.enemies) {
+            if(enemy.dead || enemy.type === 'cavalry' || enemy.type === 'angelic' || enemy.type === 'midas') continue;
+            const dx = enemy.x - e.x;
+            const dy = enemy.y - e.y;
+            const dist = dx*dx + dy*dy;
+            
+            // Each cavalry prefers enemies in different directions
+            const angle = Math.atan2(dy, dx);
+            const preferredAngle = (e.x + e.y) % (Math.PI * 2); // Simple hash for variety
+            const angleDiff = Math.abs(angle - preferredAngle);
+            
+            // Prefer enemies that are closer and in preferred direction
+            const score = dist + angleDiff * 1000;
+            if(score < targetDist) {
+              targetDist = score;
+              targetEnemy = enemy;
+            }
+          }
+          
+          if(targetEnemy) {
+            // Move towards target enemy
+            const dx = targetEnemy.x - e.x;
+            const dy = targetEnemy.y - e.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if(dist > 0) {
+              e.x += (dx/dist) * e.speed * dt;
+              e.y += (dy/dist) * e.speed * dt;
+            }
+            
+            // Attack if close enough
+            if(dist < 30) {
+              targetEnemy.hp -= e.damage * dt * 2; // High damage rate
+              // Track who killed the enemy for Midas bonus
+              if(targetEnemy.hp <= 0) {
+                targetEnemy.killedBy = e;
+              }
+              spawnParticles(targetEnemy.x, targetEnemy.y, '#00ff88', 3, 0.3);
+            }
+          } else {
+            // No enemies, move towards castle center
+            const dx = CENTER.x - e.x;
+            const dy = CENTER.y - e.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if(dist > 0) {
+              e.x += (dx/dist) * e.speed * 0.5 * dt;
+              e.y += (dy/dist) * e.speed * 0.5 * dt;
+            }
+          }
+          
+          // Animation wobble
+          e.wobble += dt * 3;
+          return;
+        }
+        
+        // Midas Knight behavior (golden knight that grants bonus gold on kills)
+        if(e.type === 'midas') {
+          e.life -= dt;
+          if(e.life <= 0) {
+            e.dead = true;
+            spawnParticles(e.x, e.y, '#ffd700', 15, 0.8);
+            return;
+          }
+          
+          // Find target enemy to attack (same logic as cavalry)
+          let targetEnemy = null;
+          let targetDist = Infinity;
+          
+          for(const enemy of game.enemies) {
+            if(enemy.dead || enemy.type === 'cavalry' || enemy.type === 'angelic' || enemy.type === 'midas') continue;
+            const dx = enemy.x - e.x;
+            const dy = enemy.y - e.y;
+            const dist = dx*dx + dy*dy;
+            
+            const angle = Math.atan2(dy, dx);
+            const preferredAngle = (e.x + e.y) % (Math.PI * 2);
+            const angleDiff = Math.abs(angle - preferredAngle);
+            
+            const score = dist + angleDiff * 1000;
+            if(score < targetDist) {
+              targetDist = score;
+              targetEnemy = enemy;
+            }
+          }
+          
+          if(targetEnemy) {
+            // Move towards target enemy
+            const dx = targetEnemy.x - e.x;
+            const dy = targetEnemy.y - e.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if(dist > 0) {
+              e.x += (dx/dist) * e.speed * dt;
+              e.y += (dy/dist) * e.speed * dt;
+            }
+            
+            // Attack if close enough
+            if(dist < 30) {
+              targetEnemy.hp -= e.damage * dt * 2; // High damage rate
+              // Track who killed the enemy for Midas bonus
+              if(targetEnemy.hp <= 0) {
+                targetEnemy.killedBy = e;
+              }
+              spawnParticles(targetEnemy.x, targetEnemy.y, '#ffd700', 3, 0.3);
+            }
+          } else {
+            // No enemies, move towards castle center
+            const dx = CENTER.x - e.x;
+            const dy = CENTER.y - e.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if(dist > 0) {
+              e.x += (dx/dist) * e.speed * 0.5 * dt;
+              e.y += (dy/dist) * e.speed * 0.5 * dt;
+            }
+          }
+          
+          // Animation wobble with golden glow
+          e.wobble += dt * 3;
+          return;
+        }
+        
+        // Angelic Knight behavior (healing cavalry that heals castle when dealing damage)
+        if(e.type === 'angelic') {
+          e.life -= dt;
+          if(e.life <= 0) {
+            e.dead = true;
+            spawnParticles(e.x, e.y, '#ff4444', 15, 0.8);
+            return;
+          }
+          
+          // Initialize healing cooldown if not exists
+          if(e.healCooldown === undefined) e.healCooldown = 0;
+          e.healCooldown -= dt;
+          
+          // Find target enemy to attack (same logic as cavalry)
+          let targetEnemy = null;
+          let targetDist = Infinity;
+          
+          for(const enemy of game.enemies) {
+            if(enemy.dead || enemy.type === 'cavalry' || enemy.type === 'angelic' || enemy.type === 'midas') continue;
+            const dx = enemy.x - e.x;
+            const dy = enemy.y - e.y;
+            const dist = dx*dx + dy*dy;
+            
+            const angle = Math.atan2(dy, dx);
+            const preferredAngle = (e.x + e.y) % (Math.PI * 2);
+            const angleDiff = Math.abs(angle - preferredAngle);
+            
+            const score = dist + angleDiff * 1000;
+            if(score < targetDist) {
+              targetDist = score;
+              targetEnemy = enemy;
+            }
+          }
+          
+          if(targetEnemy) {
+            // Move towards target enemy
+            const dx = targetEnemy.x - e.x;
+            const dy = targetEnemy.y - e.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if(dist > 0) {
+              e.x += (dx/dist) * e.speed * dt;
+              e.y += (dy/dist) * e.speed * dt;
+            }
+            
+            // Attack if close enough and heal castle
+            if(dist < 30) {
+              const damageDealt = e.damage * dt * 2;
+              targetEnemy.hp -= damageDealt;
+              // Track who killed the enemy for Midas bonus
+              if(targetEnemy.hp <= 0) {
+                targetEnemy.killedBy = e;
+              }
+              
+              // Heal castle for the damage dealt (with cooldown)
+              if(e.healCooldown <= 0) {
+                const healAmount = 5; // Fixed healing amount per hit
+                game.castleHp = Math.min(game.castleHp + healAmount, game.castleMax);
+                spawnText(e.x, e.y-20, `+${healAmount}`, '#00ff00', 1.0, 16);
+                spawnParticles(e.x, e.y, '#00ff00', 8, 0.6); // Add healing particles
+                e.healCooldown = 0.5; // 0.5 second cooldown between heals
+              }
+              
+              spawnParticles(targetEnemy.x, targetEnemy.y, '#ff4444', 3, 0.3);
+            }
+          } else {
+            // No enemies, move towards castle center
+            const dx = CENTER.x - e.x;
+            const dy = CENTER.y - e.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if(dist > 0) {
+              e.x += (dx/dist) * e.speed * 0.5 * dt;
+              e.y += (dy/dist) * e.speed * 0.5 * dt;
+            }
+          }
+          
+          // Animation wobble with pulsing white glow
+          e.wobble += dt * 3;
+          return;
+        }
+        
+        // Regular enemy behavior
+        // Check for nearby cavalry, angelic knights, or midas knights to attack (but not converted units)
+        let nearestCavalry = null;
+        let cavalryDist = Infinity;
+        for(const other of game.enemies) {
+          if((other.type === 'cavalry' || other.type === 'angelic' || other.type === 'midas') && !other.dead && other.type !== 'converted') {
+            const dx = other.x - e.x;
+            const dy = other.y - e.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if(dist < cavalryDist && dist < 100) { // Attack cavalry/angelic/midas within 100 pixels
+              cavalryDist = dist;
+              nearestCavalry = other;
+            }
+          }
+        }
+        
+        // Move toward castle or cavalry
+        let targetX = CENTER.x;
+        let targetY = CENTER.y;
+        if(nearestCavalry) {
+          targetX = nearestCavalry.x;
+          targetY = nearestCavalry.y;
+        }
+        
+        const v = new V2(targetX - e.x, targetY - e.y); 
+        const d=v.len(); 
+        v.norm(); 
+        e.heading = Math.atan2(v.y, v.x);
+        
+        let speed = e.speed;
+        const wallDist = Math.abs(d - CASTLE.r);
+        
+        // Invisibility (rogues visible from East wall)
+        if(e.invisible && !(game.player.wall===2)) e.renderGhost=true; 
+        else e.renderGhost=false;
+        
+        // Knockback decay
+        e.vx = (e.vx||0) * Math.pow(0.6, dt*60); 
+        e.vy = (e.vy||0) * Math.pow(0.6, dt*60);
+        
+        // Movement (flyers have different radius)
+        const targetRadius = e.flyer? CASTLE.r-6 : CASTLE.r- e.radius*0.4;
+        if(d > targetRadius){ 
+          e.x += v.x * speed * dt + (e.vx||0) * dt; 
+          e.y += v.y * speed * dt + (e.vy||0) * dt; 
+        }
+        
+        // Cleric healing
+        if(e.type==='cleric'){ 
+          e.healTimer = (e.healTimer||0) - dt; 
+          if(e.healTimer<=0){ 
+            e.healTimer=1.4; 
+            for(const f of game.enemies){ 
+              if(f.dead||f===e) continue; 
+              const dx=f.x-e.x, dy=f.y-e.y; 
+              if(dx*dx+dy*dy< 80*80){ 
+                f.hp = Math.min(f.maxHp, f.hp + 8); 
+                spawnParticles(f.x,f.y,'#88ff00',6,0.5); 
+              } 
+            } 
+          } 
+        }
+        
+        // Wizard necromancy
+        if(e.necro){ 
+          e.healTimer=(e.healTimer||0)-dt; 
+          if(e.healTimer<=0){ 
+            e.healTimer=3.0; 
+            for(const f of game.enemies){ 
+              if(f.dead) { 
+                f.dead=false; 
+                f.hp=f.maxHp*0.5; 
+                spawnParticles(f.x,f.y,'#ff88ff',12,0.8); 
+                setBattleMessage('💀 UNDEAD RISES!', 1.5, '#ff8800');
+                break; 
+              } 
+            } 
+          } 
+        }
+        
+        // Lancer throws projectiles
+        if(e.bomber){ 
+          e.throwT=(e.throwT||rand(1.2,2.2))-dt; 
+          if(e.throwT<=0){ 
+            e.throwT=rand(1.2,2.0); 
+            
+            // Find nearest cavalry/angelic knight to target, otherwise target castle center
+            let targetX = CENTER.x, targetY = CENTER.y;
+            let nearestCavalry = null;
+            let nearestDist = Infinity;
+            
+            for(const enemy of game.enemies) {
+              if(enemy.dead || enemy.type !== 'cavalry' && enemy.type !== 'angelic' && enemy.type !== 'midas' || enemy.type === 'converted') continue;
+              const dx = enemy.x - e.x;
+              const dy = enemy.y - e.y;
+              const dist = dx*dx + dy*dy;
+              if(dist < nearestDist) {
+                nearestDist = dist;
+                nearestCavalry = enemy;
+              }
+            }
+            
+            if(nearestCavalry) {
+              targetX = nearestCavalry.x;
+              targetY = nearestCavalry.y;
+            }
+            
+            const ang=Math.atan2(targetY-e.y, targetX-e.x); 
+            const sp=220; 
+            game.eProjectiles.push({ 
+              x:e.x, y:e.y, 
+              vx:Math.cos(ang)*sp, 
+              vy:Math.sin(ang)*sp, // Remove arc, shoot straight
+              life:2.2, r:4, 
+              color: '#ffff00' 
+            }); 
+          } 
+        }
+        
+        // Electric moat damage (if spike moat upgrade is active)
+        if(game.upgrades.oil > 0 && !e.flyer) {
+          const moatRadius = CASTLE.r + 120; // Much further from castle
+          const moatInner = CASTLE.r + 80;
+          if(d >= moatInner && d <= moatRadius) {
+            // Apply burn damage over time
+            if(!e.burnTimer) e.burnTimer = 0;
+            e.burnTimer += dt;
+            
+            const burnDamage = 12 + 8 * game.upgrades.oil; // Base 12 + 8 per level
+            const burnTick = 0.5; // Damage every 0.5 seconds
+            
+            if(e.burnTimer >= burnTick) {
+              e.hp -= burnDamage;
+              e.burnTimer = 0;
+              spawnParticles(e.x, e.y, '#ff6600', 8, 0.6); // Orange burn particles
+              spawnText(e.x, e.y - e.radius - 10, `-${burnDamage}`, '#ff6600', 0.8, 14);
+            }
+            
+            // Visual burn effect
+            if(Math.random() < 8*dt) {
+              spawnParticles(e.x, e.y, '#ff4400', 3, 0.3);
+            }
+          } else {
+            // Clear burn timer when outside moat
+            e.burnTimer = 0;
+          }
+        }
+        
+        // Poison damage over time
+        if(e.poisonStacks && e.poisonStacks > 0) {
+          e.poisonTimer = (e.poisonTimer || 0) + dt;
+          const poisonTick = 0.5; // Damage every 0.5 seconds
+          
+          if(e.poisonTimer >= poisonTick) {
+            const poisonDamage = e.poisonStacks * game.upgrades.poison; // 1 damage per stack per level
+            e.hp -= poisonDamage;
+            e.poisonTimer = 0;
+            spawnParticles(e.x, e.y, '#00ff00', 4, 0.3); // Green poison particles
+            spawnText(e.x, e.y - e.radius - 20, `-${poisonDamage}`, '#00ff00', 0.6, 12);
+            
+            // Decay poison stacks over time
+            if(Math.random() < 0.1) { // 10% chance per tick to lose a stack
+              e.poisonStacks = Math.max(0, e.poisonStacks - 1);
+            }
+          }
+        }
+        
+        // Fire damage over time (Flame Cannon) - applies damage continuously
+        if(e.fireStacks && e.fireStacks > 0) {
+          e.fireTimer = (e.fireTimer || 0) + dt;
+          const fireTick = 0.3; // Damage every 0.3 seconds
+          
+          // Apply damage immediately when fire stacks are present
+          if(e.fireTimer >= fireTick) {
+            // Use stackMultiplier from flame cannon upgrade for infinite stacking
+            const flameLevel = game.upgrades.flamecannon || 0;
+            const stackMultiplier = 5 + flameLevel; // +1 stack multiplier per level
+            const fireDamage = e.fireStacks * stackMultiplier; // Damage scales with stacks and level
+            e.hp -= fireDamage;
+            e.fireTimer = 0;
+            e.fireStacks = Math.max(0, e.fireStacks - 1); // Reduce stacks by 1 each tick
+            spawnParticles(e.x, e.y, '#ff4400', 6, 0.4); // Orange fire particles
+            spawnText(e.x, e.y - e.radius - 25, `-${fireDamage}`, '#ff4400', 0.6, 14);
+          }
+          
+          // Visual fire effect on burning enemies
+          if(Math.random() < 0.3) { // 30% chance per frame
+            spawnParticles(e.x, e.y, '#ff4400', 2, 0.3);
+          }
+        }
+        
+        // Damage castle walls or cavalry
+        if(nearestCavalry && cavalryDist < e.radius + nearestCavalry.radius) {
+          // Attack cavalry
+          nearestCavalry.hp -= e.damage * dt * 2; // High damage rate to cavalry
+          spawnParticles(nearestCavalry.x, nearestCavalry.y, '#ff0088', 4, 0.4);
+        } else if(wallDist < e.radius && !e.flyer){ 
+          damageCastle(e.damage*dt*0.5); 
+          if(Math.random()<3*dt) spawnParticles(e.x,e.y,'#ff0088',6,0.6); 
+        }
+        
+        // Animation wobble
+        e.wobble += dt * 3;
+      }
+
+      function projectileUpdate(p, dt){ 
+        p.life-=dt; 
+        if(p.life<=0) return false; 
+        
+        // Trail effect
+        p.trail.push({ x:p.x, y:p.y, life:0.25 }); 
+        const maxTrailLength = (p.sniper || p.timeSlow) ? 50 : 10; // Much longer trail for sniper and time slow shots
+        while(p.trail.length > maxTrailLength) p.trail.shift(); 
+        
+        // Boomerang return logic
+        if(p.boomerang && !p.returnPhase) {
+          // Check if projectile should start returning (after 0.8 seconds)
+          if(p.life < 0.4) {
+            p.returnPhase = true;
+            // Calculate direction back to origin
+            const dx = p.originX - p.x;
+            const dy = p.originY - p.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if(dist > 0) {
+              const speed = 540*(1+0.25*game.upgrades.rapid);
+              p.vx = (dx/dist) * speed;
+              p.vy = (dy/dist) * speed;
+            }
+          }
+        }
+        
+        p.vx*=0.999; 
+        p.vy*=0.999; 
+        p.x+=p.vx*dt; 
+        p.y+=p.vy*dt;
+        
+        // Check collisions
+        for(const e of game.enemies){ 
+          if(e.dead) continue; 
+          if(e.invisible && !(game.player.wall===2)) continue; 
+          if(p.hitSet.has(e)) continue; 
+          if(e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'converted') continue; // Cavalry, angelic knights, midas knights, and converted enemies are immune to player/tower damage
+          if(p.radiant && (e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'converted')) continue; // Radiant projectiles also don't damage friendly units
+          
+          const dx=e.x-p.x, dy=e.y-p.y; 
+          const rr = (e.radius+6);
+          
+          if(dx*dx+dy*dy < rr*rr){ 
+            // Shield block check (knights) — shields have HP and can be broken
+            if(e.type==='knight' && (e.shieldHp==null || e.shieldHp>0)){ 
+              const inAngle = Math.acos( clamp(( (p.vx*-1)*Math.cos(e.heading) + (p.vy*-1)*Math.sin(e.heading) )/(Math.hypot(p.vx,p.vy)||1), -1, 1) ); 
+              if(inAngle < e.blockAngle){ 
+                // Hit the shield instead of the body
+                e.shieldHp = (e.shieldHp==null? Math.round(60*DIFFICULTY.ENEMY_HP_MULT) : e.shieldHp) - p.baseDmg*0.8; 
+                spawnParticles(p.x,p.y,'#00ffff',8,0.6); 
+                sfx.hit(); 
+                p.life=0; 
+                if(e.shieldHp<=0){ 
+                  // Show "blocked" text above the mob instead of toast
+                  spawnText(e.x, e.y-e.radius-15, 'blocked', '#ffffff', 1.2, 16, true);
+                }
+                break; 
+              } 
+            }
+            
+            // Hit!
+            const dmg = p.baseDmg * (p.crit && Math.random()<0.12? 2.5:1);
+            e.hp -= dmg;
+            
+            // Apply poison damage (stacking)
+            if(p.poison && game.upgrades.poison > 0) {
+              if(!e.poisonStacks) e.poisonStacks = 0;
+              e.poisonStacks = e.poisonStacks + 1; // Infinite stacking
+              // Don't reset poison timer - let it continue ticking
+              spawnParticles(e.x, e.y, '#00ff00', 6, 0.4); // Green poison particles
+            }
+            
+            // Apply burn damage (Radiant Aegis projectiles)
+            if(p.radiant && p.burnStacks) {
+              if(!e.fireStacks) e.fireStacks = 0;
+              e.fireStacks += p.burnStacks; // Add burn stacks
+              e.fireTimer = 0.3; // Start timer immediately so damage ticks right away
+              spawnParticles(e.x, e.y, '#ff4400', 8, 0.6); // Orange fire particles
+              spawnText(e.x, e.y-12, `+${p.burnStacks}`, '#ff4400', 0.6, 16);
+            }
+            
+            // Knockback (dragon is immune)
+            if(e.type !== 'dragon') {
+              const kb = new V2(p.vx, p.vy).norm().scale(360*(0.8+Math.random()*0.4)); 
+              e.vx += kb.x; 
+              e.vy += kb.y;
+            }
+            
+            // Damage text
+            spawnText(e.x, e.y-12, `-${Math.round(dmg)}`, p.crit ? '#ff00ff' : '#00ffff', 0.6, p.crit ? 24 : 18);
+            spawnParticles(e.x, e.y, e.glowColor, 15, 0.8);
+            
+            sfx.hit(); 
+            game.shake = Math.min(12, game.shake + 3);
+            if(p.src==='player'){
+              game.combo = Math.min(10, game.combo + 0.3 + (game.upgrades.crit?0.15:0)); 
+              game.comboTimer = 1.1;
+            }
+            
+            p.hitSet.add(e);
+            
+            if(!p.pierce || p.pierce<=0){ 
+              p.life=0; 
+            } else { 
+              p.pierce--; 
+            }
+            
+            if(p.explosive){ 
+              explodeAt(e.x, e.y, p.baseDmg*0.7); 
+            }
+          }
+        }
+        
+        return p.life>0;
+      }
+
+      function enemyProjectileUpdate(ep, dt){ 
+        ep.life-=dt; 
+        if(ep.life<=0) return false; 
+        
+        ep.vy += 180*dt; 
+        ep.x += ep.vx*dt; 
+        ep.y += ep.vy*dt; 
+        
+        // Divine Aegis collision check
+        if(game.upgrades.divineaegis > 0 && game.divineAegis.active) {
+          const shieldSize = game.divineAegis.size;
+          
+          // Calculate shield position based on mouse position (same as rendering)
+          const dx = mouse.x - CENTER.x;
+          const dy = mouse.y - CENTER.y;
+          const mouseAngle = Math.atan2(dy, dx);
+          
+          const shieldDistance = 200; // Same distance as rendering
+          const shieldX = CENTER.x + Math.cos(mouseAngle) * shieldDistance;
+          const shieldY = CENTER.y + Math.sin(mouseAngle) * shieldDistance;
+          
+          // Shield faces toward the mouse (perpendicular to the radius)
+          const shieldAngle = mouseAngle + Math.PI/2; // Rotate 90 degrees to face mouse
+          const offsetAngle = (game.divineAegis.divineAegisAngle||0) * (Math.PI/180);
+          const finalShieldAngle = shieldAngle + offsetAngle;
+          const halfWidth = shieldSize * 0.8;
+          
+          // Transform projectile position to shield's local coordinates
+          const projDx = ep.x - shieldX;
+          const projDy = ep.y - shieldY;
+          const rotatedX = projDx * Math.cos(-finalShieldAngle) - projDy * Math.sin(-finalShieldAngle);
+          const rotatedY = projDx * Math.sin(-finalShieldAngle) + projDy * Math.cos(-finalShieldAngle);
+          
+          // Check if projectile is within shield bounds (straight line with slight curve)
+          if(Math.abs(rotatedX) <= halfWidth && rotatedY >= -shieldSize * 0.1 && rotatedY <= shieldSize * 0.1) {
+            // Shield absorbs the projectile and heals castle
+            const healAmount = 8; // Base heal amount (same as projectile damage)
+            game.castleHp = Math.min(game.castleHp + healAmount, game.castleMax);
+            game.divineAegis.hp -= 5; // Each projectile damages shield
+            
+            spawnParticles(ep.x, ep.y, '#00ffff', 15, 0.8);
+            spawnText(ep.x, ep.y-20, 'HEALED', '#00ff00', 0.8, 16);
+            spawnText(ep.x, ep.y-40, `+${healAmount}`, '#00ff00', 0.6, 14);
+            
+            // Radiant Aegis: Visual effect when absorbing projectiles
+            if(game.upgrades.radiantaegis > 0) {
+              spawnParticles(shieldX, shieldY, '#ffaa00', 20, 1.0);
+              spawnText(shieldX, shieldY-60, 'RADIANT', '#ffaa00', 0.8, 16);
+            }
+            
+            ep.life = 0;
+            return false;
+          }
+        }
+        
+        const dx=ep.x-CENTER.x, dy=ep.y-CENTER.y; 
+        const d=Math.hypot(dx,dy); 
+        
+        if(Math.abs(d-CASTLE.r)<18){ 
+          damageCastle(8); 
+          spawnParticles(ep.x,ep.y,'#ffff00',12,0.8); 
+          ep.life=0; 
+          return false; 
+        } 
+        
+        return ep.life>0; 
+      }
+
+      function explodeAt(x,y,dmg,radius=120){ 
+        spawnParticles(x,y,'#ff00ff',30,1.5); 
+        spawnParticles(x,y,'#00ffff',30,1.5);
+        game.shake = Math.min(20, game.shake + 8);
+        
+        for(const e of game.enemies){ 
+          if(e.dead) continue; 
+          const dx=e.x-x,dy=e.y-y; 
+          const d2=dx*dx+dy*dy; 
+          if(d2<radius*radius){ 
+            const d = Math.sqrt(d2)||1; 
+            const push = (140/d); 
+            // Dragon is immune to knockback
+            if(e.type !== 'dragon') {
+              e.vx += (dx/d)*push; 
+              e.vy += (dy/d)*push; 
+            }
+            e.hp -= dmg; 
+            spawnParticles(e.x,e.y,'#ff8800',8,0.8); 
+          } 
+        } 
+      }
+
+      function damageCastle(amount){ 
+        game.castleHp -= amount; 
+        if(game.castleHp<=0){ 
+          game.castleHp=0; 
+          gameOver(); 
+        } 
+      }
+
+      function applyFortifications(){
+        const lvl = game.upgrades.fort||0;
+        // Increase max HP and redraw castle scale slightly
+        const base = CASTLE.maxHpBase;
+        game.castleMax = Math.round(base * (1 + 0.25*lvl));
+        const healAmount = 15 + 5*lvl; // Base 15 + 5 per level
+        game.castleHp = Math.min(game.castleHp + healAmount, game.castleMax);
+        // Visually thicken walls by slightly increasing radius
+        CASTLE.r = 140 + Math.min(20, 6*lvl);
+      }
+
+      // Game Over overlay and quick restart
+      function gameOver(){
+        game.state = STATE.OVER;
+        game.high = Math.max(game.high, Math.floor(game.score));
+        persist();
+        // Build Game Over UI in overlay
+        ui.ovTitle.innerHTML = '<div class="epic-title">GAME OVER</div>';
+        ui.ovSub.textContent = 'Press R to restart, or choose an option';
+        ui.ovBody.innerHTML = `
+          <div class="card" style="grid-column:1/-1">
+            <div class="title">Final Score</div>
+            <div class="desc">Score: ${Math.floor(game.score)} · High: ${Math.floor(game.high)}</div>
+          </div>
+        `;
+        const actions = document.createElement('div');
+        actions.style.display='flex'; actions.style.gap='10px'; actions.style.gridColumn='1/-1'; actions.style.justifyContent='flex-end';
+        const btnRestart = document.createElement('button');
+        btnRestart.className='primary';
+        btnRestart.textContent = 'Restart (R)';
+        btnRestart.addEventListener('click', ()=>{ showOverlay(false); startGame(); });
+        const btnMenu = document.createElement('button');
+        btnMenu.textContent = 'Main Menu';
+        btnMenu.addEventListener('click', ()=>{ buildMenu(); });
+        actions.appendChild(btnRestart); actions.appendChild(btnMenu);
+        ui.ovBody.appendChild(actions);
+        showOverlay(true);
+      }
+
+      // Quick restart hotkey
+      window.addEventListener('keydown', (e)=>{
+        if (game.state === STATE.OVER && e.key.toLowerCase() === 'r') {
+          showOverlay(false);
+          startGame();
+        }
+      });
+
+      // ============================
+      // Update & Render
+      // ============================
+      function loop(t){ 
+        let dt = Math.min(0.033,(t-game.last)/1000); 
+        game.last=t; 
+        handleControls(dt); 
+        dt *= (game.dtScale||1); 
+        
+        if(game.state===STATE.PLAY){ 
+          update(dt); 
+          render(); 
+          requestAnimationFrame(loop); 
+        } else { 
+          render(); 
+        } 
+        
+        updateHUD(); 
+      }
+
+      function update(dt){
+        handleShooting(dt);
+        ballistaThink(dt);
+        
+        // Radiant Aegis: Auto-fire Flame Cannon at nearby enemies
+        if(game.upgrades.divineaegis > 0 && game.divineAegis.active && game.upgrades.radiantaegis > 0) {
+          const radiantLevel = game.upgrades.radiantaegis;
+          const fireRate = 0.5 + radiantLevel * 0.1; // Faster firing with levels
+          
+          // Initialize or update fire timer
+          if(!game.radiantFireTimer) game.radiantFireTimer = 0;
+          game.radiantFireTimer += dt;
+          
+          if(game.radiantFireTimer >= fireRate) {
+            game.radiantFireTimer = 0;
+            
+            // Calculate shield position (same as in collision detection)
+            const mouseAngle = Math.atan2(mouse.y - CENTER.y, mouse.x - CENTER.x);
+            const shieldDistance = 200; // Same as in drawWorld
+            const shieldX = CENTER.x + Math.cos(mouseAngle) * shieldDistance;
+            const shieldY = CENTER.y + Math.sin(mouseAngle) * shieldDistance;
+            
+            // Fire from the shield itself
+            const fireX = shieldX;
+            const fireY = shieldY;
+            
+            // Find nearest enemy within range
+            let nearestEnemy = null;
+            let nearestDist = Infinity;
+            const maxRange = 300 + radiantLevel * 50; // Range increases with level
+            
+            for(const e of game.enemies) {
+              if(e.dead || e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'converted') continue;
+              
+              const dx = e.x - shieldX;
+              const dy = e.y - shieldY;
+              const dist = Math.sqrt(dx*dx + dy*dy);
+              
+              if(dist < maxRange && dist < nearestDist) {
+                nearestEnemy = e;
+                nearestDist = dist;
+              }
+            }
+            
+            // Fire Flame Cannon at nearest enemy from closer to shield position
+            if(nearestEnemy) {
+              const dir = Math.atan2(nearestEnemy.y - fireY, nearestEnemy.x - fireX);
+              
+              // Create Radiant Aegis flame effect (similar to Flame Cannon but independent)
+              const radiantLevel = game.upgrades.radiantaegis;
+              const baseRange = 51; // Reduced by 80% (from 255 to 51)
+              const baseWidth = 60;
+              const range = baseRange * (1 + radiantLevel * 0.15);
+              const width = baseWidth * (1 + radiantLevel * 0.15);
+              const baseDamage = 1 + radiantLevel; // +1 base damage per level
+              const stackMultiplier = 5 + radiantLevel; // +1 stack multiplier per level
+              
+              // Calculate cone-shaped flame area
+              const endX = fireX + Math.cos(dir) * range;
+              const endY = fireY + Math.sin(dir) * range;
+              
+              // Add flame stream to game state for rendering
+              if(!game.flameStreams) game.flameStreams = [];
+              game.flameStreams.push({
+                x1: fireX, y1: fireY, x2: endX, y2: endY,
+                width: width,
+                life: 0.3,
+                baseDamage: baseDamage,
+                stackMultiplier: stackMultiplier,
+                dir: dir,
+                range: range,
+                radiant: true // Mark as radiant flame
+              });
+              
+              // Damage all enemies in the flame area
+              for(const e of game.enemies) {
+                if(e.dead) continue;
+                if(e.invisible && !(game.player.wall===2)) continue;
+                if(e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'converted') continue;
+                
+                // Check if enemy is in the cone-shaped flame area
+                const distToLine = distanceToLine(e.x, e.y, fireX, fireY, endX, endY);
+                const distFromStart = Math.sqrt((e.x - fireX) * (e.x - fireX) + (e.y - fireY) * (e.y - fireY));
+                
+                // Cone shape: wider at the end, narrower at the start
+                const coneWidth = width * (distFromStart / range);
+                const hitRadius = e.radius + coneWidth * 0.5;
+                
+                // Check if enemy is within the cone and not behind the flame source
+                if(distToLine < hitRadius && distFromStart <= range && distFromStart > 0) {
+                  // Apply immediate base damage
+                  const immediateDamage = 15 + radiantLevel;
+                  e.hp -= immediateDamage;
+                  spawnText(e.x, e.y-25, `-${immediateDamage}`, '#ff0000', 0.8, 18);
+                  
+                  // Apply fire damage stacks
+                  if(!e.fireStacks) e.fireStacks = 0;
+                  e.fireStacks += baseDamage; // Add stacks based on base damage
+                  e.fireTimer = 0.3; // Start timer immediately so damage ticks right away
+                  
+                  // Visual effect
+                  spawnParticles(e.x, e.y, '#ff4400', 8, 0.6);
+                  spawnText(e.x, e.y-12, `+${baseDamage}`, '#ff4400', 0.6, 16);
+                }
+              }
+              
+              // Visual effect
+              spawnParticles(fireX, fireY, '#ff0000', 15, 0.8);
+            }
+          }
+        }
+        
+        game.bgPulse += dt;
+        
+        // Spawn enemies
+        trySpawn(dt);
+        
+        // Update projectiles
+        for(let i=game.projectiles.length-1;i>=0;i--){ 
+          const p = game.projectiles[i];
+          
+          // Handle sputtering projectiles (flame cannon)
+          if(p.sputter) {
+            p.life -= dt;
+            if(p.life <= 0) {
+              game.projectiles.splice(i, 1);
+              continue;
+            }
+            
+            // Update position
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            
+            // Check collision with enemies
+            for(const e of game.enemies) {
+              if(e.dead || e.type === 'cavalry' || e.type === 'converted') continue;
+              
+              const dx = e.x - p.x;
+              const dy = e.y - p.y;
+              const dist = Math.sqrt(dx*dx + dy*dy);
+              
+              if(dist < e.radius + p.size) {
+                // Apply damage and burn stacks
+                e.hp -= p.baseDmg;
+                if(!e.fireStacks) e.fireStacks = 0;
+                e.fireStacks += p.burnStacks;
+                e.fireTimer = 0;
+                
+                // Visual effects
+                spawnParticles(e.x, e.y, '#ff4400', 6, 0.4);
+                spawnText(e.x, e.y-15, `-${p.baseDmg}`, '#ff0000', 0.6, 14);
+                
+                // Remove projectile
+                game.projectiles.splice(i, 1);
+                break;
+              }
+            }
+            continue;
+          }
+          
+          // Handle homing projectiles
+          if(p.homing) {
+            p.life -= dt;
+            if(p.life <= 0) {
+              game.projectiles.splice(i, 1);
+              continue;
+            }
+            
+            // Find nearest enemy target
+            let nearestEnemy = null;
+            let nearestDist = Infinity;
+            for(const e of game.enemies) {
+              if(e.dead || e.type === 'cavalry' || e.type === 'converted') continue;
+              
+              const dx = e.x - p.x;
+              const dy = e.y - p.y;
+              const dist = Math.sqrt(dx*dx + dy*dy);
+              
+              if(dist < nearestDist && dist < 300) { // Only target enemies within 300 pixels
+                nearestEnemy = e;
+                nearestDist = dist;
+              }
+            }
+            
+            // Update target and steering
+            if(nearestEnemy) {
+              p.target = nearestEnemy;
+              
+              // Calculate direction to target
+              const dx = nearestEnemy.x - p.x;
+              const dy = nearestEnemy.y - p.y;
+              const targetDir = Math.atan2(dy, dx);
+              
+              // Current direction
+              const currentDir = Math.atan2(p.vy, p.vx);
+              
+              // Smooth steering (gradual turn)
+              let angleDiff = targetDir - currentDir;
+              if(angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+              if(angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+              
+              // Limit turn rate
+              const maxTurnRate = 2.0; // radians per second
+              const turnAmount = Math.max(-maxTurnRate * dt, Math.min(maxTurnRate * dt, angleDiff));
+              const newDir = currentDir + turnAmount;
+              
+              // Accelerate over time
+              p.currentSpeed = Math.min(p.maxSpeed, p.currentSpeed + p.acceleration * dt);
+              
+              // Update velocity
+              p.vx = Math.cos(newDir) * p.currentSpeed;
+              p.vy = Math.sin(newDir) * p.currentSpeed;
+            }
+            
+            // Update position
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            
+            // Add trail effect
+            p.trail.push({ x: p.x, y: p.y, life: 0.3 });
+            while(p.trail.length > 15) p.trail.shift();
+            
+            // Check collision with enemies
+            for(const e of game.enemies) {
+              if(e.dead || e.type === 'cavalry' || e.type === 'converted') continue;
+              
+              const dx = e.x - p.x;
+              const dy = e.y - p.y;
+              const dist = Math.sqrt(dx*dx + dy*dy);
+              
+              if(dist < e.radius + p.size) {
+                // Explode on impact
+                explodeAt(p.x, p.y, p.baseDmg, p.explosionRadius);
+                
+                // Visual explosion effect
+                spawnParticles(p.x, p.y, '#ff00ff', 40, 1.5);
+                spawnParticles(p.x, p.y, '#00ffff', 30, 1.2);
+                spawnText(p.x, p.y-20, 'EXPLOSION!', '#ff00ff', 1.0, 18);
+                
+                // Remove projectile
+                game.projectiles.splice(i, 1);
+                break;
+              }
+            }
+            continue;
+          }
+          
+          // Regular projectile update
+          if(!projectileUpdate(game.projectiles[i], dt)){ 
+            game.projectiles.splice(i,1); 
+          } 
+        }
+        
+        for(let i=game.eProjectiles.length-1;i>=0;i--){ 
+          if(!enemyProjectileUpdate(game.eProjectiles[i], dt)){ 
+            game.eProjectiles.splice(i,1); 
+          } 
+        }
+        
+        // Update sniper lines
+        if(game.sniperLines) {
+          for(let i=game.sniperLines.length-1;i>=0;i--){
+            game.sniperLines[i].life -= dt;
+            if(game.sniperLines[i].life <= 0) {
+              game.sniperLines.splice(i,1);
+            }
+          }
+        }
+        
+        // Update flame streams
+        if(game.flameStreams) {
+          for(let i=game.flameStreams.length-1;i>=0;i--){
+            game.flameStreams[i].life -= dt;
+            if(game.flameStreams[i].life <= 0) {
+              game.flameStreams.splice(i,1);
+            }
+          }
+        }
+        
+        // Update Divine Aegis
+        if(game.upgrades.divineaegis > 0) {
+          if(game.divineAegis.active && game.divineAegis.hp <= 0) {
+            // Shield broken
+            game.divineAegis.active = false;
+            game.divineAegis.respawnTimer = 15.0; // 15 second respawn
+            spawnParticles(game.player.x, game.player.y, '#ff0000', 30, 1.0);
+            setBattleMessage('🛡️ DIVINE AEGIS SHATTERED!', 2.5, '#ff0000');
+          }
+          
+          if(!game.divineAegis.active && game.divineAegis.respawnTimer > 0) {
+            game.divineAegis.respawnTimer -= dt;
+            if(game.divineAegis.respawnTimer <= 0) {
+              // Respawn shield
+              const level = game.upgrades.divineaegis;
+              game.divineAegis.active = true;
+              game.divineAegis.hp = game.divineAegis.maxHp;
+              spawnParticles(game.player.x, game.player.y, '#00ffff', 30, 1.0);
+              setBattleMessage('🛡️ DIVINE AEGIS RESTORED!', 2.0, '#00ffff');
+            }
+          }
+        }
+        
+        // Update enemies
+        for(let i=game.enemies.length-1;i>=0;i--){ 
+          const e=game.enemies[i]; 
+          if(e.dead){ continue; } 
+          enemyUpdate(e, dt); 
+          if(e.hp<=0){ 
+            e.dead=true; 
+            onEnemyDeath(e); 
+            game.enemies.splice(i,1); 
+          } 
+        }
+        
+        // Update effects
+        for(let i=game.texts.length-1;i>=0;i--){ 
+          const a=game.texts[i]; 
+          a.life-=dt; 
+          a.y+=a.vy*dt;
+          a.vy -= 100*dt; 
+          if(a.life<=0) game.texts.splice(i,1); 
+        }
+        
+        for(let i=game.particles.length-1;i>=0;i--){ 
+          const p=game.particles[i]; 
+          p.life-=dt; 
+          p.vy+=220*dt; 
+          p.x+=p.vx*dt; 
+          p.y+=p.vy*dt; 
+          if(p.life<=0) game.particles.splice(i,1); 
+        }
+        
+        for(let i=game.coins.length-1;i>=0;i--){ 
+          const c=game.coins[i]; 
+          c.life-=dt; 
+          c.vy+=420*dt; 
+          c.x+=c.vx*dt; 
+          c.y+=c.vy*dt;
+          c.rot += dt * 5; 
+          if(c.life<=0) game.coins.splice(i,1); 
+        }
+        
+        // Battle message timer
+        if(game.battleMessage.timer > 0) {
+          game.battleMessage.timer -= dt;
+          if(game.battleMessage.timer <= 0) {
+            game.battleMessage.text = '';
+            game.battleMessage.color = '#ffffff';
+          }
+        }
+        
+        // Combo decay
+        if(game.comboTimer>0){ 
+          game.comboTimer-=dt; 
+          if(game.comboTimer<=0){ 
+            game.combo=1; 
+          } 
+        }
+        
+        // Check wave completion
+        if(allDefeated() && !game._endQueued){
+          game._endQueued = true;
+          sfx.powerup();
+          setBattleMessage('WAVE COMPLETE!', 2.0, '#00ffff');
+          setTimeout(()=>{ if(game.state===STATE.PLAY || game.state===STATE.UPGRADE){ endWave(); } game._endQueued=false; }, 1500);
+        }
+      }
+
+      function onEnemyDeath(e){ 
+        const mult = (e.type==='dragon')? 3.0 : 1.0; 
+        
+        // Epic death effect
+        spawnParticles(e.x,e.y, e.glowColor, 30*mult, 1.5); 
+        spawnParticles(e.x,e.y,'#ffffff', 20*mult, 1.2);
+        spawnCoins(e.x,e.y, Math.round(6*mult)); 
+        
+        // Check if killed by Midas Knight for bonus gold
+        let midasBonus = 1;
+        if(e.killedBy && e.killedBy.midas) {
+          const midasLevel = game.upgrades.midasknights || 0;
+          midasBonus = 2 + midasLevel; // x2 base, +1 per level (x3, x4, x5, etc.)
+        }
+        
+        const goldGain = Math.round((e.reward||6)*(1+0.5*(game.upgrades.treasury||0))*game.combo * midasBonus); 
+        game.gold += goldGain; 
+        // Track interest for King's Treasury
+        if(game.upgrades.treasury > 0) {
+          game.treasuryInterest = (game.treasuryInterest || 0) + goldGain * 0.1 * game.upgrades.treasury;
+        }
+        game.score += (10 + e.reward) * game.combo; 
+        
+        spawnText(e.x,e.y,'+'+goldGain+'g', '#ffd700', 1.0, 20);
+        
+        // Special death effects
+        if(e.type==='jester' && e.split>0){ 
+          for(let i=0;i<2;i++){ 
+            const m=makeEnemy('page',1); 
+            m.x=e.x+rand(-10,10); 
+            m.y=e.y+rand(-10,10); 
+            game.enemies.push(m); 
+          } 
+                      setBattleMessage('JESTER SPLITS!', 1.5, '#ff8800');
+        }
+        
+        if(e.type==='dragon'){
+          game.shake = 20;
+          showAchievement('DRAGON SLAYER!');
+                      setBattleMessage('LEGENDARY KILL!', 3.0, '#ff0088');
+        }
+        
+        sfx.death();
+      }
+
+      function render(dt=0.016){
+        // Clear
+        ctx.clearRect(0,0,W,H);
+        
+        // Screen shake
+        if(game.shake>0){ 
+          game.shake = Math.max(0, game.shake-0.8); 
+          const sx=rand(-game.shake, game.shake), sy=rand(-game.shake, game.shake); 
+          ctx.save(); 
+          ctx.translate(sx, sy); 
+          drawWorld(); 
+          ctx.restore(); 
+        } else { 
+          drawWorld(); 
+        }
+        
+        drawUIFX(dt);
+      }
+
+      function drawWorld(){
+        // Animated neon background
+        const pulse = Math.sin(game.bgPulse) * 0.5 + 0.5;
+        const g = ctx.createRadialGradient(CENTER.x,CENTER.y,60, CENTER.x,CENTER.y, 520); 
+        g.addColorStop(0,`rgba(255,0,255,${0.1*pulse})`); 
+        g.addColorStop(0.5,`rgba(0,255,255,${0.05*pulse})`); 
+        g.addColorStop(1,'#0a0014'); 
+        ctx.fillStyle=g; 
+        ctx.fillRect(0,0,W,H);
+        
+        // Grid lines for cyberpunk effect
+        ctx.strokeStyle = `rgba(255,0,255,${0.1*pulse})`;
+        ctx.lineWidth = 1;
+        for(let i=0;i<W;i+=50){
+          ctx.beginPath();
+          ctx.moveTo(i,0);
+          ctx.lineTo(i,H);
+          ctx.stroke();
+        }
+        for(let i=0;i<H;i+=50){
+          ctx.beginPath();
+          ctx.moveTo(0,i);
+          ctx.lineTo(W,i);
+          ctx.stroke();
+        }
+        
+        // Castle with neon glow
+        const hpR = clamp(game.castleHp/game.castleMax,0,1);
+        
+        // Castle outer glow
+        ctx.shadowColor = hpR>0.6? '#00ffff' : hpR>0.3? '#ffff00' : '#ff00ff';
+        ctx.shadowBlur = 30;
+        ctx.strokeStyle = hpR>0.6? '#00ffff' : hpR>0.3? '#ffff00' : '#ff00ff';
+        ctx.lineWidth=4; 
+        ctx.beginPath(); 
+        ctx.arc(CENTER.x,CENTER.y,CASTLE.r+10,0,Math.PI*2); 
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        
+        // Castle walls
+        ctx.strokeStyle = hpR>0.6? '#00cccc' : hpR>0.3? '#cccc00' : '#cc00cc';
+        ctx.lineWidth=18; 
+        ctx.beginPath(); 
+        ctx.arc(CENTER.x,CENTER.y,CASTLE.r,0,Math.PI*2); 
+        ctx.stroke();
+        
+        // Castle keep (interior)
+        const g2 = ctx.createRadialGradient(CENTER.x,CENTER.y,0, CENTER.x,CENTER.y,CASTLE.r-26);
+        g2.addColorStop(0,'#1a0033');
+        g2.addColorStop(1,'#0a0014');
+        ctx.fillStyle = g2; 
+        ctx.beginPath(); 
+        ctx.arc(CENTER.x, CENTER.y, CASTLE.r-26, 0, Math.PI*2); 
+        ctx.fill();
+        
+                // Electric moat effect (if spike moat upgrade is active)
+        if(game.upgrades.oil > 0) {
+          const time = performance.now() * 0.003;
+          const level = game.upgrades.oil;
+          
+          // Draw multiple electric rings based on upgrade level
+          for(let ring = 0; ring < level; ring++) {
+            const ringRadius = Math.max(10, CASTLE.r + 80 + ring * 15); // Rings get further apart, prevent negative radius
+            const intensity = 1 - (ring * 0.2); // Inner rings are brighter
+            
+            // Electric halo effect
+            ctx.shadowColor = '#ff6600';
+            ctx.shadowBlur = 20 * intensity;
+            ctx.strokeStyle = `rgba(255, 102, 0, ${0.8 * intensity})`;
+            ctx.lineWidth = 4 * intensity;
+            
+            // Draw electric arcs around the ring
+            const arcCount = 8 + ring * 2; // More arcs for higher levels
+            for(let i = 0; i < arcCount; i++) {
+              const startAngle = (i / arcCount) * Math.PI * 2 + time;
+              const endAngle = ((i + 1) / arcCount) * Math.PI * 2 + time;
+              const arcLength = (endAngle - startAngle) * 0.7; // Leave gaps
+              
+              ctx.beginPath();
+              ctx.arc(CENTER.x, CENTER.y, ringRadius, startAngle, startAngle + arcLength);
+              ctx.stroke();
+              
+              // Add electric sparks at the ends
+              const sparkX1 = CENTER.x + Math.cos(startAngle) * ringRadius;
+              const sparkY1 = CENTER.y + Math.sin(startAngle) * ringRadius;
+              const sparkX2 = CENTER.x + Math.cos(startAngle + arcLength) * ringRadius;
+              const sparkY2 = CENTER.y + Math.sin(startAngle + arcLength) * ringRadius;
+              
+              ctx.shadowBlur = 15 * intensity;
+              ctx.fillStyle = `rgba(255, 255, 0, ${intensity})`;
+              ctx.beginPath();
+              ctx.arc(sparkX1, sparkY1, Math.max(0.1, 3 * intensity), 0, Math.PI * 2);
+              ctx.fill();
+              ctx.beginPath();
+              ctx.arc(sparkX2, sparkY2, Math.max(0.1, 3 * intensity), 0, Math.PI * 2);
+              ctx.fill();
+            }
+            
+            // Add pulsing energy waves
+            const pulseRadius = Math.max(10, ringRadius + Math.sin(time * 2 + ring) * 5);
+            ctx.shadowBlur = 10 * intensity;
+            ctx.strokeStyle = `rgba(255, 200, 0, ${0.3 * intensity})`;
+            ctx.lineWidth = 2 * intensity;
+            ctx.beginPath();
+            ctx.arc(CENTER.x, CENTER.y, pulseRadius, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          
+          ctx.shadowBlur = 0;
+        }
+        
+        // Draw wall indicators
+        const wallPositions = [
+          { x: CENTER.x, y: CENTER.y - CASTLE.r, label: 'N', color: '#ff00ff' },
+          { x: CENTER.x, y: CENTER.y + CASTLE.r, label: 'S', color: '#00ffff' },
+          { x: CENTER.x + CASTLE.r, y: CENTER.y, label: 'E', color: '#ffff00' },
+          { x: CENTER.x - CASTLE.r, y: CENTER.y, label: 'W', color: '#00ff88' }
+        ];
+        
+        wallPositions.forEach((wall, i) => {
+          ctx.fillStyle = game.player.wall === i ? wall.color : 'rgba(255,255,255,0.3)';
+          ctx.font = 'bold 16px Orbitron';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(wall.label, wall.x, wall.y);
+        });
+        
+        // Projectile trails
+        for(const p of game.projectiles){ 
+          // Skip trail rendering for sputtering projectiles
+          if(p.sputter) continue;
+          
+          const gradient = ctx.createLinearGradient(p.x-10, p.y, p.x+10, p.y);
+          gradient.addColorStop(0, 'transparent');
+          gradient.addColorStop(0.5, p.color);
+          gradient.addColorStop(1, 'transparent');
+          ctx.strokeStyle=gradient; 
+          ctx.lineWidth=3; 
+          ctx.beginPath(); 
+          let first=true; 
+          for(const t of p.trail){ 
+            if(first){ 
+              ctx.moveTo(t.x,t.y); 
+              first=false; 
+            } else { 
+              ctx.lineTo(t.x,t.y); 
+            } 
+          } 
+          ctx.stroke(); 
+        }
+        
+        // Sniper lines
+        if(game.sniperLines) {
+          for(const line of game.sniperLines) {
+            const alpha = clamp(line.life / 0.3, 0, 1);
+            ctx.globalAlpha = alpha;
+            const color = line.isTimeSlow ? '#ffff00' : '#ff00ff'; // Yellow for time slow, magenta for sniper upgrade
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 20;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = line.width || 6;
+            ctx.beginPath();
+            ctx.moveTo(line.x1, line.y1);
+            ctx.lineTo(line.x2, line.y2);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+            ctx.globalAlpha = 1;
+          }
+        }
+        
+        // Flame streams
+        if(game.flameStreams) {
+          for(const flame of game.flameStreams) {
+            const alpha = clamp(flame.life / 0.3, 0, 1);
+            ctx.globalAlpha = alpha;
+            
+            // Create fire-like gradient
+            const gradient = ctx.createLinearGradient(flame.x1, flame.y1, flame.x2, flame.y2);
+            gradient.addColorStop(0, '#ff8800'); // Orange at start
+            gradient.addColorStop(0.3, '#ff4400'); // Red-orange
+            gradient.addColorStop(0.7, '#ff2200'); // Dark red
+            gradient.addColorStop(1, '#ff0000'); // Red at end
+            
+            ctx.shadowColor = '#ff4400';
+            ctx.shadowBlur = 30;
+            ctx.strokeStyle = gradient;
+            
+            // Draw multiple lines for fire effect
+            for(let i = 0; i < 3; i++) {
+              const offset = (i - 1) * 2; // Slight offset for each line
+              const perpX = Math.cos(flame.dir + Math.PI/2) * offset;
+              const perpY = Math.sin(flame.dir + Math.PI/2) * offset;
+              
+              ctx.lineWidth = (flame.width || 40) * (1 - i * 0.2); // Decreasing width
+              ctx.beginPath();
+              ctx.moveTo(flame.x1 + perpX, flame.y1 + perpY);
+              ctx.lineTo(flame.x2 + perpX, flame.y2 + perpY);
+              ctx.stroke();
+            }
+            
+            // Add fire particles
+            for(let i = 0; i < 5; i++) {
+              const t = Math.random();
+              const px = flame.x1 + (flame.x2 - flame.x1) * t;
+              const py = flame.y1 + (flame.y2 - flame.y1) * t;
+              const perpX = Math.cos(flame.dir + Math.PI/2) * (Math.random() - 0.5) * flame.width * 0.3;
+              const perpY = Math.sin(flame.dir + Math.PI/2) * (Math.random() - 0.5) * flame.width * 0.3;
+              
+              ctx.fillStyle = `rgba(255, ${Math.floor(200 + Math.random() * 55)}, 0, ${alpha * 0.8})`;
+              ctx.beginPath();
+              ctx.arc(px + perpX, py + perpY, Math.random() * 3 + 1, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            
+            ctx.shadowBlur = 0;
+            ctx.globalAlpha = 1;
+          }
+        }
+        
+        // Projectiles with glow
+        for(const p of game.projectiles){ 
+          // Special glow for homing projectiles
+          if(p.homing) {
+            ctx.shadowColor = p.color;
+            ctx.shadowBlur = 20 + Math.sin(game.bgPulse * 8) * 10; // Pulsing glow
+          }
+          // Special rendering for sputtering projectiles
+          if(p.sputter) {
+            // Fading effect based on life
+            const alpha = clamp(p.life / 1.0, 0, 1);
+            ctx.globalAlpha = alpha;
+            
+            // Red fire particle with glow
+            ctx.shadowColor = '#ff0000';
+            ctx.shadowBlur = 15;
+            ctx.fillStyle = '#ff0000';
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+            ctx.fill();
+            
+            // Add small orange core
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#ff4400';
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size * 0.6, 0, Math.PI*2);
+            ctx.fill();
+            
+            ctx.globalAlpha = 1;
+            continue;
+          }
+          
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 20;
+          ctx.fillStyle=p.color; 
+          ctx.beginPath(); 
+          ctx.arc(p.x,p.y, p.size, 0, Math.PI*2); 
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+        
+        // Enemy projectiles
+        for(const ep of game.eProjectiles){ 
+          ctx.shadowColor = ep.color;
+          ctx.shadowBlur = 15;
+          ctx.fillStyle=ep.color; 
+          ctx.beginPath(); 
+          ctx.arc(ep.x,ep.y, ep.r, 0, Math.PI*2); 
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+
+        // Draw enemies with medieval sprites
+        for(const e of game.enemies){ 
+          if(e.dead) continue; 
+          drawEnemy(e); 
+        }
+
+        // Player hero with crown
+        drawHero(game.player.x, game.player.y);
+        
+
+        
+        // Divine Aegis shield (upgrades to Radiant Aegis when purchased)
+        if(game.upgrades.divineaegis > 0 && game.divineAegis.active) {
+          const shieldSize = game.divineAegis.size;
+          const shieldHpRatio = game.divineAegis.hp / game.divineAegis.maxHp;
+          const isRadiant = game.upgrades.radiantaegis > 0;
+          
+          // Calculate angle from castle center to mouse position
+          const dx = mouse.x - CENTER.x;
+          const dy = mouse.y - CENTER.y;
+          const mouseAngle = Math.atan2(dy, dx);
+          
+          // Position shield at a fixed distance from castle center, facing mouse direction
+          const shieldDistance = 200; // Distance from castle center
+          const shieldX = CENTER.x + Math.cos(mouseAngle) * shieldDistance;
+          const shieldY = CENTER.y + Math.sin(mouseAngle) * shieldDistance;
+          
+          // Shield faces toward the mouse (perpendicular to the radius)
+          const shieldAngle = mouseAngle + Math.PI/2; // Rotate 90 degrees to face mouse
+          
+          // Shield glow effect - red for Radiant Aegis, white for regular
+          ctx.shadowColor = isRadiant ? '#ff0000' : '#ffffff';
+          ctx.shadowBlur = isRadiant ? 60 : 30; // Increased glow for Radiant Aegis
+          
+          // Straight shield with slight curve
+          ctx.save();
+          ctx.translate(shieldX, shieldY);
+          const offsetAngle = (game.divineAegis.divineAegisAngle||0) * (Math.PI/180);
+          const finalShieldAngle = shieldAngle + offsetAngle;
+          ctx.rotate(finalShieldAngle);
+          
+          // Shield border - straight line with slight curve
+          let borderColor = '#ffffff';
+          if(isRadiant) {
+            // Radiant Aegis: Glowing red hot border with intense pulsing effect
+            const pulseIntensity = Math.sin(game.bgPulse * 12) * 0.4 + 0.8; // More intense pulsing
+            borderColor = `rgba(255, 0, 0, ${pulseIntensity})`;
+          } else {
+            borderColor = shieldHpRatio > 0.6 ? '#ffffff' : shieldHpRatio > 0.3 ? '#ffff00' : '#ff0000';
+          }
+          
+          ctx.strokeStyle = borderColor;
+          ctx.lineWidth = isRadiant ? 8 : 4; // Even thicker border for Radiant Aegis
+          ctx.beginPath();
+          
+          // Draw a straight line with slight curve for more protective area
+          const curveAmount = 0.1; // Slight curve
+          const halfWidth = shieldSize * 0.8; // Make it wider than tall
+          
+          ctx.moveTo(-halfWidth, 0);
+          // Add slight curve using quadratic curve - curve downward toward center
+          ctx.quadraticCurveTo(0, -shieldSize * curveAmount, halfWidth, 0);
+          
+          ctx.stroke();
+          
+          // Radiant Aegis: Add sputtering flame effects along the shield (always visible)
+          if(isRadiant) {
+            const radiantLevel = game.upgrades.radiantaegis;
+            const flameCount = 3 + radiantLevel; // More flames per level
+            
+            for(let i = 0; i < flameCount; i++) {
+              const flamePos = (i / (flameCount - 1)) * 2 - 1; // -1 to 1 across shield
+              const flameX = flamePos * halfWidth * 0.8;
+              const flameY = -shieldSize * curveAmount * 0.5;
+              
+              // Enhanced flame particle effect - always visible
+              const flameSize = 4 + radiantLevel * 1.5; // Larger flames
+              const flameAlpha = Math.sin(game.bgPulse * 15 + i * 3) * 0.2 + 0.8; // Higher base alpha, more intense pulsing
+              
+              // Outer flame glow
+              ctx.shadowColor = '#ff4400';
+              ctx.shadowBlur = 20;
+              ctx.fillStyle = `rgba(255, 68, 0, ${flameAlpha})`;
+              ctx.beginPath();
+              ctx.arc(flameX, flameY, flameSize, 0, Math.PI * 2);
+              ctx.fill();
+              
+              // Middle flame layer
+              ctx.shadowBlur = 10;
+              ctx.fillStyle = `rgba(255, 128, 0, ${flameAlpha * 0.9})`;
+              ctx.beginPath();
+              ctx.arc(flameX, flameY, flameSize * 0.8, 0, Math.PI * 2);
+              ctx.fill();
+              
+              // Inner flame core (white hot)
+              ctx.shadowBlur = 0;
+              ctx.fillStyle = `rgba(255, 255, 255, ${flameAlpha * 0.7})`;
+              ctx.beginPath();
+              ctx.arc(flameX, flameY, flameSize * 0.5, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+          
+          // Health indicator - overlay on the same shield (only for non-Radiant Aegis)
+          if(shieldHpRatio < 1.0 && !isRadiant) {
+            ctx.strokeStyle = '#00ffff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            const healthWidth = halfWidth * shieldHpRatio;
+            ctx.moveTo(-halfWidth, 0);
+            ctx.quadraticCurveTo(-halfWidth + healthWidth * 0.5, -shieldSize * curveAmount * shieldHpRatio, -halfWidth + healthWidth, 0);
+            
+            ctx.stroke();
+          }
+          
+          ctx.restore();
+          ctx.shadowBlur = 0;
+        }
+
+        // Particles with glow
+        for(const p of game.particles){ 
+          ctx.globalAlpha = clamp(p.life*2,0,1); 
+          if(p.glow){
+            ctx.shadowColor = p.color;
+            ctx.shadowBlur = 10;
+          }
+          ctx.fillStyle=p.color; 
+          ctx.fillRect(p.x-p.size/2,p.y-p.size/2,p.size,p.size); 
+          ctx.shadowBlur = 0;
+          ctx.globalAlpha=1; 
+        }
+        
+        // Coins spinning
+        for(const c of game.coins){ 
+          ctx.globalAlpha = clamp(c.life,0,1); 
+          ctx.save();
+          ctx.translate(c.x, c.y);
+          ctx.rotate(c.rot);
+          ctx.shadowColor = '#ffd700';
+          ctx.shadowBlur = 15;
+          ctx.fillStyle= '#ffd700'; 
+          ctx.beginPath(); 
+          const minor = Math.max(0.001, Math.abs(c.size*Math.cos(c.rot)));
+          ctx.ellipse(0,0,c.size, minor, 0, 0, Math.PI*2); 
+          ctx.fill();
+          ctx.restore();
+          ctx.shadowBlur = 0;
+          ctx.globalAlpha=1; 
+        }
+        
+        // Floating damage texts
+        for(const t of game.texts){ 
+          ctx.globalAlpha = clamp(t.life/t.total,0,1); 
+          ctx.fillStyle=t.color; 
+          ctx.font = `${t.italic ? 'italic ' : ''}bold ${Math.round(t.size)}px Orbitron`; 
+          ctx.textAlign='center'; 
+          ctx.textBaseline='middle';
+          ctx.shadowColor = t.color;
+          ctx.shadowBlur = 10;
+          ctx.fillText(t.text, t.x, t.y); 
+          ctx.shadowBlur = 0;
+          ctx.globalAlpha=1; 
+        }
+        
+        // Charge indicator
+        if(charging && charge > 0){
+          ctx.strokeStyle = `rgba(255,0,255,${charge})`;
+          ctx.lineWidth = 3 + charge * 7;
+          ctx.beginPath();
+          ctx.arc(game.player.x, game.player.y, 20 + charge * 30, 0, Math.PI * 2 * charge);
+          ctx.stroke();
+        }
+      }
+
+      function drawEnemy(e){
+        const bob = Math.sin(e.wobble) * 2;
+        
+        // Glow effect
+        ctx.shadowColor = e.glowColor;
+        ctx.shadowBlur = 20;
+        
+        // Different sprites for each enemy type
+        if(e.type==='squire'){
+          // Basic soldier
+          ctx.fillStyle=e.color; 
+          ctx.beginPath(); 
+          ctx.arc(e.x,e.y+bob,e.radius,0,Math.PI*2); 
+          ctx.fill();
+          // Sword
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(e.x, e.y+bob-e.radius);
+          ctx.lineTo(e.x, e.y+bob+e.radius);
+          ctx.stroke();
+        } 
+        else if(e.type==='knight'){
+          // Armored knight with shield
+          ctx.fillStyle=e.color; 
+          ctx.beginPath(); 
+          ctx.arc(e.x,e.y+bob,e.radius,0,Math.PI*2); 
+          ctx.fill();
+          // Shield
+          ctx.fillStyle='#ffffff'; 
+          ctx.beginPath(); 
+          ctx.moveTo(e.x,e.y+bob); 
+          const a=e.heading; 
+          const s= e.radius+6; 
+          ctx.lineTo(e.x+Math.cos(a-0.6)*s, e.y+bob+Math.sin(a-0.6)*s); 
+          ctx.lineTo(e.x+Math.cos(a+0.6)*s, e.y+bob+Math.sin(a+0.6)*s); 
+          ctx.closePath(); 
+          ctx.fill();
+        } 
+        else if(e.type==='rogue'){
+          // Sneaky assassin
+          ctx.globalAlpha = e.renderGhost? 0.3: 1; 
+          ctx.fillStyle=e.color; 
+          // Diamond shape
+          ctx.beginPath();
+          ctx.moveTo(e.x, e.y+bob-e.radius);
+          ctx.lineTo(e.x+e.radius, e.y+bob);
+          ctx.lineTo(e.x, e.y+bob+e.radius);
+          ctx.lineTo(e.x-e.radius, e.y+bob);
+          ctx.closePath();
+          ctx.fill(); 
+          ctx.globalAlpha=1;
+        } 
+        else if(e.type==='lancer'){
+          // Rectangle with lance
+          ctx.fillStyle=e.color; 
+          ctx.fillRect(e.x-e.radius*0.9, e.y+bob-e.radius*0.9, e.radius*1.8, e.radius*1.8);
+          // Lance pointing forward
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          const lanceDir = e.heading;
+          ctx.moveTo(e.x, e.y+bob);
+          ctx.lineTo(e.x + Math.cos(lanceDir)*e.radius*2, e.y+bob + Math.sin(lanceDir)*e.radius*2);
+          ctx.stroke();
+        } 
+        else if(e.type==='pegasus'){
+          // Flying horse - triangle with wings
+          ctx.fillStyle=e.color; 
+          ctx.beginPath(); 
+          ctx.moveTo(e.x, e.y+bob-e.radius); 
+          ctx.lineTo(e.x+e.radius, e.y+bob+e.radius); 
+          ctx.lineTo(e.x-e.radius, e.y+bob+e.radius); 
+          ctx.closePath(); 
+          ctx.fill();
+          // Wings
+          ctx.strokeStyle = e.color;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(e.x-e.radius, e.y+bob);
+          ctx.lineTo(e.x-e.radius*2, e.y+bob-e.radius/2);
+          ctx.moveTo(e.x+e.radius, e.y+bob);
+          ctx.lineTo(e.x+e.radius*2, e.y+bob-e.radius/2);
+          ctx.stroke();
+        } 
+        else if(e.type==='cleric'){
+          // Healer with cross
+          ctx.fillStyle=e.color; 
+          ctx.fillRect(e.x-e.radius*0.9, e.y+bob-e.radius*0.9, e.radius*1.8, e.radius*1.8);
+          // Cross symbol
+          ctx.fillStyle='#ffffff';
+          ctx.fillRect(e.x-2, e.y+bob-8, 4, 16);
+          ctx.fillRect(e.x-8, e.y+bob-2, 16, 4);
+        } 
+        else if(e.type==='wizard'){
+          // Necromancer with star
+          ctx.fillStyle=e.color; 
+          ctx.beginPath(); 
+          ctx.arc(e.x,e.y+bob,e.radius,0,Math.PI*2); 
+          ctx.fill(); 
+          // Magic star
+          ctx.strokeStyle='#ffffff';
+          ctx.lineWidth = 2;
+          for(let i=0;i<5;i++){
+            const a = (Math.PI*2/5)*i - Math.PI/2;
+            const x = e.x + Math.cos(a)*e.radius*0.7;
+            const y = e.y+bob + Math.sin(a)*e.radius*0.7;
+            if(i===0) ctx.moveTo(x,y);
+            else ctx.lineTo(x,y);
+          }
+          ctx.closePath();
+          ctx.stroke();
+        } 
+        else if(e.type==='jester'){
+          // Jester that splits
+          ctx.fillStyle=e.color; 
+          ctx.beginPath(); 
+          ctx.arc(e.x,e.y+bob,e.radius,0,Math.PI*2); 
+          ctx.fill(); 
+          // Jester hat points
+          ctx.fillStyle='#ffffff'; 
+          for(let i=0;i<3;i++){
+            const a = (Math.PI*2/3)*i;
+            ctx.beginPath();
+            ctx.arc(e.x+Math.cos(a)*e.radius*0.7, e.y+bob+Math.sin(a)*e.radius*0.7, 3, 0, Math.PI*2);
+            ctx.fill();
+          }
+        }
+        else if(e.type==='page'){
+          // Small minion
+          ctx.fillStyle=e.color; 
+          ctx.beginPath(); 
+          ctx.arc(e.x,e.y+bob,e.radius,0,Math.PI*2); 
+          ctx.fill();
+        }
+        else if(e.type==='dragon'){
+          // Boss dragon
+          ctx.fillStyle=e.color; 
+          // Body
+          ctx.fillRect(e.x-e.radius*1.3, e.y+bob-e.radius, e.radius*2.6, e.radius*2.0);
+          // Wings
+          ctx.beginPath();
+          ctx.moveTo(e.x-e.radius*1.3, e.y+bob);
+          ctx.lineTo(e.x-e.radius*2.5, e.y+bob-e.radius*1.5);
+          ctx.lineTo(e.x-e.radius*1.3, e.y+bob-e.radius);
+          ctx.moveTo(e.x+e.radius*1.3, e.y+bob);
+          ctx.lineTo(e.x+e.radius*2.5, e.y+bob-e.radius*1.5);
+          ctx.lineTo(e.x+e.radius*1.3, e.y+bob-e.radius);
+          ctx.fill();
+          // Fire breath effect
+          if(Math.random() < 0.1){
+            spawnParticles(e.x, e.y+bob, '#ff8800', 3, 0.5);
+          }
+        }
+        else if(e.type==='cavalry'){
+          // Friendly cavalry knight
+          ctx.fillStyle=e.color; 
+          ctx.beginPath(); 
+          ctx.arc(e.x,e.y+bob,e.radius,0,Math.PI*2); 
+          ctx.fill();
+          // Sword
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(e.x, e.y+bob-e.radius);
+          ctx.lineTo(e.x, e.y+bob+e.radius);
+          ctx.stroke();
+          // Helmet
+          ctx.fillStyle='#ffffff';
+          ctx.beginPath();
+          ctx.arc(e.x, e.y+bob-e.radius*0.3, e.radius*0.4, 0, Math.PI*2);
+          ctx.fill();
+        }
+        else if(e.type==='angelic'){
+          // Angelic knight with pulsing black/white glow
+          const pulseIntensity = Math.sin(game.bgPulse * 8) * 0.3 + 0.7; // Pulsing effect
+          
+          // Pulsing white glow
+          ctx.shadowColor = '#ffffff';
+          ctx.shadowBlur = 20 * pulseIntensity;
+          
+          // Main body - black with white border
+          ctx.fillStyle = '#000000'; 
+          ctx.beginPath(); 
+          ctx.arc(e.x,e.y+bob,e.radius,0,Math.PI*2); 
+          ctx.fill();
+          
+          // White border
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(e.x,e.y+bob,e.radius,0,Math.PI*2);
+          ctx.stroke();
+          
+          // Angelic sword with white glow
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 4;
+          ctx.shadowBlur = 10 * pulseIntensity;
+          ctx.beginPath();
+          ctx.moveTo(e.x, e.y+bob-e.radius);
+          ctx.lineTo(e.x, e.y+bob+e.radius);
+          ctx.stroke();
+          
+          // Angelic helmet with glow
+          ctx.fillStyle='#ffffff';
+          ctx.shadowBlur = 15 * pulseIntensity;
+          ctx.beginPath();
+          ctx.arc(e.x, e.y+bob-e.radius*0.3, e.radius*0.4, 0, Math.PI*2);
+          ctx.fill();
+          
+          // Angelic halo
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.shadowBlur = 8 * pulseIntensity;
+          ctx.beginPath();
+          ctx.arc(e.x, e.y+bob-e.radius*0.8, e.radius*0.6, 0, Math.PI*2);
+          ctx.stroke();
+        }
+        else if(e.type==='midas'){
+          // Midas knight with pulsing golden glow
+          const pulseIntensity = Math.sin(game.bgPulse * 6) * 0.4 + 0.6; // Pulsing effect
+          
+          // Pulsing golden glow
+          ctx.shadowColor = '#ffd700';
+          ctx.shadowBlur = 25 * pulseIntensity;
+          
+          // Main body - golden
+          ctx.fillStyle = '#ffd700'; 
+          ctx.beginPath(); 
+          ctx.arc(e.x,e.y+bob,e.radius,0,Math.PI*2); 
+          ctx.fill();
+          
+          // White border
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(e.x,e.y+bob,e.radius,0,Math.PI*2);
+          ctx.stroke();
+          
+          // Golden sword with glow
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 4;
+          ctx.shadowBlur = 12 * pulseIntensity;
+          ctx.beginPath();
+          ctx.moveTo(e.x, e.y+bob-e.radius);
+          ctx.lineTo(e.x, e.y+bob+e.radius);
+          ctx.stroke();
+          
+          // Golden helmet with glow
+          ctx.fillStyle='#ffffff';
+          ctx.shadowBlur = 18 * pulseIntensity;
+          ctx.beginPath();
+          ctx.arc(e.x, e.y+bob-e.radius*0.3, e.radius*0.4, 0, Math.PI*2);
+          ctx.fill();
+          
+          // Golden crown
+          ctx.strokeStyle = '#ffd700';
+          ctx.lineWidth = 3;
+          ctx.shadowBlur = 10 * pulseIntensity;
+          ctx.beginPath();
+          ctx.arc(e.x, e.y+bob-e.radius*0.6, e.radius*0.5, 0, Math.PI*2);
+          ctx.stroke();
+        }
+        else if(e.type==='converted'){
+          // Converted enemy (friendly)
+          ctx.fillStyle=e.color; 
+          ctx.beginPath(); 
+          ctx.arc(e.x,e.y+bob,e.radius,0,Math.PI*2); 
+          ctx.fill();
+          // Converted symbol (star)
+          ctx.strokeStyle='#ffffff';
+          ctx.lineWidth = 2;
+          for(let i=0;i<5;i++){
+            const a = (Math.PI*2/5)*i - Math.PI/2;
+            const x = e.x + Math.cos(a)*e.radius*0.7;
+            const y = e.y+bob + Math.sin(a)*e.radius*0.7;
+            if(i===0) ctx.moveTo(x,y);
+            else ctx.lineTo(x,y);
+          }
+          ctx.closePath();
+          ctx.stroke();
+        }
+        
+        ctx.shadowBlur = 0;
+        
+        // HP bar with glow
+        const r = clamp(e.hp/e.maxHp,0,1); 
+        const w=e.radius*2,h=4; 
+        ctx.fillStyle='rgba(0,0,0,0.5)'; 
+        ctx.fillRect(e.x-w/2, e.y-e.radius-12, w, h); 
+        ctx.fillStyle=r>0.5?'#00ff00':r>0.2?'#ffff00':'#ff00ff'; 
+        ctx.shadowColor = ctx.fillStyle;
+        ctx.shadowBlur = 5;
+        ctx.fillRect(e.x-w/2, e.y-e.radius-12, w*r, h);
+        ctx.shadowBlur = 0;
+        
+        // Name label for special enemies
+        if(e.type === 'dragon' || e.type === 'wizard'){
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 10px Orbitron';
+          ctx.textAlign = 'center';
+          ctx.fillText(ENEMY[e.type].name, e.x, e.y+e.radius+10);
+        }
+      }
+
+      function drawHero(x,y){
+        // Hero with neon crown
+        ctx.shadowColor = '#ffd700';
+        ctx.shadowBlur = 20;
+        
+        // Body
+        ctx.fillStyle = '#ffd700';
+        ctx.beginPath();
+        ctx.arc(x, y, 12, 0, Math.PI*2);
+        ctx.fill();
+        
+        // Crown
+        ctx.fillStyle='#ff00ff'; 
+        ctx.beginPath(); 
+        ctx.moveTo(x-12,y-6); 
+        ctx.lineTo(x-8,y-18); 
+        ctx.lineTo(x-2,y-12); 
+        ctx.lineTo(x+2,y-20); 
+        ctx.lineTo(x+8,y-12); 
+        ctx.lineTo(x+12,y-18); 
+        ctx.lineTo(x+12,y-6); 
+        ctx.closePath(); 
+        ctx.fill();
+        
+        // Bow
+        ctx.strokeStyle = '#00ffff';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(x, y, 18, -Math.PI/3, Math.PI/3);
+        ctx.stroke();
+        
+        ctx.shadowBlur = 0;
+      }
+
+      function drawUIFX(dt=0.016){ 
+        // Time slow visual effect
+        if(game.dtScale < 1) {
+          const timeSlowAlpha = 0.1 + Math.sin(game.bgPulse * 3) * 0.05;
+          ctx.fillStyle = `rgba(255, 255, 0, ${timeSlowAlpha})`;
+          ctx.fillRect(0, 0, W, H);
+        }
+        
+        // Low HP warning
+        const hpR = clamp(game.castleHp/game.castleMax,0,1); 
+        if(hpR<0.35){ 
+          const v = ctx.createRadialGradient(CENTER.x,CENTER.y,120, CENTER.x,CENTER.y, 560); 
+          v.addColorStop(0,'rgba(0,0,0,0)'); 
+          v.addColorStop(1,`rgba(255,0,136,${0.2 + Math.sin(game.bgPulse*4)*0.1})`); 
+          ctx.fillStyle=v; 
+          ctx.fillRect(0,0,W,H); 
+        }
+        
+        // Stamina bar (neon style) - moved to bottom center
+        const barWidth = 140;
+        const barHeight = 10;
+        const barX = W/2 - barWidth/2;
+        const barY = H - 40;
+        
+        // Background
+        ctx.fillStyle='rgba(0,0,0,0.5)'; 
+        ctx.fillRect(barX, barY, barWidth, barHeight);
+        
+        // Border
+        ctx.strokeStyle = '#00ffff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(barX, barY, barWidth, barHeight);
+        
+        // Fill with gradient
+        const gradient = ctx.createLinearGradient(barX, 0, barX + barWidth*game.stamina, 0);
+        gradient.addColorStop(0, '#00ffff');
+        gradient.addColorStop(1, '#ff00ff');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(barX, barY, barWidth*game.stamina, barHeight);
+        
+        // Glow effect
+        if(game.stamina < 0.3){
+          ctx.shadowColor = '#ff00ff';
+          ctx.shadowBlur = 10;
+          ctx.strokeStyle = '#ff00ff';
+          ctx.strokeRect(barX-1, barY-1, barWidth+2, barHeight+2);
+          ctx.shadowBlur = 0;
+        }
+        
+        // Combo indicator - handles all message types with different colors
+        let messageText = '';
+        let messageColor = '#ff00ff';
+        let messageSize = 20;
+        let messageGlow = 20;
+        
+        // Battle message priority (highest priority)
+        if(game.battleMessage.timer > 0) {
+          messageText = game.battleMessage.text;
+          messageColor = game.battleMessage.color;
+          messageSize = 24;
+          messageGlow = 25;
+        }
+        // Power shot indicator
+        else if(game.powerShotReady) {
+          messageText = '⚡ POWER SHOT!';
+          messageColor = '#ff00ff';
+          messageSize = 22;
+          messageGlow = 22;
+        } else if(game.dtScale < 1 && game.sniperReloadTimer > 0) {
+          messageText = `RELOADING ${game.sniperReloadTimer.toFixed(1)}s`;
+          messageColor = '#ffff00';
+          messageSize = 18;
+          messageGlow = 18;
+        } else if(game.dtScale < 1) {
+          messageText = 'TIME SLOW';
+          messageColor = '#ffff00';
+          messageSize = 18;
+          messageGlow = 18;
+        } else if(game.upgrades.sniper > 0 && game.sniperReloadTimer > 0) {
+          messageText = `RELOADING ${game.sniperReloadTimer.toFixed(1)}s`;
+          messageColor = '#ff00ff';
+          messageSize = 18;
+          messageGlow = 18;
+        } else if(game.upgrades.divineaegis > 0 && !game.divineAegis.active && game.divineAegis.respawnTimer > 0) {
+          messageText = `🛡️ AEGIS ${game.divineAegis.respawnTimer.toFixed(1)}s`;
+          messageColor = '#ff0000';
+          messageSize = 18;
+          messageGlow = 18;
+        } else if(game.teleportCooldown > 0) {
+          messageText = `⚡ TELEPORT ${game.teleportCooldown.toFixed(1)}s`;
+          messageColor = '#00ffff';
+          messageSize = 18;
+          messageGlow = 18;
+        } else if(game.combo > 1.5) {
+          messageText = `COMBO x${game.combo.toFixed(1)}!`;
+          messageColor = '#ff00ff';
+          messageSize = 20 + game.combo * 2;
+          messageGlow = 20;
+        }
+        
+        // Display the message if we have one
+        if(messageText) {
+          const alpha = game.battleMessage.timer > 0 ? 1.0 : Math.sin(game.bgPulse*8)*0.5+0.5;
+          ctx.fillStyle = messageColor.replace('#', 'rgba(').replace(')', `,${alpha})`);
+          ctx.font = `bold ${messageSize}px Orbitron`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.shadowColor = messageColor;
+          ctx.shadowBlur = messageGlow;
+          ctx.fillText(messageText, W/2, 100);
+          ctx.shadowBlur = 0;
+        }
+        
+        // Cavalry Cooldown display (separate from combo indicator)
+        if(game.upgrades.cavalry > 0 && game.cavalryTimer > 0) {
+          const cooldownText = `CAVALRY COOLDOWN ${game.cavalryTimer.toFixed(1)}s`;
+          const cooldownColor = '#00ff88';
+          const cooldownSize = 16;
+          
+          ctx.fillStyle = cooldownColor;
+          ctx.font = `bold ${cooldownSize}px Orbitron`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.shadowColor = cooldownColor;
+          ctx.shadowBlur = 15;
+          ctx.fillText(cooldownText, W/2, 130); // Position below combo indicator
+          ctx.shadowBlur = 0;
+        }
+
+        // Draw active ballista tower shapes
+        const lvl = game.upgrades.ballista||0;
+        if(lvl>0){
+          const angles = [ 
+            -Math.PI/2,  // 0 N
+             Math.PI/2,  // 1 S
+             0,          // 2 E
+             Math.PI,    // 3 W
+            -Math.PI/4,  // 4 NE
+             Math.PI/4,  // 5 SE
+             3*Math.PI/4,// 6 SW
+            -3*Math.PI/4 // 7 NW
+          ];
+          const order = [2,3,0,1,4,5,6,7];
+          const activeCount = Math.min(lvl, (lvl>4?8:4));
+          for(let k=0;k<activeCount;k++){
+            const i=order[k];
+            const pos = V2.fromAngle(angles[i], CASTLE.r+8);
+            const x = CENTER.x+pos.x, y=CENTER.y+pos.y;
+            
+            // Get target for this turret
+            const origin = { x: x, y: y };
+            const target = getNearestEnemy(origin);
+            let targetAngle = angles[i]; // Default angle
+            
+            // If there's a target, calculate angle to face it
+            if(target) {
+              targetAngle = Math.atan2(target.y - origin.y, target.x - origin.x);
+            }
+            
+            // Smooth rotation towards target
+            // Ensure turretAngles supports up to 8 slots
+            if(game.turretAngles.length < (lvl>4?8:4)){
+              const needed = (lvl>4?8:4) - game.turretAngles.length;
+              for(let n=0;n<needed;n++) game.turretAngles.push(angles[game.turretAngles.length%angles.length]);
+            }
+            const currentAngle = game.turretAngles[i]||angles[i];
+            const angleDiff = targetAngle - currentAngle;
+            
+            // Normalize angle difference to shortest path
+            let normalizedDiff = angleDiff;
+            while(normalizedDiff > Math.PI) normalizedDiff -= Math.PI * 2;
+            while(normalizedDiff < -Math.PI) normalizedDiff += Math.PI * 2;
+            
+            // Smooth rotation speed
+            const rotationSpeed = 3.0; // radians per second
+            const newAngle = currentAngle + normalizedDiff * Math.min(1, rotationSpeed * dt);
+            game.turretAngles[i] = newAngle;
+            
+            const turretAngle = newAngle;
+            
+            // Enhanced neon turret design
+            ctx.save();
+            ctx.translate(x,y);
+            ctx.rotate(turretAngle);
+            
+            // Outer glow
+            ctx.shadowColor = '#ff00ff';
+            ctx.shadowBlur = 15;
+            
+            // Turret base (hexagonal)
+            ctx.fillStyle = 'rgba(255,0,255,0.2)';
+            ctx.strokeStyle = '#ff00ff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for(let j=0;j<6;j++){
+              const a = (Math.PI/3)*j;
+              const px = Math.cos(a)*10;
+              const py = Math.sin(a)*10;
+              if(j===0) ctx.moveTo(px,py);
+              else ctx.lineTo(px,py);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            
+            // Turret body (tall rectangle with neon accents)
+            ctx.fillStyle = 'rgba(255,0,255,0.3)';
+            ctx.strokeStyle = '#ff00ff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.rect(-6,-15,12,20);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Neon energy core
+            ctx.fillStyle = '#ff00ff';
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(0,-5,3,0,Math.PI*2);
+            ctx.fill();
+            
+            // Turret cannon (pointing right so rotation works correctly)
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(15,0);
+            ctx.lineTo(25,0);
+            ctx.stroke();
+            
+            // Cannon tip glow
+            ctx.shadowColor = '#ffffff';
+            ctx.shadowBlur = 10;
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(25,0,2,0,Math.PI*2);
+            ctx.fill();
+            
+            // Decorative neon rings
+            ctx.shadowBlur = 5;
+            ctx.strokeStyle = '#ff00ff';
+            ctx.lineWidth = 1;
+            for(let ring=0;ring<2;ring++){
+              ctx.beginPath();
+              ctx.arc(0,0,8-ring*3,0,Math.PI*2);
+              ctx.stroke();
+            }
+            
+            ctx.shadowBlur = 0;
+            ctx.restore();
+            
+            // Firing flash effect - just a small burst at the cannon tip
+            if(ballistaThink._flash && ballistaThink._flash[i]>0){
+              ctx.shadowColor = '#ffffff';
+              ctx.shadowBlur = 15;
+              ctx.fillStyle = 'rgba(255,255,255,0.8)';
+              ctx.beginPath();
+              ctx.arc(25,0,4,0,Math.PI*2);
+              ctx.fill();
+              ctx.shadowBlur = 0;
+            }
+          }
+        }
+      }
+
+      function updateHUD(){ 
+        ui.wave.textContent = (game.state===STATE.UPGRADE? game.wave-1 : game.wave).toString(); 
+        ui.gold.textContent = Math.floor(game.gold).toString(); 
+        // Show interest if King's Treasury is purchased
+        if(game.upgrades.treasury > 0) {
+          ui.interest.style.display = 'block';
+          ui.interestValue.textContent = Math.floor(game.treasuryInterest || 0).toString();
+        } else {
+          ui.interest.style.display = 'none';
+        }
+        ui.hptext.textContent = `${Math.ceil(game.castleHp)}/${game.castleMax}`; 
+        ui.score.textContent = Math.floor(game.score).toString(); 
+        ui.high.textContent = Math.floor(game.high).toString(); 
+        ui.combo.textContent = `x${game.combo.toFixed(1)}`;
+        
+        const r = clamp(game.castleHp/game.castleMax,0,1); 
+        ui.hpbar.style.width = `${240*r}px`; 
+        ui.hpbar.style.background = r>0.5? 'linear-gradient(90deg,#00ff00,#00ffff)': r>0.2? 'linear-gradient(90deg,#ffff00,#ff8800)': 'linear-gradient(90deg,#ff00ff,#ff0088)'; 
+      }
+      
+      function previewWaveString(){ 
+        const c = {}; 
+        (game.nextWave||[]).forEach(s=> c[s.type]=(c[s.type]||0)+1 ); 
+        return Object.entries(c).map(([k,v])=>`${ENEMY[k].name}:${v}`).join(' · '); 
+      }
+
+      // ============================
+      // UI Events
+      // ============================
+      function byId(id){ return document.getElementById(id); }
+      
+
+      
+      ui.btnPause.addEventListener('click', ()=>{ 
+        sfx.ui(); 
+        togglePause(); 
+      });
+      
+      ui.btnReset.addEventListener('click', ()=>{ 
+        sfx.ui(); 
+        try{ localStorage.removeItem(SAVE_KEY);}catch{} 
+        location.reload(); 
+      });
+      
+      ui.btnContinue.addEventListener('click', ()=>{ 
+        sfx.ui(); 
+        showOverlay(false); 
+        
+        // Hide intel box when battle starts
+        const intelBox = document.getElementById('intelBox');
+        if(intelBox) {
+          intelBox.style.display = 'none';
+          intelBox.style.bottom = '-200px';
+        }
+        
+        // Check if it's the very first wave (Wave 1)
+        if (game.wave === 1) {
+          startGame(); // Mimic the Start button behavior
+        } else {
+          game.state=STATE.PLAY; 
+          game.last=performance.now(); 
+          requestAnimationFrame(loop); 
+          spawnWave(game.nextWave); 
+        }
+      });
+
+      function setBattleMessage(text, duration = 2.0, color = '#ff00ff') {
+        game.battleMessage.text = text;
+        game.battleMessage.timer = duration;
+        game.battleMessage.color = color;
+      }
+      
+      function toast(msg, ms=1100){ 
+        // Route all toasts through the combo area as battle messages
+        setBattleMessage(msg, ms/1000, '#ff00ff');
+      }
+      
+      function showAchievement(text){
+        const div = document.createElement('div');
+        div.className = 'achievement';
+        div.textContent = text;
+        document.body.appendChild(div);
+        setTimeout(()=>div.remove(), 2000);
+      }
+
+      // ============================
+      // Boot (MENU)
+      // ============================
+      function buildMenu(){ 
+        ui.ovTitle.innerHTML = '<div class="epic-title" style="text-align: center; width: 100%; margin: 0 auto;">⚔️ NEON KNIGHTS ⚔️</div>'; 
+        ui.ovSub.textContent='DEFEND THE NEON REALM'; 
+        ui.ovSub.style.textAlign = 'center';
+        ui.ovSub.style.width = '100%';
+        ui.ovSub.style.margin = '0 auto';
+        ui.ovBody.innerHTML = `
+          <div style="display: grid; grid-template-columns: 30% 30% 30%; gap: 20px; width: 90%; margin: 0 auto; padding: 20px 0; justify-content: center;">
+            <!-- WASD Teleport Column -->
+            <div class="card" style="text-align: center; background: linear-gradient(135deg, rgba(0,255,255,0.15), rgba(0,255,255,0.05)); border: 2px solid #00ffff; min-height: 180px; display: flex; flex-direction: column; justify-content: center; padding: 20px;">
+              <div class="title" style="color: #00ffff; text-shadow: 0 0 10px #00ffff; margin-bottom: 15px;">TELEPORT</div>
+              <div style="font-size: 48px; margin: 20px 0;">WASD MOVE</div>
+              <div class="desc">
+                <strong style="color: #00ffff">Unlock power shots after movement</strong>
+              </div>
+            </div>
+            
+            <!-- Time Slow Column -->
+            <div class="card" style="text-align: center; background: linear-gradient(135deg, rgba(255,255,0,0.15), rgba(255,255,0,0.05)); border: 2px solid #ffff00; min-height: 180px; display: flex; flex-direction: column; justify-content: center; padding: 20px;">
+              <div class="title" style="color: #ffff00; text-shadow: 0 0 10px #ffff00; margin-bottom: 15px;">TIME SLOW</div>
+              <div style="font-size: 48px; margin: 20px 0;">HOLD SHIFT</div>
+              <div class="desc">
+                Slow down time<br>
+                <strong style="color: #ffff00">Enhanced sniper accuracy</strong>
+              </div>
+            </div>
+            
+            <!-- Power Shot Column -->
+            <div class="card" style="text-align: center; background: linear-gradient(135deg, rgba(255,0,255,0.15), rgba(255,0,255,0.05)); border: 2px solid #ff00ff; min-height: 180px; display: flex; flex-direction: column; justify-content: center; padding: 20px;">
+              <div class="title" style="color: #ff00ff; text-shadow: 0 0 10px #ff00ff; margin-bottom: 15px;">POWER SHOT</div>
+              <div style="font-size: 48px; margin: 20px 0;">HOLD RIGHT</div>
+              <div class="desc">
+                Charge devastating attacks
+              </div>
+            </div>
+          </div>`; 
+        showOverlay(true); 
+      }
+      
+      buildMenu();
+      render();
+
+    </script>
+  </body>
+  </html>
