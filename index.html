@@ -1213,7 +1213,7 @@
         for(const e of game.enemies) {
           if(e.dead) continue;
           if(e.invisible) continue; // Invisible enemies are always invisible now
-          if(e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'converted') continue; // Don't damage friendly units
+          if(e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'goldenangelic' || e.type === 'converted') continue; // Don't damage friendly units
           
           // Check if enemy is in the cone-shaped flame area
           const distToLine = distanceToLine(e.x, e.y, x, y, endX, endY);
@@ -1986,8 +1986,8 @@
                   shotInterval: 1.5,
                   damage: 80,
                   chainDamage: 40,
-                  range: 250,
-                  chainRange: 120
+                  range: 875, // Increased by 250% (250 * 3.5)
+                  chainRange: 420 // Increased by 250% (120 * 3.5)
                 };
                 
                 // Spawn resources around the map (outside castle boundaries)
@@ -2419,7 +2419,7 @@
         for(const e of game.enemies){ 
           if(e.dead) continue; 
           if(e.invisible) continue; // Invisible enemies are always invisible now
-          if(e.type === 'cavalry' || e.type === 'converted') continue; // Don't target friendly units
+          if(e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'goldenangelic' || e.type === 'converted') continue; // Don't target friendly units
           const d=(e.x-pt.x)*(e.x-pt.x)+(e.y-pt.y)*(e.y-pt.y); 
           if(d<bd){bd=d; best=e;} 
         } 
@@ -2608,11 +2608,16 @@
       // Wave Spawning & Enemy Behavior
       // ============================
       function spawnGolemWithMinions(game, x, y, hpScale) {
-        // Create the golem
+        // Create the golem on the edge of the map
+        const spawnAngle = Math.random() * Math.PI * 2;
+        const spawnDistance = 600; // Spawn much further from castle
+        const golemX = x || (CENTER.x + Math.cos(spawnAngle) * spawnDistance);
+        const golemY = y || (CENTER.y + Math.sin(spawnAngle) * spawnDistance);
+        
         const golem = {
           type: 'golem',
-          x: x || CENTER.x,
-          y: y || CENTER.y,
+          x: golemX,
+          y: golemY,
           vx: 0,
           vy: 0,
           speed: 8,
@@ -3194,25 +3199,27 @@
         }
         
         // Regular enemy behavior
-        // Check for nearby taunt units (knights) to attack first
+        // Check for nearby taunt units (knights) to attack first (but not for bosses)
         let nearestTaunt = null;
         let tauntDist = Infinity;
-        for(const other of game.enemies) {
-          if(other.taunt && !other.dead && other.type !== 'converted') {
-            const dx = other.x - e.x;
-            const dy = other.y - e.y;
-            const dist = Math.sqrt(dx*dx + dy*dy);
-            if(dist < tauntDist && dist < 150) { // Attack taunt units within 150 pixels
-              tauntDist = dist;
-              nearestTaunt = other;
+        if(e.type !== 'golem' && e.type !== 'dragon') { // Bosses ignore taunt
+          for(const other of game.enemies) {
+            if(other.taunt && !other.dead && other.type !== 'converted') {
+              const dx = other.x - e.x;
+              const dy = other.y - e.y;
+              const dist = Math.sqrt(dx*dx + dy*dy);
+              if(dist < tauntDist && dist < 150) { // Attack taunt units within 150 pixels
+                tauntDist = dist;
+                nearestTaunt = other;
+              }
             }
           }
         }
         
-        // Check for engineer to attack
+        // Check for engineer to attack (but not for bosses)
         let nearestEngineer = null;
         let engineerDist = Infinity;
-        if(game.centralTower && game.centralTower.engineerActive && game.centralTower.engineerHp > 0) {
+        if(e.type !== 'golem' && e.type !== 'dragon' && game.centralTower && game.centralTower.engineerActive && game.centralTower.engineerHp > 0) {
           const dx = game.centralTower.engineerX - e.x;
           const dy = game.centralTower.engineerY - e.y;
           const dist = Math.sqrt(dx*dx + dy*dy);
@@ -3329,7 +3336,7 @@
         }
         
         // Electric moat damage (if spike moat upgrade is active)
-        if(game.upgrades.oil > 0 && !e.flyer) {
+        if(game.upgrades.oil > 0 && !e.flyer && e.type !== 'cavalry' && e.type !== 'angelic' && e.type !== 'midas' && e.type !== 'goldenangelic' && e.type !== 'converted') {
           const moatRadius = CASTLE.r + 120; // Much further from castle
           const moatInner = CASTLE.r + 80;
           if(d >= moatInner && d <= moatRadius) {
@@ -3407,9 +3414,9 @@
           }
         }
         
-        // Damage castle walls, taunt units, or engineer
-        if(nearestEngineer && engineerDist < e.radius + 12) { // 12 is engineer radius
-          // Attack engineer
+        // Damage castle walls, taunt units, or engineer (but not friendly units)
+        if(nearestEngineer && engineerDist < e.radius + 12 && e.type !== 'cavalry' && e.type !== 'angelic' && e.type !== 'midas' && e.type !== 'goldenangelic' && e.type !== 'converted') { // 12 is engineer radius
+          // Attack engineer (only hostile enemies)
           nearestEngineer.engineerHp -= e.damage * dt * 2; // High damage rate to engineer
           spawnParticles(nearestEngineer.engineerX, nearestEngineer.engineerY, '#ff0088', 4, 0.4);
           
@@ -3623,8 +3630,9 @@
           if(e.dead) continue; 
           if(e.invisible) continue; // Invisible enemies are always invisible now
           if(p.hitSet.has(e)) continue; 
-          if(e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'converted') continue; // Cavalry, angelic knights, midas knights, and converted enemies are immune to player/tower damage
-          if(p.radiant && (e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'converted')) continue; // Radiant projectiles also don't damage friendly units
+          // FRIENDLY UNIT PROTECTION: All friendly units are immune to player/tower damage
+          if(e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'goldenangelic' || e.type === 'converted') continue; // Cavalry, angelic knights, midas knights, golden angelic knights, and converted enemies are immune to player/tower damage
+          if(p.radiant && (e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'goldenangelic' || e.type === 'converted')) continue; // Radiant projectiles also don't damage friendly units
           
           const dx=e.x-p.x, dy=e.y-p.y; 
           const rr = (e.radius+6);
@@ -3924,6 +3932,8 @@
         
         for(const e of game.enemies){ 
           if(e.dead) continue; 
+          // Don't damage friendly units with explosions
+          if(e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'goldenangelic' || e.type === 'converted') continue;
           const dx=e.x-x,dy=e.y-y; 
           const d2=dx*dx+dy*dy; 
           if(d2<radius*radius){ 
@@ -4019,7 +4029,7 @@
         handleShooting(dt);
         ballistaThink(dt);
         
-        // Radiant Aegis: Periodic fire sputtering
+        // Radiant Aegis: Simple sputtering (no visuals, no absorption effects)
         if(game.upgrades.divineaegis > 0 && game.divineAegis.active && game.upgrades.radiantaegis > 0) {
           const radiantLevel = game.upgrades.radiantaegis;
           const sputterInterval = 1.5; // Sputter every 1.5 seconds
@@ -4037,9 +4047,9 @@
             const shieldX = CENTER.x + Math.cos(mouseAngle) * shieldDistance;
             const shieldY = CENTER.y + Math.sin(mouseAngle) * shieldDistance;
             
-            // Create sputtering projectiles in random directions
+            // Create sputtering projectiles pointing outward from shield center
             for(let i = 0; i < 3; i++) { // 3 sputtering projectiles
-              const sputterAngle = Math.random() * Math.PI * 2; // Random direction
+              const sputterAngle = mouseAngle + (Math.PI * 2 / 3) * i; // Point outward from shield
               const sputterSpeed = 300 + Math.random() * 200; // Fast sputters
               
               if(!game.projectiles) game.projectiles = [];
@@ -4048,7 +4058,7 @@
                 y: shieldY,
                 vx: Math.cos(sputterAngle) * sputterSpeed,
                 vy: Math.sin(sputterAngle) * sputterSpeed,
-                size: 5, // Smaller size like flame cannon
+                size: 5, // Same size as flame cannon sputter
                 life: 1.5,
                 baseDmg: 6 + radiantLevel * 2, // Damage scales with level
                 color: '#ffaa00',
@@ -4059,9 +4069,6 @@
                 hitSet: new Set()
               });
             }
-            
-            // Visual effect
-            spawnParticles(shieldX, shieldY, '#ffaa00', 8, 0.6);
           }
         }
         
@@ -6156,7 +6163,6 @@
         else if(e.type==='golem'){
           // Enhanced Golem with body horror design
           drawEnhancedGolem(ctx, e, game);
-        }
         }
         else if(e.type==='cavalry'){
           // Friendly cavalry knight
