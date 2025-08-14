@@ -706,6 +706,7 @@
           <div id="uiInterest" style="display: none;">💎 <strong>Interest</strong>: <span id="uiInterestValue">0</span>g</div>
           <div class="bar"><div id="uiHpBar"></div></div>
           <div>🏰 <strong>Castle</strong>: <span id="uiHpText">100/100</span></div>
+
           <div>⭐ <strong>Score</strong>: <span id="uiScore">0</span> · <span id="uiCombo">x1</span></div>
           <div>👑 High: <span id="uiHigh">0</span></div>
         </div>
@@ -835,13 +836,10 @@
         upgrades: defaultUpgrades(),
         nextWave: [],
         shake: 0,
-        player: { wall: 0, x: CENTER.x, y: CENTER.y - CASTLE.r + 8, rate: 0.36 },
+        player: { wall: 0, x: CENTER.x, y: CENTER.y - CASTLE.r + 8, rate: 0.36, angle: 0 },
         bgPulse: 0,
-        powerShotReady: false,
-        powerShotTimer: 0,
         turretAngles: [0, 0, 0, 0], // Track current turret angles for smooth rotation
         cavalryTimer: 0, // Cavalry charge cooldown
-        teleportCooldown: 0, // WASD teleport cooldown
         divineAegis: {
           active: false,
           hp: 0,
@@ -927,7 +925,8 @@
           angelic: isAngelic || isGoldenAngelic, // Mark as angelic for healing logic
           midas: isMidas || isGoldenAngelic, // Mark as midas for gold bonus logic
           goldenAngelic: isGoldenAngelic, // Mark as golden angelic for special rendering
-          goldMultiplier: shouldGetGoldBonus ? goldMultiplier : 1 // Store gold multiplier for kill rewards
+          goldMultiplier: shouldGetGoldBonus ? goldMultiplier : 1, // Store gold multiplier for kill rewards
+          taunt: true // Knights have taunt ability to draw enemy attention
         };
         
         game.enemies.push(cavalry); // Add to enemies array for easy management
@@ -949,6 +948,7 @@
         jester:  { hp: 70, speed: 40, damage: 5, reward: 10, radius: 16, color: '#ff8800', glowColor: '#ff8800', split: 2, name: 'Jester' },
         page:    { hp: 25, speed: 52, damage: 3, reward: 3, radius: 12, color: '#ffff88', glowColor: '#ffff88', name: 'Page' },
         dragon:  { hp: 6600, speed: 25, damage: 18, reward: 80, radius: 26, color: '#ff0088', glowColor: '#ff0088', name: 'DRAGON' },
+        golem:   { hp: 12000, speed: 8, damage: 35, reward: 100, radius: 40, color: '#8B4513', glowColor: '#8B4513', name: 'GOLEM' },
       };
 
       // Projectiles
@@ -1038,7 +1038,8 @@
         
         // Sniper upgrade increases damage and width
         const sniperLevel = game.upgrades.sniper || 0;
-        const finalDamage = damage * (1 + sniperLevel * 0.5); // +50% damage per level
+        const waveScaling = 1 + (game.wave - 1) * 0.15; // +15% damage per wave
+        const finalDamage = damage * (1 + sniperLevel * 0.5) * waveScaling; // +50% damage per level + wave scaling
         const lineWidth = 6 + sniperLevel * 2; // +2 pixels width per level
         
         // Add line to game state for rendering
@@ -1051,11 +1052,39 @@
           width: lineWidth
         });
         
+        // Orbital Strike - trigger orbital strike for sniper shots
+        if(game.upgrades.orbitalstrike > 0) {
+          const orbitalLevel = game.upgrades.orbitalstrike;
+          const strikeDelay = 0.5; // 0.5 second delay
+          const baseRadius = 120 + orbitalLevel * 30; // Base 120 + 30 per level
+          const baseDamage = 50 + orbitalLevel * 25; // Base 50 + 25 per level
+          
+          // Calculate strike position (at mouse position instead of end of line)
+          const strikeX = mouse.x;
+          const strikeY = mouse.y;
+          
+          // Add orbital strike to game state
+          if(!game.orbitalStrikes) game.orbitalStrikes = [];
+          game.orbitalStrikes.push({
+            x: strikeX,
+            y: strikeY,
+            radius: baseRadius,
+            damage: baseDamage,
+            timer: strikeDelay,
+            totalDelay: strikeDelay,
+            level: orbitalLevel
+          });
+          
+          // Visual warning effect
+          spawnText(strikeX, strikeY-50, 'ORBITAL STRIKE INCOMING!', '#ff0000', 2.0, 20);
+          spawnParticles(strikeX, strikeY, '#ff0000', 20, 1.0);
+        }
+        
         // Damage all enemies in the line's path
         for(const e of game.enemies) {
-          if(e.dead) continue;
-          if(e.invisible && !(game.player.wall===2)) continue;
-          if(e.type === 'cavalry') continue; // Cavalry is immune to sniper damage
+                    if(e.dead) continue; 
+          if(e.invisible) continue; // Invisible enemies are always invisible now
+          if(e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'goldenangelic' || e.type === 'converted') continue; // All friendly units are immune to sniper damage
           
           // Check if enemy is close to the line
           const dist = distanceToLine(e.x, e.y, x, y, endX, endY);
@@ -1183,7 +1212,7 @@
         // Damage all enemies in the flame area
         for(const e of game.enemies) {
           if(e.dead) continue;
-          if(e.invisible && !(game.player.wall===2)) continue;
+          if(e.invisible) continue; // Invisible enemies are always invisible now
           if(e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'converted') continue; // Don't damage friendly units
           
           // Check if enemy is in the cone-shaped flame area
@@ -1297,15 +1326,14 @@
         game.player.wall=0; 
         game._endQueued=false; 
         game._spawnedAny=false; 
-        game.powerShotReady = false;
-        game.powerShotTimer = 0;
         game.turretAngles = [0, 0, 0, 0];
         game.cavalryTimer = 0;
         game.sniperReloadTimer = 0;
         game.sniperLines = [];
         game.flameStreams = [];
         game.homingProjectiles = [];
-        game.teleportCooldown = 0;
+        game.orbitalStrikes = [];
+        game.lightningBolts = [];
         // Reset Dragonkin Lord and Undead Dragon for new game
         game.dragonkinLord = false;
         game.undeadDragon = {
@@ -1493,10 +1521,15 @@
           setBattleMessage('⭐ WIZARDS CAST!', 3.0, '#ff88ff');
         }
         else if(boss){ 
-          // Boss wave
-          list.push({type:'dragon', hpScale}); 
+          // Boss wave - alternate between Dragon and Golem
+          const isGolemWave = (w % 10 === 0); // Every 10th wave (10, 20, 30...) gets Golem
+          const bossType = isGolemWave ? 'golem' : 'dragon';
+          const bossMessage = isGolemWave ? '🗿 GOLEM AWAKENS!' : '🐉 DRAGON AWAKENS!';
+          const bossColor = isGolemWave ? '#8B4513' : '#ff0088';
+          
+          list.push({type: bossType, hpScale}); 
           for(let i=0;i<8;i++) list.push({type:'squire', hpScale});
-          setBattleMessage('🐉 DRAGON AWAKENS!', 4.0, '#ff0088');
+          setBattleMessage(bossMessage, 4.0, bossColor);
           showAchievement('BOSS BATTLE!');
         }
         else { 
@@ -1538,7 +1571,7 @@
         { key:'fort',      name:'Tower Fortifications', desc:'+25% max HP & heal per level', icon: '→' },
         { key:'sniper',    name:'Sniper Shot', desc:'3x damage piercing beam (+50% damage & width per level)', icon: '→', primordial: true },
         { key:'poison',    name:'Poison Arrow', desc:'Apply infinite stacking poison damage', icon: '→' },
-        { key:'cavalry',   name:'Cavalry Charge', desc:'WASD spawns X knights (X = level)', icon: '→' },
+        { key:'cavalry',   name:'Cavalry Charge', desc:'Automatically spawns X knights every 10s (X = level)', icon: '→' },
         { key:'boomerang', name:'Boomerang Blade', desc:'Large projectile that returns (+50% size & damage per level)', icon: '↩', primordial: true },
         { key:'necromancy', name:'Time Necromancy', desc:'Time slow kills convert enemies (+2s duration & +25% stats per level)', icon: '💀' },
         { key:'flamecannon', name:'Flame Cannon', desc:'Constant fire stream (+15% range/width, +1 base damage, +1 stack multiplier per level)', icon: '🔥', primordial: true },
@@ -1547,7 +1580,9 @@
         { key:'angelicknights', name:'Angelic Knights', desc:'Cavalry knights heal castle when dealing damage (+2s duration per level)', icon: '👼', requires: ['divineaegis', 'cavalry'] },
         { key:'midasknights', name:'Midas Knights', desc:'Golden knights grant x2 gold per kill (+1x per level, bonus stats based on gold)', icon: '💰', requires: ['cavalry', 'treasury'] },
         { key:'radiantaegis', name:'Radiant Aegis', desc:'Divine Aegis releases flame projectiles (+25% burn damage & projectile size per level)', icon: '✨', requires: ['divineaegis', 'oil'] },
-        { key:'dragonkinlord', name:'Dragonkin Lord', desc:'Execute dragons with time slow sniper shots to permanently recruit them as Undead Dragons', icon: '🐉', heroic: true, requires: ['necromancy'] },
+        { key:'dragonkinlord', name:'Dragonkin Lord', desc:'Execute dragons with time slow sniper shots to permanently recruit them as Undead Dragons', icon: '🐉', heroic: true },
+        { key:'orbitalstrike', name:'Orbital Strike', desc:'Sniper shots trigger orbital strikes (+25% radius & damage per level)', icon: '☄️' },
+        { key:'micasa', name:'MI CASA SU CASA?', desc:'Secret: Build a massive central tower with chaining attacks', icon: '🏗️', secret: true },
       ]; }
 
       function buildUpgradeUI(){ 
@@ -1566,10 +1601,29 @@
         const picks = []; 
         const pool = defs.filter(d=>d.key!=='fort');
         
+        // Track turns without upgrades for secret ability
+        if(!game.turnsWithoutUpgrade) game.turnsWithoutUpgrade = 0;
+        if(!game.lastUpgradeWave) game.lastUpgradeWave = 0;
+        if(!game.micasaShown) game.micasaShown = false;
+        
+        if(game.wave > game.lastUpgradeWave) {
+          game.turnsWithoutUpgrade++;
+          game.lastUpgradeWave = game.wave;
+        }
+        
         // Filter out primordial upgrades that conflict with already selected ones
         const primordialKeys = defs.filter(d => d.primordial).map(d => d.key);
         const anyPrimordialTaken = primordialKeys.some(k => (game.upgrades[k]||0) > 0);
         const availablePool = pool.filter(upgrade => {
+          // Check for secret upgrades
+          if(upgrade.secret) {
+            if(upgrade.key === 'micasa') {
+              // Only show if no upgrades purchased for 3 turns AND hasn't been shown before
+              return game.turnsWithoutUpgrade >= 3 && (game.upgrades.micasa || 0) === 0 && !game.micasaShown;
+            }
+            return false; // Other secret upgrades not implemented yet
+          }
+          
           if (!upgrade.primordial) {
             // Check if upgrade has requirements
             if(upgrade.requires) {
@@ -1589,6 +1643,22 @@
           }
           return !anyPrimordialTaken;
         });
+        
+        // Check if MI CASA SU CASA should be guaranteed
+        const shouldShowMicasa = game.turnsWithoutUpgrade >= 3 && (game.upgrades.micasa || 0) === 0 && !game.micasaShown;
+        const micasaUpgrade = availablePool.find(u => u.key === 'micasa');
+        
+        // If MI CASA should be shown, add it first
+        if(shouldShowMicasa && micasaUpgrade) {
+          picks.push(micasaUpgrade);
+          game.micasaShown = true; // Mark as shown so it won't appear again
+          
+          // Remove it from available pool
+          const micasaIndex = availablePool.indexOf(micasaUpgrade);
+          if(micasaIndex > -1) {
+            availablePool.splice(micasaIndex, 1);
+          }
+        }
         
         while(picks.length<5 && availablePool.length > 0){ 
           const c = availablePool[randInt(0,availablePool.length-1)]; 
@@ -1715,6 +1785,40 @@
             }
           }
           
+          // Add neon pink glow for secret upgrades
+          if(u.secret) {
+            card.style.background = 'linear-gradient(135deg, rgba(255,20,147,0.3), rgba(255,105,180,0.1))';
+            card.style.border = '2px solid';
+            card.style.borderImage = 'linear-gradient(45deg, #ff1493, #ff69b4) 1';
+            card.style.boxShadow = '0 0 25px rgba(255,20,147,0.8)';
+            card.style.animation = 'shimmer 1.5s ease-in-out infinite, borderShimmer 2s ease-in-out infinite';
+            
+            // Add pulsing effect
+            card.style.transform = 'scale(1.02)';
+            card.style.transition = 'all 0.3s ease';
+            
+            // Add sparkle elements for secret upgrades
+            for(let i = 0; i < 8; i++) {
+              const sparkle = document.createElement('div');
+              sparkle.style.position = 'absolute';
+              sparkle.style.width = '6px';
+              sparkle.style.height = '6px';
+              sparkle.style.background = '#ff1493';
+              sparkle.style.borderRadius = '50%';
+              sparkle.style.boxShadow = '0 0 15px #ff1493';
+              sparkle.style.animation = `sparkle 1.5s ease-in-out infinite ${i * 0.2}s`;
+              sparkle.style.pointerEvents = 'none';
+              
+              // Position sparkles around the card
+              const angle = (i / 8) * Math.PI * 2;
+              const radius = 70;
+              sparkle.style.left = `calc(50% + ${Math.cos(angle) * radius}px)`;
+              sparkle.style.top = `calc(50% + ${Math.sin(angle) * radius}px)`;
+              
+              card.appendChild(sparkle);
+            }
+          }
+          
           const content = document.createElement('div'); 
           content.style.flex = '1';
           // Dynamic description for fortifications
@@ -1787,6 +1891,15 @@
             if(game.gold >= cost) {
               game.gold -= cost;
               game.upgrades[u.key]=(game.upgrades[u.key]||0)+1; 
+              
+              // Reset turn counter when any upgrade is purchased
+              game.turnsWithoutUpgrade = 0;
+              
+              // Mark MI CASA as shown if this is the MI CASA upgrade
+              if(u.key === 'micasa') {
+                game.micasaShown = true;
+              }
+              
               sfx.powerup(); 
               updateHUD(); 
               persist(); 
@@ -1829,6 +1942,85 @@
                 spawnParticles(CENTER.x, CENTER.y, '#ffd700', 50, 2.0);
                 setBattleMessage('🐉 DRAGONKIN LORD AWAKENED!', 4.0, '#ffd700');
                 showAchievement('DRAGONKIN LORD!');
+              }
+              
+              // Activate MI CASA SU CASA ability
+              if(u.key==='micasa'){ 
+                // Initialize the Tower of Babel
+                game.centralTower = {
+                  // Construction state
+                  constructionProgress: 0,
+                  maxProgress: 100,
+                  towerBuilt: false,
+                  scaffoldHeight: 0,
+                  towerLevels: 0,
+                  maxLevels: 7, // Tower of Babel has 7 levels
+                  
+                  // Engineer properties
+                  engineerActive: true,
+                  engineerHp: 100,
+                  engineerMaxHp: 100,
+                  engineerX: CENTER.x,
+                  engineerY: CENTER.y,
+                  engineerSpeed: 60,
+                  engineerState: 'collecting', // 'collecting', 'building', 'repairing'
+                  
+                  // Resource collection
+                  resourceTarget: null,
+                  carryingResource: null,
+                  stonesCollected: 0,
+                  woodCollected: 0,
+                  stonesNeeded: 5,
+                  woodNeeded: 5,
+                  
+                  // Building/repair timers
+                  lastBuildTime: 0,
+                  buildInterval: 2.0,
+                  buildAmount: 5,
+                  repairTimer: 0,
+                  repairInterval: 3.0,
+                  repairAmount: 3,
+                  
+                  // Combat properties
+                  lastShotTime: 0,
+                  shotInterval: 1.5,
+                  damage: 80,
+                  chainDamage: 40,
+                  range: 250,
+                  chainRange: 120
+                };
+                
+                // Spawn resources around the map (outside castle boundaries)
+                game.resources = [];
+                for(let i = 0; i < 5; i++) {
+                  // Spawn stones
+                  const stoneAngle = (Math.PI * 2 / 5) * i;
+                  const stoneDist = CASTLE.r + 80 + Math.random() * 150; // Outside castle
+                  game.resources.push({
+                    type: 'stone',
+                    x: CENTER.x + Math.cos(stoneAngle) * stoneDist,
+                    y: CENTER.y + Math.sin(stoneAngle) * stoneDist,
+                    collected: false
+                  });
+                  
+                  // Spawn wood
+                  const woodAngle = stoneAngle + Math.PI / 5;
+                  const woodDist = CASTLE.r + 80 + Math.random() * 150;
+                  game.resources.push({
+                    type: 'wood',
+                    x: CENTER.x + Math.cos(woodAngle) * woodDist,
+                    y: CENTER.y + Math.sin(woodAngle) * woodDist,
+                    collected: false
+                  });
+                }
+                
+                // Initialize lightning bolts array
+                if(!game.lightningBolts) game.lightningBolts = [];
+                
+                // Visual upgrade effect
+                spawnParticles(CENTER.x, CENTER.y, '#ff1493', 60, 2.0);
+                setBattleMessage('🏗️ TOWER OF BABEL ACTIVATED!', 4.0, '#ff1493');
+                showAchievement('SECRET DISCOVERED!');
               }
               
               // Update HUD immediately after fortification
@@ -2087,6 +2279,7 @@
           if(t==='wizard') lines.push('⭐ Raises fallen once');
           if(t==='jester') lines.push('🃏 Splits into Pages on death');
           if(t==='dragon') lines.push('🐉 Boss — very tough');
+          if(t==='golem') lines.push('🗿 Boss — absorbs units, ground slam');
           return lines.join(' · ');
         };
         
@@ -2196,10 +2389,11 @@
           <div class="card" style="grid-column:1/-1">
             <div class="title">⚔️ CONTROLS</div>
             <div class="desc">
-              1/2/3/4 or WASD - Teleport between walls<br>
-              Mouse - Aim & shoot<br>
+              Mouse - Move around castle & aim<br>
+              Left Click - Shoot<br>
               Right Click - Charge shot<br>
               Shift - Slow motion (sniper shots + 150% speed)<br>
+              WASD - Reserved for future special abilities<br>
               ESC - Pause
             </div>
           </div>`;
@@ -2219,12 +2413,12 @@
       // ============================
       // Shooting & Player Mechanics
       // ============================
-      let shootTimer = 0, charge = 0, charging = false, lastWall = 0;
+      let shootTimer = 0, charge = 0, charging = false;
       function getNearestEnemy(pt){ 
         let best=null,bd=Infinity; 
         for(const e of game.enemies){ 
           if(e.dead) continue; 
-          if(e.invisible && !(game.player.wall===2)) continue; 
+          if(e.invisible) continue; // Invisible enemies are always invisible now
           if(e.type === 'cavalry' || e.type === 'converted') continue; // Don't target friendly units
           const d=(e.x-pt.x)*(e.x-pt.x)+(e.y-pt.y)*(e.y-pt.y); 
           if(d<bd){bd=d; best=e;} 
@@ -2257,7 +2451,7 @@
             p.color = power>0.6 ? '#ff00ff' : '#00ffff';
             p.powershot = true; // Mark as powershot for shield breaking
           } 
-          if(game.player.wall===0) p.baseDmg*=1.2; // North bonus
+          // Remove wall-based damage bonus since we're using mouse movement
           game.projectiles.push(p); 
           
           // Special particle effect for time slow shots
@@ -2269,46 +2463,40 @@
       }
       
       function updatePlayerPos(){ 
-        const angle = [ -Math.PI/2, Math.PI/2, 0, Math.PI ][game.player.wall]; 
-        const pos = V2.fromAngle(angle, CASTLE.r-8); 
+        // Calculate angle from castle center to mouse position for 360-degree rotation
+        const mouseAngle = Math.atan2(mouse.y - CENTER.y, mouse.x - CENTER.x);
+        const pos = V2.fromAngle(mouseAngle, CASTLE.r-8); 
         game.player.x = CENTER.x + pos.x; 
         game.player.y = CENTER.y + pos.y; 
+        // Store the current angle for reference
+        game.player.angle = mouseAngle;
       }
       
       function handleControls(dt){ 
-        // Wall teleportation
-        if(KEYS.has('1')||KEYS.has('w')){ 
-          if(game.player.wall !== 0 && game.teleportCooldown <= 0){
-            lastWall = game.player.wall;
-            game.player.wall=0; 
-            updatePlayerPos(); 
-            teleportFx();
+        // Update player position based on mouse for 360-degree rotation
+        updatePlayerPos();
+        
+        // Automatic cavalry spawn on cooldown
+        if(game.upgrades.cavalry > 0 && game.cavalryTimer <= 0) {
+          // Spawn multiple cavalry based on upgrade level
+          const cavalryCount = game.upgrades.cavalry;
+          for(let i = 0; i < cavalryCount; i++) {
+            // Spawn cavalry at slightly different positions around the player
+            const angle = (i / cavalryCount) * Math.PI * 2;
+            const offsetX = Math.cos(angle) * 20;
+            const offsetY = Math.sin(angle) * 20;
+            spawnCavalry(game.player.x + offsetX, game.player.y + offsetY);
           }
+          game.cavalryTimer = 10.0; // 10 second cooldown
+          
+          // Visual effect for cavalry spawn
+          spawnParticles(game.player.x, game.player.y, '#00ff88', 30, 1.0);
+          game.shake = Math.max(game.shake, 4);
         }
-        if(KEYS.has('2')||KEYS.has('s')){ 
-          if(game.player.wall !== 1 && game.teleportCooldown <= 0){
-            lastWall = game.player.wall;
-            game.player.wall=1; 
-            updatePlayerPos(); 
-            teleportFx();
-          }
-        }
-        if(KEYS.has('3')||KEYS.has('d')){ 
-          if(game.player.wall !== 2 && game.teleportCooldown <= 0){
-            lastWall = game.player.wall;
-            game.player.wall=2; 
-            updatePlayerPos(); 
-            teleportFx();
-          }
-        }
-        if(KEYS.has('4')||KEYS.has('a')){ 
-          if(game.player.wall !== 3 && game.teleportCooldown <= 0){
-            lastWall = game.player.wall;
-            game.player.wall=3; 
-            updatePlayerPos(); 
-            teleportFx();
-          }
-        }
+        
+        // WASD reserved for future special abilities
+        // (Currently disabled - will be used for special abilities later)
+        
         // Slow motion
         if(KEYS.has('shift')){ 
           if(game.stamina>0){ 
@@ -2324,66 +2512,14 @@
         }
       }
       
-      function teleportFx(){ 
-        // Check teleport cooldown
-        if(game.teleportCooldown > 0) {
-          return; // Don't allow teleport if on cooldown
-        }
-        
-        // Set cooldown
-        game.teleportCooldown = 1.0; // 1 second cooldown
-        
-        // Lightning effect between walls
-        for(let i=0;i<20;i++){
-          const t = i/20;
-          const x = lerp(game.player.x, CENTER.x, t) + rand(-10,10);
-          const y = lerp(game.player.y, CENTER.y, t) + rand(-10,10);
-          spawnParticles(x, y, '#00ffff', 2, 0.3);
-          spawnParticles(x, y, '#ff00ff', 2, 0.3);
-        }
-        spawnParticles(game.player.x, game.player.y, '#00ffff', 20, 1.0); 
-        spawnParticles(game.player.x, game.player.y, '#ff00ff', 20, 1.0); 
-        game.shake=Math.max(game.shake,6);
-        
-        // Enable power shot after teleporting
-        game.powerShotReady = true;
-        game.powerShotTimer = 2.0; // 2 seconds to use the power shot
-        
-        // Cavalry charge (if upgrade is active and cooldown is ready)
-        if(game.upgrades.cavalry > 0 && game.cavalryTimer <= 0) {
-          // Spawn multiple cavalry based on upgrade level
-          const cavalryCount = game.upgrades.cavalry;
-          for(let i = 0; i < cavalryCount; i++) {
-            // Spawn cavalry at slightly different positions around the player
-            const angle = (i / cavalryCount) * Math.PI * 2;
-            const offsetX = Math.cos(angle) * 20;
-            const offsetY = Math.sin(angle) * 20;
-            spawnCavalry(game.player.x + offsetX, game.player.y + offsetY);
-          }
-          game.cavalryTimer = 10.0; // 10 second cooldown
-        }
-      }
+      // teleportFx function removed - no longer needed with mouse-based movement
       
       function handleShooting(dt){ 
-        shootTimer-=dt*(game.player.wall===1? 1.25:1); // South speed bonus
-        
-        // Power shot timer (after WASD teleport)
-        if(game.powerShotTimer) {
-          game.powerShotTimer -= dt;
-          if(game.powerShotTimer <= 0) {
-            game.powerShotReady = false;
-            game.powerShotTimer = 0;
-          }
-        }
+        shootTimer-=dt; // Remove wall-based speed bonus since we're using mouse movement
         
         // Cavalry timer
         if(game.cavalryTimer > 0) {
           game.cavalryTimer -= dt;
-        }
-        
-        // Update teleport cooldown
-        if(game.teleportCooldown > 0) {
-          game.teleportCooldown -= dt;
         }
         
         // Sniper reload timer
@@ -2413,15 +2549,7 @@
           
           shootTimer = Math.max(0.08, game.player.rate - 0.04*(game.upgrades.rapid||0)); 
           
-          // Check if power shot is ready (after WASD)
-          if(game.powerShotReady) {
-            fire({x:game.player.x,y:game.player.y}, 1.0); // Full purple power shot
-            game.powerShotReady = false;
-            game.powerShotTimer = 0;
-            setBattleMessage('⚡ POWER SHOT!', 1.5, '#ff00ff');
-          } else {
-            fire({x:game.player.x,y:game.player.y}, 0); // Normal shot
-          }
+          fire({x:game.player.x,y:game.player.y}, 0); // Normal shot
           
           // Set sniper reload timer (for both sniper upgrade and time slow)
           if(game.upgrades.sniper > 0 || game.dtScale < 1) {
@@ -2558,30 +2686,65 @@
             return;
           }
           
-          // Find target enemy to attack (each cavalry gets a different target)
+          // Handle stun effect
+          if(e.stunned) {
+            e.stunTimer -= dt;
+            if(e.stunTimer <= 0) {
+              e.stunned = false;
+            } else {
+              // Skip movement and attack while stunned
+              e.wobble += dt * 3;
+              return;
+            }
+          }
+          
+          // Find target enemy to attack (improved targeting to avoid same targets)
           let targetEnemy = null;
           let targetDist = Infinity;
           
-          // Use cavalry's position to determine which enemy to target
-          // This creates a simple targeting system where cavalry spread out
+          // Get all available enemies
+          const availableEnemies = [];
           for(const enemy of game.enemies) {
-            if(enemy.dead || enemy.type === 'cavalry' || enemy.type === 'angelic' || enemy.type === 'midas') continue;
+            if(enemy.dead || enemy.type === 'cavalry' || enemy.type === 'angelic' || enemy.type === 'midas' || enemy.type === 'goldenangelic' || enemy.type === 'converted') continue;
+            
+            // Check if this enemy is already being targeted by another friendly unit
+            let isTargeted = false;
+            for(const other of game.enemies) {
+              if(other.type === 'cavalry' || other.type === 'angelic' || other.type === 'midas' || other.type === 'goldenangelic') {
+                if(other.targetEnemy === enemy && other !== e) {
+                  isTargeted = true;
+                  break;
+                }
+              }
+            }
+            
+            if(!isTargeted) {
+              availableEnemies.push(enemy);
+            }
+          }
+          
+          // If no untargeted enemies, target any enemy
+          if(availableEnemies.length === 0) {
+            for(const enemy of game.enemies) {
+              if(enemy.dead || enemy.type === 'cavalry' || enemy.type === 'angelic' || enemy.type === 'midas' || enemy.type === 'goldenangelic' || enemy.type === 'converted') continue;
+              availableEnemies.push(enemy);
+            }
+          }
+          
+          // Find closest available enemy
+          for(const enemy of availableEnemies) {
             const dx = enemy.x - e.x;
             const dy = enemy.y - e.y;
             const dist = dx*dx + dy*dy;
             
-            // Each cavalry prefers enemies in different directions
-            const angle = Math.atan2(dy, dx);
-            const preferredAngle = (e.x + e.y) % (Math.PI * 2); // Simple hash for variety
-            const angleDiff = Math.abs(angle - preferredAngle);
-            
-            // Prefer enemies that are closer and in preferred direction
-            const score = dist + angleDiff * 1000;
-            if(score < targetDist) {
-              targetDist = score;
+            if(dist < targetDist) {
+              targetDist = dist;
               targetEnemy = enemy;
             }
           }
+          
+          // Store target for other units to check
+          e.targetEnemy = targetEnemy;
           
           if(targetEnemy) {
             // Move towards target enemy
@@ -2627,26 +2790,65 @@
             return;
           }
           
-          // Find target enemy to attack (same logic as cavalry)
+          // Handle stun effect
+          if(e.stunned) {
+            e.stunTimer -= dt;
+            if(e.stunTimer <= 0) {
+              e.stunned = false;
+            } else {
+              // Skip movement and attack while stunned
+              e.wobble += dt * 3;
+              return;
+            }
+          }
+          
+          // Find target enemy to attack (improved targeting to avoid same targets)
           let targetEnemy = null;
           let targetDist = Infinity;
           
+          // Get all available enemies
+          const availableEnemies = [];
           for(const enemy of game.enemies) {
-            if(enemy.dead || enemy.type === 'cavalry' || enemy.type === 'angelic' || enemy.type === 'midas') continue;
+            if(enemy.dead || enemy.type === 'cavalry' || enemy.type === 'angelic' || enemy.type === 'midas' || enemy.type === 'goldenangelic' || enemy.type === 'converted') continue;
+            
+            // Check if this enemy is already being targeted by another friendly unit
+            let isTargeted = false;
+            for(const other of game.enemies) {
+              if(other.type === 'cavalry' || other.type === 'angelic' || other.type === 'midas' || other.type === 'goldenangelic') {
+                if(other.targetEnemy === enemy && other !== e) {
+                  isTargeted = true;
+                  break;
+                }
+              }
+            }
+            
+            if(!isTargeted) {
+              availableEnemies.push(enemy);
+            }
+          }
+          
+          // If no untargeted enemies, target any enemy
+          if(availableEnemies.length === 0) {
+            for(const enemy of game.enemies) {
+              if(enemy.dead || enemy.type === 'cavalry' || enemy.type === 'angelic' || enemy.type === 'midas' || enemy.type === 'goldenangelic' || enemy.type === 'converted') continue;
+              availableEnemies.push(enemy);
+            }
+          }
+          
+          // Find closest available enemy
+          for(const enemy of availableEnemies) {
             const dx = enemy.x - e.x;
             const dy = enemy.y - e.y;
             const dist = dx*dx + dy*dy;
             
-            const angle = Math.atan2(dy, dx);
-            const preferredAngle = (e.x + e.y) % (Math.PI * 2);
-            const angleDiff = Math.abs(angle - preferredAngle);
-            
-            const score = dist + angleDiff * 1000;
-            if(score < targetDist) {
-              targetDist = score;
+            if(dist < targetDist) {
+              targetDist = dist;
               targetEnemy = enemy;
             }
           }
+          
+          // Store target for other units to check
+          e.targetEnemy = targetEnemy;
           
           if(targetEnemy) {
             // Move towards target enemy
@@ -2692,30 +2894,69 @@
             return;
           }
           
+          // Handle stun effect
+          if(e.stunned) {
+            e.stunTimer -= dt;
+            if(e.stunTimer <= 0) {
+              e.stunned = false;
+            } else {
+              // Skip movement and attack while stunned
+              e.wobble += dt * 3;
+              return;
+            }
+          }
+          
           // Initialize healing cooldown if not exists
           if(e.healCooldown === undefined) e.healCooldown = 0;
           e.healCooldown -= dt;
           
-          // Find target enemy to attack (same logic as cavalry)
+          // Find target enemy to attack (improved targeting to avoid same targets)
           let targetEnemy = null;
           let targetDist = Infinity;
           
+          // Get all available enemies
+          const availableEnemies = [];
           for(const enemy of game.enemies) {
-            if(enemy.dead || enemy.type === 'cavalry' || enemy.type === 'angelic' || enemy.type === 'midas') continue;
+            if(enemy.dead || enemy.type === 'cavalry' || enemy.type === 'angelic' || enemy.type === 'midas' || enemy.type === 'goldenangelic' || enemy.type === 'converted') continue;
+            
+            // Check if this enemy is already being targeted by another friendly unit
+            let isTargeted = false;
+            for(const other of game.enemies) {
+              if(other.type === 'cavalry' || other.type === 'angelic' || other.type === 'midas' || other.type === 'goldenangelic') {
+                if(other.targetEnemy === enemy && other !== e) {
+                  isTargeted = true;
+                  break;
+                }
+              }
+            }
+            
+            if(!isTargeted) {
+              availableEnemies.push(enemy);
+            }
+          }
+          
+          // If no untargeted enemies, target any enemy
+          if(availableEnemies.length === 0) {
+            for(const enemy of game.enemies) {
+              if(enemy.dead || enemy.type === 'cavalry' || enemy.type === 'angelic' || enemy.type === 'midas' || enemy.type === 'goldenangelic' || enemy.type === 'converted') continue;
+              availableEnemies.push(enemy);
+            }
+          }
+          
+          // Find closest available enemy
+          for(const enemy of availableEnemies) {
             const dx = enemy.x - e.x;
             const dy = enemy.y - e.y;
             const dist = dx*dx + dy*dy;
             
-            const angle = Math.atan2(dy, dx);
-            const preferredAngle = (e.x + e.y) % (Math.PI * 2);
-            const angleDiff = Math.abs(angle - preferredAngle);
-            
-            const score = dist + angleDiff * 1000;
-            if(score < targetDist) {
-              targetDist = score;
+            if(dist < targetDist) {
+              targetDist = dist;
               targetEnemy = enemy;
             }
           }
+          
+          // Store target for other units to check
+          e.targetEnemy = targetEnemy;
           
           if(targetEnemy) {
             // Move towards target enemy
@@ -2772,30 +3013,69 @@
             return;
           }
           
+          // Handle stun effect
+          if(e.stunned) {
+            e.stunTimer -= dt;
+            if(e.stunTimer <= 0) {
+              e.stunned = false;
+            } else {
+              // Skip movement and attack while stunned
+              e.wobble += dt * 3;
+              return;
+            }
+          }
+          
           // Initialize healing cooldown if not exists
           if(e.healCooldown === undefined) e.healCooldown = 0;
           e.healCooldown -= dt;
           
-          // Find target enemy to attack (same logic as other cavalry)
+          // Find target enemy to attack (improved targeting to avoid same targets)
           let targetEnemy = null;
           let targetDist = Infinity;
           
+          // Get all available enemies
+          const availableEnemies = [];
           for(const enemy of game.enemies) {
-            if(enemy.dead || enemy.type === 'cavalry' || enemy.type === 'angelic' || enemy.type === 'midas' || enemy.type === 'goldenangelic') continue;
+            if(enemy.dead || enemy.type === 'cavalry' || enemy.type === 'angelic' || enemy.type === 'midas' || enemy.type === 'goldenangelic' || enemy.type === 'converted') continue;
+            
+            // Check if this enemy is already being targeted by another friendly unit
+            let isTargeted = false;
+            for(const other of game.enemies) {
+              if(other.type === 'cavalry' || other.type === 'angelic' || other.type === 'midas' || other.type === 'goldenangelic') {
+                if(other.targetEnemy === enemy && other !== e) {
+                  isTargeted = true;
+                  break;
+                }
+              }
+            }
+            
+            if(!isTargeted) {
+              availableEnemies.push(enemy);
+            }
+          }
+          
+          // If no untargeted enemies, target any enemy
+          if(availableEnemies.length === 0) {
+            for(const enemy of game.enemies) {
+              if(enemy.dead || enemy.type === 'cavalry' || enemy.type === 'angelic' || enemy.type === 'midas' || enemy.type === 'goldenangelic' || enemy.type === 'converted') continue;
+              availableEnemies.push(enemy);
+            }
+          }
+          
+          // Find closest available enemy
+          for(const enemy of availableEnemies) {
             const dx = enemy.x - e.x;
             const dy = enemy.y - e.y;
             const dist = dx*dx + dy*dy;
             
-            const angle = Math.atan2(dy, dx);
-            const preferredAngle = (e.x + e.y) % (Math.PI * 2);
-            const angleDiff = Math.abs(angle - preferredAngle);
-            
-            const score = dist + angleDiff * 1000;
-            if(score < targetDist) {
-              targetDist = score;
+            if(dist < targetDist) {
+              targetDist = dist;
               targetEnemy = enemy;
             }
           }
+          
+          // Store target for other units to check
+          e.targetEnemy = targetEnemy;
           
           if(targetEnemy) {
             // Move towards target enemy
@@ -2844,27 +3124,43 @@
         }
         
         // Regular enemy behavior
-        // Check for nearby cavalry, angelic knights, or midas knights to attack (but not converted units)
-        let nearestCavalry = null;
-        let cavalryDist = Infinity;
+        // Check for nearby taunt units (knights) to attack first
+        let nearestTaunt = null;
+        let tauntDist = Infinity;
         for(const other of game.enemies) {
-          if((other.type === 'cavalry' || other.type === 'angelic' || other.type === 'midas') && !other.dead && other.type !== 'converted') {
+          if(other.taunt && !other.dead && other.type !== 'converted') {
             const dx = other.x - e.x;
             const dy = other.y - e.y;
             const dist = Math.sqrt(dx*dx + dy*dy);
-            if(dist < cavalryDist && dist < 100) { // Attack cavalry/angelic/midas within 100 pixels
-              cavalryDist = dist;
-              nearestCavalry = other;
+            if(dist < tauntDist && dist < 150) { // Attack taunt units within 150 pixels
+              tauntDist = dist;
+              nearestTaunt = other;
             }
           }
         }
         
-        // Move toward castle or cavalry
+        // Check for engineer to attack
+        let nearestEngineer = null;
+        let engineerDist = Infinity;
+        if(game.centralTower && game.centralTower.engineerActive && game.centralTower.engineerHp > 0) {
+          const dx = game.centralTower.engineerX - e.x;
+          const dy = game.centralTower.engineerY - e.y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if(dist < engineerDist && dist < 120) { // Attack engineer within 120 pixels
+            engineerDist = dist;
+            nearestEngineer = game.centralTower;
+          }
+        }
+        
+        // Move toward castle, taunt units, or engineer
         let targetX = CENTER.x;
         let targetY = CENTER.y;
-        if(nearestCavalry) {
-          targetX = nearestCavalry.x;
-          targetY = nearestCavalry.y;
+        if(nearestEngineer) {
+          targetX = nearestEngineer.engineerX;
+          targetY = nearestEngineer.engineerY;
+        } else if(nearestTaunt) {
+          targetX = nearestTaunt.x;
+          targetY = nearestTaunt.y;
         }
         
         const v = new V2(targetX - e.x, targetY - e.y); 
@@ -2875,17 +3171,17 @@
         let speed = e.speed;
         const wallDist = Math.abs(d - CASTLE.r);
         
-        // Invisibility (rogues visible from East wall)
-        if(e.invisible && !(game.player.wall===2)) e.renderGhost=true; 
+        // Invisibility (rogues are always invisible now)
+        if(e.invisible) e.renderGhost=true; 
         else e.renderGhost=false;
         
         // Knockback decay
         e.vx = (e.vx||0) * Math.pow(0.6, dt*60); 
         e.vy = (e.vy||0) * Math.pow(0.6, dt*60);
         
-        // Movement (flyers have different radius)
+        // Movement (flyers have different radius, golem stops during slam)
         const targetRadius = e.flyer? CASTLE.r-6 : CASTLE.r- e.radius*0.4;
-        if(d > targetRadius){ 
+        if(d > targetRadius && !(e.type === 'golem' && e.isSlamming)){ 
           e.x += v.x * speed * dt + (e.vx||0) * dt; 
           e.y += v.y * speed * dt + (e.vy||0) * dt; 
         }
@@ -3017,15 +3313,22 @@
           
           // Apply damage immediately when fire stacks are present
           if(e.fireTimer >= fireTick) {
-            // Use stackMultiplier from flame cannon upgrade for infinite stacking
-            const flameLevel = game.upgrades.flamecannon || 0;
-            const stackMultiplier = 5 + flameLevel; // +1 stack multiplier per level
-            const fireDamage = e.fireStacks * stackMultiplier; // Damage scales with stacks and level
-            e.hp -= fireDamage;
-            e.fireTimer = 0;
-            e.fireStacks = Math.max(0, e.fireStacks - 1); // Reduce stacks by 1 each tick
-            spawnParticles(e.x, e.y, '#ff4400', 6, 0.4); // Orange fire particles
-            spawnText(e.x, e.y - e.radius - 25, `-${fireDamage}`, '#ff4400', 0.6, 14);
+            // Don't damage friendly units with burn effects
+            if(e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'goldenangelic' || e.type === 'converted') {
+              // Just clear the fire stacks for friendly units
+              e.fireStacks = 0;
+              e.fireTimer = 0;
+            } else {
+              // Use stackMultiplier from flame cannon upgrade for infinite stacking
+              const flameLevel = game.upgrades.flamecannon || 0;
+              const stackMultiplier = 5 + flameLevel; // +1 stack multiplier per level
+              const fireDamage = e.fireStacks * stackMultiplier; // Damage scales with stacks and level
+              e.hp -= fireDamage;
+              e.fireTimer = 0;
+              e.fireStacks = Math.max(0, e.fireStacks - 1); // Reduce stacks by 1 each tick
+              spawnParticles(e.x, e.y, '#ff4400', 6, 0.4); // Orange fire particles
+              spawnText(e.x, e.y - e.radius - 25, `-${fireDamage}`, '#ff4400', 0.6, 14);
+            }
           }
           
           // Visual fire effect on burning enemies
@@ -3034,14 +3337,109 @@
           }
         }
         
-        // Damage castle walls or cavalry
-        if(nearestCavalry && cavalryDist < e.radius + nearestCavalry.radius) {
-          // Attack cavalry
-          nearestCavalry.hp -= e.damage * dt * 2; // High damage rate to cavalry
-          spawnParticles(nearestCavalry.x, nearestCavalry.y, '#ff0088', 4, 0.4);
+        // Damage castle walls, taunt units, or engineer
+        if(nearestEngineer && engineerDist < e.radius + 12) { // 12 is engineer radius
+          // Attack engineer
+          nearestEngineer.engineerHp -= e.damage * dt * 2; // High damage rate to engineer
+          spawnParticles(nearestEngineer.engineerX, nearestEngineer.engineerY, '#ff0088', 4, 0.4);
+          
+          // Check if engineer dies
+          if(nearestEngineer.engineerHp <= 0) {
+            nearestEngineer.engineerHp = 0;
+            nearestEngineer.engineerActive = false;
+          }
+        } else if(nearestTaunt && tauntDist < e.radius + nearestTaunt.radius) {
+          // Attack taunt unit
+          nearestTaunt.hp -= e.damage * dt * 2; // High damage rate to taunt units
+          spawnParticles(nearestTaunt.x, nearestTaunt.y, '#ff0088', 4, 0.4);
         } else if(wallDist < e.radius && !e.flyer){ 
           damageCastle(e.damage*dt*0.5); 
           if(Math.random()<3*dt) spawnParticles(e.x,e.y,'#ff0088',6,0.6); 
+        }
+        
+        // Golem behavior - suck in nearby units and slam attack
+        if(e.type === 'golem') {
+          // Initialize golem properties if not set
+          if(e.suckCooldown === undefined) e.suckCooldown = 0;
+          if(e.slamCooldown === undefined) e.slamCooldown = 0;
+          if(e.attachedUnits === undefined) e.attachedUnits = [];
+          
+          e.suckCooldown -= dt;
+          e.slamCooldown -= dt;
+          
+          // Suck in nearby units every 3 seconds
+          if(e.suckCooldown <= 0) {
+            e.suckCooldown = 3.0;
+            
+            // Find nearby units to suck in
+            for(const unit of game.enemies) {
+              if(unit.dead || unit === e) continue;
+              if(unit.type === 'cavalry' || unit.type === 'angelic' || unit.type === 'midas' || unit.type === 'goldenangelic' || unit.type === 'converted') continue;
+              
+              const dx = unit.x - e.x;
+              const dy = unit.y - e.y;
+              const dist = Math.sqrt(dx*dx + dy*dy);
+              
+                             if(dist < 160) { // Suck radius (increased by 100% from 80 to 160)
+                 // Attach unit to golem
+                 unit.dead = true;
+                 e.attachedUnits.push({
+                   type: unit.type,
+                   hp: unit.maxHp,
+                   originalHp: unit.maxHp,
+                   angle: Math.atan2(dy, dx), // Store angle for positioning
+                   distance: dist // Store distance for visual effect
+                 });
+                 
+                 // Heal golem and increase max HP
+                 const healAmount = unit.maxHp * 0.5;
+                 e.maxHp += healAmount;
+                 e.hp = Math.min(e.hp + healAmount, e.maxHp);
+                 
+                 // Visual effect
+                 spawnText(e.x, e.y-e.radius-20, `+${Math.round(healAmount)}`, '#8B4513', 1.0, 18);
+                 spawnParticles(e.x, e.y, '#8B4513', 15, 0.8);
+                 setBattleMessage('🗿 GOLEM ABSORBS UNIT!', 2.0, '#8B4513');
+               }
+            }
+          }
+          
+          // Slam attack every 5 seconds
+          if(e.slamCooldown <= 0) {
+            e.slamCooldown = 5.0;
+            e.isSlamming = true; // Mark as slamming to prevent movement
+            
+            // Stun all nearby friendly units
+            for(const unit of game.enemies) {
+              if(unit.dead) continue;
+              if(unit.type === 'cavalry' || unit.type === 'angelic' || unit.type === 'midas' || unit.type === 'goldenangelic' || unit.type === 'converted') {
+                const dx = unit.x - e.x;
+                const dy = unit.y - e.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if(dist < 120) { // Slam radius
+                  // Stun the unit
+                  unit.stunned = true;
+                  unit.stunTimer = 2.0; // 2 second stun
+                  
+                  // Visual effect
+                  spawnText(unit.x, unit.y-unit.radius-15, 'STUNNED!', '#ff0000', 1.0, 16);
+                  spawnParticles(unit.x, unit.y, '#ff0000', 8, 0.6);
+                }
+              }
+            }
+            
+            // Visual slam effect
+            spawnText(e.x, e.y-e.radius-30, 'SLAM!', '#8B4513', 1.5, 24);
+            spawnParticles(e.x, e.y, '#8B4513', 30, 1.2);
+            setBattleMessage('🗿 GOLEM SLAM!', 2.0, '#8B4513');
+            game.shake = Math.min(20, game.shake + 8);
+          }
+          
+          // Reset slamming state after animation
+          if(e.isSlamming && e.slamCooldown < 4.5) {
+            e.isSlamming = false;
+          }
         }
         
         // Animation wobble
@@ -3082,7 +3480,7 @@
         // Check collisions
         for(const e of game.enemies){ 
           if(e.dead) continue; 
-          if(e.invisible && !(game.player.wall===2)) continue; 
+          if(e.invisible) continue; // Invisible enemies are always invisible now
           if(p.hitSet.has(e)) continue; 
           if(e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'converted') continue; // Cavalry, angelic knights, midas knights, and converted enemies are immune to player/tower damage
           if(p.radiant && (e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'converted')) continue; // Radiant projectiles also don't damage friendly units
@@ -3158,6 +3556,54 @@
             
             p.hitSet.add(e);
             
+            // Central Tower chaining logic
+            if(p.src === 'centraltower' && p.chainCount < p.maxChains) {
+              // Add this enemy to chained list
+              p.chainedEnemies.push(e);
+              
+              // Find next enemy to chain to
+              let nextEnemy = null;
+              let nextDist = Infinity;
+              for(const enemy of game.enemies) {
+                if(enemy.dead || enemy === e) continue;
+                if(enemy.type === 'cavalry' || enemy.type === 'angelic' || enemy.type === 'midas' || enemy.type === 'goldenangelic' || enemy.type === 'converted') continue;
+                if(p.chainedEnemies.includes(enemy)) continue; // Don't chain to already hit enemies
+                
+                const dx = enemy.x - e.x;
+                const dy = enemy.y - e.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if(dist < p.chainRange && dist < nextDist) {
+                  nextDist = dist;
+                  nextEnemy = enemy;
+                }
+              }
+              
+              if(nextEnemy) {
+                // Create chain effect
+                const dx = nextEnemy.x - e.x;
+                const dy = nextEnemy.y - e.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                const speed = 800;
+                
+                // Update projectile to target next enemy
+                p.x = e.x;
+                p.y = e.y;
+                p.vx = (dx/dist) * speed;
+                p.vy = (dy/dist) * speed;
+                p.chainCount++;
+                p.targetEnemy = nextEnemy;
+                
+                // Visual chain effect
+                spawnParticles(e.x, e.y, '#ff1493', 20, 1.0);
+                spawnText(e.x, e.y-25, 'CHAIN!', '#ff1493', 0.8, 16);
+                
+                // Continue projectile life
+                p.life = 1.0; // Reset life for chain
+                return true;
+              }
+            }
+            
             if(!p.pierce || p.pierce<=0){ 
               p.life=0; 
             } else { 
@@ -3177,7 +3623,8 @@
         ep.life-=dt; 
         if(ep.life<=0) return false; 
         
-        ep.vy += 180*dt; 
+        // Remove gravity for straight projectile movement
+        // ep.vy += 180*dt; 
         ep.x += ep.vx*dt; 
         ep.y += ep.vy*dt; 
         
@@ -3279,6 +3726,38 @@
               }
             }
             
+            ep.life = 0;
+            return false;
+          }
+        }
+        
+        // Check collision with taunt units (knights) first
+        for(const e of game.enemies) {
+          if(e.taunt && !e.dead && e.type !== 'converted') {
+            const dx = ep.x - e.x;
+            const dy = ep.y - e.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if(dist < e.radius + 6) { // 6 is projectile radius
+              // Damage the knight
+              e.hp -= 8; // Same damage as castle
+              spawnParticles(ep.x, ep.y, '#ffff00', 12, 0.8);
+              spawnText(e.x, e.y-e.radius-10, '-8', '#ffff00', 0.8, 16);
+              ep.life = 0;
+              return false;
+            }
+          }
+        }
+        
+        // Check collision with engineer
+        if(game.centralTower && game.centralTower.engineerActive && game.centralTower.engineerHp > 0) {
+          const dx = ep.x - game.centralTower.engineerX;
+          const dy = ep.y - game.centralTower.engineerY;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if(dist < 12 + 6) { // Engineer radius + projectile radius
+            // Damage the engineer
+            game.centralTower.engineerHp -= 8;
+            spawnParticles(ep.x, ep.y, '#ffff00', 12, 0.8);
+            spawnText(game.centralTower.engineerX, game.centralTower.engineerY-15, '-8', '#ffff00', 0.8, 16);
             ep.life = 0;
             return false;
           }
@@ -3399,111 +3878,49 @@
         handleShooting(dt);
         ballistaThink(dt);
         
-        // Radiant Aegis: Auto-fire Flame Cannon at nearby enemies
+        // Radiant Aegis: Periodic fire sputtering
         if(game.upgrades.divineaegis > 0 && game.divineAegis.active && game.upgrades.radiantaegis > 0) {
           const radiantLevel = game.upgrades.radiantaegis;
-          const fireRate = 0.5 + radiantLevel * 0.1; // Faster firing with levels
+          const sputterInterval = 1.5; // Sputter every 1.5 seconds
           
-          // Initialize or update fire timer
-          if(!game.radiantFireTimer) game.radiantFireTimer = 0;
-          game.radiantFireTimer += dt;
+          // Initialize or update sputter timer
+          if(!game.radiantSputterTimer) game.radiantSputterTimer = 0;
+          game.radiantSputterTimer += dt;
           
-          if(game.radiantFireTimer >= fireRate) {
-            game.radiantFireTimer = 0;
+          if(game.radiantSputterTimer >= sputterInterval) {
+            game.radiantSputterTimer = 0;
             
             // Calculate shield position (same as in collision detection)
             const mouseAngle = Math.atan2(mouse.y - CENTER.y, mouse.x - CENTER.x);
-            const shieldDistance = 200; // Same as in drawWorld
+            const shieldDistance = 200; // Same distance as rendering
             const shieldX = CENTER.x + Math.cos(mouseAngle) * shieldDistance;
             const shieldY = CENTER.y + Math.sin(mouseAngle) * shieldDistance;
             
-            // Fire from the shield itself
-            const fireX = shieldX;
-            const fireY = shieldY;
-            
-            // Find nearest enemy within range
-            let nearestEnemy = null;
-            let nearestDist = Infinity;
-            const maxRange = 300 + radiantLevel * 50; // Range increases with level
-            
-            for(const e of game.enemies) {
-              if(e.dead || e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'converted') continue;
+            // Create sputtering projectiles in random directions
+            for(let i = 0; i < 3; i++) { // 3 sputtering projectiles
+              const sputterAngle = Math.random() * Math.PI * 2; // Random direction
+              const sputterSpeed = 300 + Math.random() * 200; // Fast sputters
               
-              const dx = e.x - shieldX;
-              const dy = e.y - shieldY;
-              const dist = Math.sqrt(dx*dx + dy*dy);
-              
-              if(dist < maxRange && dist < nearestDist) {
-                nearestEnemy = e;
-                nearestDist = dist;
-              }
-            }
-            
-            // Fire Flame Cannon at nearest enemy from closer to shield position
-            if(nearestEnemy) {
-              const dir = Math.atan2(nearestEnemy.y - fireY, nearestEnemy.x - fireX);
-              
-              // Create Radiant Aegis flame effect (similar to Flame Cannon but independent)
-              const radiantLevel = game.upgrades.radiantaegis;
-              const baseRange = 51; // Reduced by 80% (from 255 to 51)
-              const baseWidth = 60;
-              const range = baseRange * (1 + radiantLevel * 0.15);
-              const width = baseWidth * (1 + radiantLevel * 0.15);
-              const baseDamage = 1 + radiantLevel; // +1 base damage per level
-              const stackMultiplier = 5 + radiantLevel; // +1 stack multiplier per level
-              
-              // Calculate cone-shaped flame area
-              const endX = fireX + Math.cos(dir) * range;
-              const endY = fireY + Math.sin(dir) * range;
-              
-              // Add flame stream to game state for rendering
-              if(!game.flameStreams) game.flameStreams = [];
-              game.flameStreams.push({
-                x1: fireX, y1: fireY, x2: endX, y2: endY,
-                width: width,
-                life: 0.3,
-                baseDamage: baseDamage,
-                stackMultiplier: stackMultiplier,
-                dir: dir,
-                range: range,
-                radiant: true // Mark as radiant flame
+              if(!game.projectiles) game.projectiles = [];
+              game.projectiles.push({
+                x: shieldX,
+                y: shieldY,
+                vx: Math.cos(sputterAngle) * sputterSpeed,
+                vy: Math.sin(sputterAngle) * sputterSpeed,
+                size: 5, // Smaller size like flame cannon
+                life: 1.5,
+                baseDmg: 6 + radiantLevel * 2, // Damage scales with level
+                color: '#ffaa00',
+                src: 'radiantaegis',
+                sputter: true,
+                burnStacks: 1,
+                trail: [],
+                hitSet: new Set()
               });
-              
-              // Damage all enemies in the flame area
-              for(const e of game.enemies) {
-                if(e.dead) continue;
-                if(e.invisible && !(game.player.wall===2)) continue;
-                if(e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'converted') continue;
-                
-                // Check if enemy is in the cone-shaped flame area
-                const distToLine = distanceToLine(e.x, e.y, fireX, fireY, endX, endY);
-                const distFromStart = Math.sqrt((e.x - fireX) * (e.x - fireX) + (e.y - fireY) * (e.y - fireY));
-                
-                // Cone shape: wider at the end, narrower at the start
-                const coneWidth = width * (distFromStart / range);
-                const hitRadius = e.radius + coneWidth * 0.5;
-                
-                // Check if enemy is within the cone and not behind the flame source
-                if(distToLine < hitRadius && distFromStart <= range && distFromStart > 0) {
-                  // Apply immediate base damage
-                  const immediateDamage = 15 + radiantLevel;
-                  e.hp -= immediateDamage;
-                  spawnText(e.x, e.y-25, `-${immediateDamage}`, '#ff0000', 0.8, 18);
-                  
-                  // Apply fire damage stacks
-                  if(!e.fireStacks) e.fireStacks = 0;
-                  e.fireStacks += baseDamage; // Add stacks based on base damage
-                  e.fireTimer = 0.3; // Start timer immediately so damage ticks right away
-                  
-                  // Visual effect
-                  spawnParticles(e.x, e.y, '#ff4400', 8, 0.6);
-                  spawnText(e.x, e.y-12, `+${baseDamage}`, '#ff4400', 0.6, 16);
-                }
-              }
-              
-              // Visual effect
-              spawnParticles(fireX, fireY, '#ff0000', 15, 0.8);
             }
+            
+            // Visual effect
+            spawnParticles(shieldX, shieldY, '#ffaa00', 8, 0.6);
           }
         }
         
@@ -3530,7 +3947,7 @@
             
             // Check collision with enemies
             for(const e of game.enemies) {
-              if(e.dead || e.type === 'cavalry' || e.type === 'converted') continue;
+              if(e.dead || e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'goldenangelic' || e.type === 'converted') continue;
               
               const dx = e.x - p.x;
               const dy = e.y - p.y;
@@ -3567,7 +3984,7 @@
             let nearestEnemy = null;
             let nearestDist = Infinity;
             for(const e of game.enemies) {
-              if(e.dead || e.type === 'cavalry' || e.type === 'converted') continue;
+              if(e.dead || e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'goldenangelic' || e.type === 'converted') continue;
               
               const dx = e.x - p.x;
               const dy = e.y - p.y;
@@ -3619,7 +4036,7 @@
             
             // Check collision with enemies
             for(const e of game.enemies) {
-              if(e.dead || e.type === 'cavalry' || e.type === 'converted') continue;
+              if(e.dead || e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'goldenangelic' || e.type === 'converted') continue;
               
               const dx = e.x - p.x;
               const dy = e.y - p.y;
@@ -3628,6 +4045,27 @@
               if(dist < e.radius + p.size) {
                 // Explode on impact
                 explodeAt(p.x, p.y, p.baseDmg, p.explosionRadius);
+                
+                // Apply poison effect to all enemies in explosion radius
+                if(game.upgrades.poison > 0) {
+                  for(const enemy of game.enemies) {
+                    if(enemy.dead) continue;
+                    const dx = enemy.x - p.x;
+                    const dy = enemy.y - p.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if(dist < p.explosionRadius) {
+                      // Apply poison stacks
+                      if(!enemy.poisonStacks) enemy.poisonStacks = 0;
+                      enemy.poisonStacks += game.upgrades.poison;
+                      enemy.poisonTimer = 3.0; // Reset poison timer
+                      
+                      // Visual poison effect
+                      spawnText(enemy.x, enemy.y-enemy.radius-10, 'POISON!', '#00ff00', 0.8, 14);
+                      spawnParticles(enemy.x, enemy.y, '#00ff00', 6, 0.6);
+                    }
+                  }
+                }
                 
                 // Visual explosion effect
                 spawnParticles(p.x, p.y, '#ff00ff', 40, 1.5);
@@ -3670,6 +4108,346 @@
             game.flameStreams[i].life -= dt;
             if(game.flameStreams[i].life <= 0) {
               game.flameStreams.splice(i,1);
+            }
+          }
+        }
+        
+        // Update orbital strikes
+        if(game.orbitalStrikes) {
+          for(let i=game.orbitalStrikes.length-1;i>=0;i--){
+            const strike = game.orbitalStrikes[i];
+            strike.timer -= dt;
+            
+            if(strike.timer <= 0.001) { // Small buffer for floating point precision
+              
+              // Execute orbital strike
+              const strikeX = strike.x;
+              const strikeY = strike.y;
+              
+              // Massive explosion effect
+              spawnParticles(strikeX, strikeY, '#ff0000', 80, 2.0);
+              spawnParticles(strikeX, strikeY, '#ffaa00', 60, 1.8);
+              spawnParticles(strikeX, strikeY, '#ffff00', 40, 1.5);
+              game.shake = Math.min(25, game.shake + 15);
+              
+              // Damage all enemies in radius
+              for(const e of game.enemies) {
+                if(e.dead) continue;
+                if(e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'goldenangelic' || e.type === 'converted') continue;
+                
+                const dx = e.x - strikeX;
+                const dy = e.y - strikeY;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if(dist < strike.radius) {
+                  // Apply damage
+                  e.hp -= strike.damage;
+                  spawnText(e.x, e.y-20, `-${Math.round(strike.damage)}`, '#ff0000', 1.0, 20);
+                  spawnParticles(e.x, e.y, '#ff0000', 15, 0.8);
+                  
+                  // Time Necromancy - convert enemies killed by orbital strike
+                  if(e.hp <= 0 && game.upgrades.necromancy > 0) {
+                    const necroLevel = game.upgrades.necromancy;
+                    const statBonus = 1 + necroLevel * 0.25; // +25% stats per level
+                    
+                    // Convert the enemy to friendly
+                    e.dead = false;
+                    e.maxHp = e.maxHp * statBonus;
+                    e.hp = e.maxHp; // Set to 100% health after conversion
+                    e.damage = e.damage * statBonus;
+                    e.speed = e.speed * 1.6; // +60% speed
+                    e.originalType = e.type; // Store original type before changing
+                    e.type = 'converted';
+                    e.color = '#00ff88';
+                    e.glowColor = '#00ff88';
+                    e.invisible = false; // Ensure they are visible
+                    
+                    spawnText(e.x, e.y-e.radius-25, 'CONVERTED!', '#00ff88', 1.0, 20);
+                    spawnParticles(e.x, e.y, '#00ff88', 30, 1.0);
+                    setBattleMessage('💀 ORBITAL CONVERSION!', 2.5, '#00ff88');
+                  }
+                }
+              }
+              
+              // Battle message
+              setBattleMessage('☄️ ORBITAL STRIKE!', 2.0, '#ff0000');
+              
+              // Remove strike
+              game.orbitalStrikes.splice(i,1);
+            }
+          }
+        }
+        
+        // Update Central Tower and Engineer (Tower of Babel)
+        if(game.centralTower && game.centralTower.engineerActive) {
+          const tower = game.centralTower;
+          
+          // Engineer is alive
+          if(tower.engineerHp > 0) {
+            
+            // STATE: COLLECTING RESOURCES
+            if(tower.engineerState === 'collecting') {
+              // Find nearest uncollected resource
+              if(!tower.resourceTarget || tower.resourceTarget.collected) {
+                let nearestResource = null;
+                let nearestDist = Infinity;
+                
+                for(const resource of game.resources) {
+                  if(resource.collected) continue;
+                  
+                  // Skip if we have enough of this type
+                  if(tower.stonesCollected >= tower.stonesNeeded && resource.type === 'stone') continue;
+                  if(tower.woodCollected >= tower.woodNeeded && resource.type === 'wood') continue;
+                  
+                  const dx = resource.x - tower.engineerX;
+                  const dy = resource.y - tower.engineerY;
+                  const dist = Math.sqrt(dx*dx + dy*dy);
+                  
+                  if(dist < nearestDist) {
+                    nearestDist = dist;
+                    nearestResource = resource;
+                  }
+                }
+                
+                tower.resourceTarget = nearestResource;
+              }
+              
+              // Move towards resource
+              if(tower.resourceTarget && !tower.carryingResource) {
+                const dx = tower.resourceTarget.x - tower.engineerX;
+                const dy = tower.resourceTarget.y - tower.engineerY;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if(dist > 15) {
+                  // Move towards resource
+                  tower.engineerX += (dx/dist) * tower.engineerSpeed * dt;
+                  tower.engineerY += (dy/dist) * tower.engineerSpeed * dt;
+                } else {
+                  // Pick up resource
+                  tower.resourceTarget.collected = true;
+                  tower.carryingResource = tower.resourceTarget.type;
+                  
+                  // Visual feedback
+                  const color = tower.resourceTarget.type === 'stone' ? '#888888' : '#8B4513';
+                  spawnParticles(tower.resourceTarget.x, tower.resourceTarget.y, color, 10, 0.6);
+                  spawnText(tower.engineerX, tower.engineerY-20, tower.resourceTarget.type.toUpperCase() + '!', color, 0.8, 14);
+                  
+                  tower.resourceTarget = null;
+                }
+              }
+              
+              // Return to castle with resource
+              if(tower.carryingResource) {
+                const dx = CENTER.x - tower.engineerX;
+                const dy = CENTER.y - tower.engineerY;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if(dist > 20) {
+                  // Move back to castle
+                  tower.engineerX += (dx/dist) * tower.engineerSpeed * dt;
+                  tower.engineerY += (dy/dist) * tower.engineerSpeed * dt;
+                } else {
+                  // Deposit resource
+                  if(tower.carryingResource === 'stone') {
+                    tower.stonesCollected++;
+                    spawnText(CENTER.x, CENTER.y-30, `Stone ${tower.stonesCollected}/${tower.stonesNeeded}`, '#888888', 1.0, 16);
+                  } else {
+                    tower.woodCollected++;
+                    spawnText(CENTER.x, CENTER.y-30, `Wood ${tower.woodCollected}/${tower.woodNeeded}`, '#8B4513', 1.0, 16);
+                  }
+                  
+                  tower.carryingResource = null;
+                  
+                  // Check if ready to build
+                  if(tower.stonesCollected >= tower.stonesNeeded && tower.woodCollected >= tower.woodNeeded) {
+                    tower.engineerState = 'building';
+                    setBattleMessage('🏗️ CONSTRUCTION BEGINS!', 2.5, '#ff1493');
+                  }
+                }
+              }
+            }
+            
+            // STATE: BUILDING TOWER
+            else if(tower.engineerState === 'building') {
+              // Circle around castle while building
+              const time = performance.now() * 0.001;
+              const radius = 50;
+              const speed = 0.5;
+              tower.engineerX = CENTER.x + Math.cos(time * speed) * radius;
+              tower.engineerY = CENTER.y + Math.sin(time * speed) * radius;
+              
+              // Build progress
+              tower.lastBuildTime += dt;
+              if(tower.lastBuildTime >= tower.buildInterval) {
+                tower.lastBuildTime = 0;
+                tower.constructionProgress = Math.min(tower.maxProgress, tower.constructionProgress + tower.buildAmount);
+                
+                // Update visual levels
+                const progress = tower.constructionProgress / tower.maxProgress;
+                tower.scaffoldHeight = progress;
+                tower.towerLevels = Math.floor(progress * tower.maxLevels);
+                
+                // Visual effect
+                spawnParticles(CENTER.x, CENTER.y - 20 * tower.towerLevels, '#ff1493', 12, 0.8);
+                spawnText(tower.engineerX, tower.engineerY-15, '+5', '#ff1493', 0.8, 14);
+                
+                // Check completion
+                if(tower.constructionProgress >= tower.maxProgress && !tower.towerBuilt) {
+                  tower.towerBuilt = true;
+                  tower.engineerState = 'repairing';
+                  spawnParticles(CENTER.x, CENTER.y, '#ff1493', 100, 2.0);
+                  setBattleMessage('🏰 TOWER OF BABEL COMPLETE!', 3.0, '#ff1493');
+                  game.shake = Math.min(20, game.shake + 10);
+                }
+              }
+            }
+            
+            // STATE: REPAIRING CASTLE
+            else if(tower.engineerState === 'repairing') {
+              // Circle around castle while repairing
+              const time = performance.now() * 0.001;
+              const radius = 40;
+              const speed = 0.8;
+              tower.engineerX = CENTER.x + Math.cos(time * speed) * radius;
+              tower.engineerY = CENTER.y + Math.sin(time * speed) * radius;
+              
+              // Repair castle
+              tower.repairTimer += dt;
+              if(tower.repairTimer >= tower.repairInterval) {
+                tower.repairTimer = 0;
+                game.castleHp = Math.min(game.castleHp + tower.repairAmount, game.castleMax);
+                
+                spawnParticles(CENTER.x, CENTER.y, '#00ff00', 8, 0.6);
+                spawnText(tower.engineerX, tower.engineerY-15, `+${tower.repairAmount} HP`, '#00ff00', 1.0, 14);
+              }
+            }
+          } else {
+            // Engineer is dead
+            tower.engineerActive = false;
+            setBattleMessage('💀 ENGINEER KILLED!', 2.5, '#ff0000');
+          }
+          
+          // TOWER LIGHTNING ATTACKS
+          if(tower.towerBuilt) {
+            tower.lastShotTime += dt;
+            if(tower.lastShotTime >= tower.shotInterval) {
+              tower.lastShotTime = 0;
+              
+              // Find nearest enemy
+              let nearestEnemy = null;
+              let nearestDist = Infinity;
+              
+              for(const e of game.enemies) {
+                if(e.dead || e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'goldenangelic' || e.type === 'converted') continue;
+                
+                const dx = e.x - CENTER.x;
+                const dy = e.y - CENTER.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if(dist < tower.range && dist < nearestDist) {
+                  nearestDist = dist;
+                  nearestEnemy = e;
+                }
+              }
+              
+              if(nearestEnemy) {
+                // Create lightning bolt
+                const bolt = {
+                  x1: CENTER.x,
+                  y1: CENTER.y - 60, // From tower top
+                  x2: nearestEnemy.x,
+                  y2: nearestEnemy.y,
+                  life: 0.4,
+                  segments: [],
+                  color: '#ff00ff',
+                  thickness: 8
+                };
+                
+                // Generate jagged lightning path
+                const segmentCount = 12;
+                for(let i = 0; i <= segmentCount; i++) {
+                  const t = i / segmentCount;
+                  const baseX = bolt.x1 + (bolt.x2 - bolt.x1) * t;
+                  const baseY = bolt.y1 + (bolt.y2 - bolt.y1) * t;
+                  const offset = (i === 0 || i === segmentCount) ? 0 : (Math.random() - 0.5) * 30;
+                  bolt.segments.push({
+                    x: baseX + offset,
+                    y: baseY + offset * 0.5
+                  });
+                }
+                
+                game.lightningBolts.push(bolt);
+                
+                // Deal damage
+                nearestEnemy.hp -= tower.damage;
+                spawnText(nearestEnemy.x, nearestEnemy.y-20, `-${tower.damage}`, '#ff00ff', 1.0, 20);
+                spawnParticles(nearestEnemy.x, nearestEnemy.y, '#ff00ff', 30, 1.2);
+                
+                // Find chain target
+                let chainEnemy = null;
+                let chainDist = Infinity;
+                
+                for(const e of game.enemies) {
+                  if(e.dead || e === nearestEnemy || e.type === 'cavalry' || e.type === 'angelic' || e.type === 'midas' || e.type === 'goldenangelic' || e.type === 'converted') continue;
+                  
+                  const dx = e.x - nearestEnemy.x;
+                  const dy = e.y - nearestEnemy.y;
+                  const dist = Math.sqrt(dx*dx + dy*dy);
+                  
+                  if(dist < tower.chainRange && dist < chainDist) {
+                    chainDist = dist;
+                    chainEnemy = e;
+                  }
+                }
+                
+                // Create chain lightning
+                if(chainEnemy) {
+                  const chainBolt = {
+                    x1: nearestEnemy.x,
+                    y1: nearestEnemy.y,
+                    x2: chainEnemy.x,
+                    y2: chainEnemy.y,
+                    life: 0.3,
+                    segments: [],
+                    color: '#8800ff',
+                    thickness: 5
+                  };
+                  
+                  // Generate chain path
+                  const chainSegments = 8;
+                  for(let i = 0; i <= chainSegments; i++) {
+                    const t = i / chainSegments;
+                    const baseX = chainBolt.x1 + (chainBolt.x2 - chainBolt.x1) * t;
+                    const baseY = chainBolt.y1 + (chainBolt.y2 - chainBolt.y1) * t;
+                    const offset = (i === 0 || i === chainSegments) ? 0 : (Math.random() - 0.5) * 20;
+                    chainBolt.segments.push({
+                      x: baseX + offset,
+                      y: baseY + offset * 0.5
+                    });
+                  }
+                  
+                  game.lightningBolts.push(chainBolt);
+                  
+                  // Chain damage
+                  chainEnemy.hp -= tower.chainDamage;
+                  spawnText(chainEnemy.x, chainEnemy.y-20, `-${tower.chainDamage}`, '#8800ff', 1.0, 18);
+                  spawnParticles(chainEnemy.x, chainEnemy.y, '#8800ff', 20, 1.0);
+                }
+                
+                // Screen shake and sound
+                game.shake = Math.min(15, game.shake + 5);
+                sfx.powerup();
+              }
+            }
+          }
+        }
+        
+        // Update lightning bolts
+        if(game.lightningBolts) {
+          for(let i = game.lightningBolts.length - 1; i >= 0; i--) {
+            game.lightningBolts[i].life -= dt;
+            if(game.lightningBolts[i].life <= 0) {
+              game.lightningBolts.splice(i, 1);
             }
           }
         }
@@ -3719,7 +4497,7 @@
             const dy = nearestEnemy.y - game.undeadDragon.y;
             const dist = Math.sqrt(dx*dx + dy*dy);
             if(dist > 0) {
-              const speed = 25; // Increased from 20 to 25 (25% faster)
+              const speed = 43; // Increased from 25 to 43 (70% faster)
               game.undeadDragon.x += (dx/dist) * speed * dt;
               game.undeadDragon.y += (dy/dist) * speed * dt;
             }
@@ -3830,7 +4608,7 @@
             const dy = CENTER.y - game.undeadDragon.y;
             const dist = Math.sqrt(dx*dx + dy*dy);
             if(dist > 0) {
-              const speed = 19; // Increased from 15 to 19 (25% faster)
+              const speed = 32; // Increased from 19 to 32 (70% faster)
               game.undeadDragon.x += (dx/dist) * speed * dt;
               game.undeadDragon.y += (dy/dist) * speed * dt;
             }
@@ -4079,20 +4857,7 @@
         }
         
         // Draw wall indicators
-        const wallPositions = [
-          { x: CENTER.x, y: CENTER.y - CASTLE.r, label: 'N', color: '#ff00ff' },
-          { x: CENTER.x, y: CENTER.y + CASTLE.r, label: 'S', color: '#00ffff' },
-          { x: CENTER.x + CASTLE.r, y: CENTER.y, label: 'E', color: '#ffff00' },
-          { x: CENTER.x - CASTLE.r, y: CENTER.y, label: 'W', color: '#00ff88' }
-        ];
-        
-        wallPositions.forEach((wall, i) => {
-          ctx.fillStyle = game.player.wall === i ? wall.color : 'rgba(255,255,255,0.3)';
-          ctx.font = 'bold 16px Orbitron';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(wall.label, wall.x, wall.y);
-        });
+        // Wall positions removed - no longer needed with mouse-based movement
         
         // Projectile trails
         for(const p of game.projectiles){ 
@@ -4134,6 +4899,318 @@
             ctx.stroke();
             ctx.shadowBlur = 0;
             ctx.globalAlpha = 1;
+          }
+        }
+        
+        // Orbital Strike indicators
+        if(game.orbitalStrikes) {
+          for(const strike of game.orbitalStrikes) {
+            const progress = 1 - (strike.timer / strike.totalDelay);
+            const alpha = 0.3 + progress * 0.7;
+            
+            ctx.globalAlpha = alpha;
+            
+            // Draw warning circle
+            ctx.shadowColor = '#ff0000';
+            ctx.shadowBlur = 20;
+            ctx.strokeStyle = '#ff0000';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(strike.x, strike.y, strike.radius * progress, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Draw crosshair
+            ctx.strokeStyle = '#ff0000';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(strike.x - 20, strike.y);
+            ctx.lineTo(strike.x + 20, strike.y);
+            ctx.moveTo(strike.x, strike.y - 20);
+            ctx.lineTo(strike.x, strike.y + 20);
+            ctx.stroke();
+            
+            // Draw countdown text
+            ctx.fillStyle = '#ff0000';
+            ctx.font = 'bold 16px Orbitron';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = '#ff0000';
+            ctx.shadowBlur = 10;
+            ctx.fillText(`${strike.timer.toFixed(1)}s`, strike.x, strike.y - 40);
+            
+            ctx.shadowBlur = 0;
+            ctx.globalAlpha = 1;
+          }
+        }
+        
+        // Central Tower and Engineer (Tower of Babel)
+        if(game.centralTower) {
+          const tower = game.centralTower;
+          
+          // Draw resources on map
+          if(game.resources) {
+            for(const resource of game.resources) {
+              if(resource.collected) continue;
+              
+              if(resource.type === 'stone') {
+                // Draw stone
+                ctx.fillStyle = '#888888';
+                ctx.shadowColor = '#888888';
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(resource.x, resource.y, 8, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Stone texture
+                ctx.fillStyle = '#666666';
+                ctx.beginPath();
+                ctx.arc(resource.x - 2, resource.y - 2, 3, 0, Math.PI * 2);
+                ctx.fill();
+              } else {
+                // Draw wood
+                ctx.fillStyle = '#8B4513';
+                ctx.shadowColor = '#8B4513';
+                ctx.shadowBlur = 10;
+                ctx.fillRect(resource.x - 6, resource.y - 8, 12, 16);
+                
+                // Wood grain
+                ctx.strokeStyle = '#654321';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(resource.x - 4, resource.y - 6);
+                ctx.lineTo(resource.x - 4, resource.y + 6);
+                ctx.moveTo(resource.x, resource.y - 6);
+                ctx.lineTo(resource.x, resource.y + 6);
+                ctx.stroke();
+              }
+              ctx.shadowBlur = 0;
+            }
+          }
+          
+          // Draw tower construction or completed tower
+          if(!tower.towerBuilt) {
+            // Draw scaffolding during construction
+            const progress = tower.constructionProgress / tower.maxProgress;
+            const levels = Math.floor(progress * tower.maxLevels);
+            
+            ctx.strokeStyle = '#ff1493';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#ff1493';
+            ctx.shadowBlur = 15;
+            
+            // Base platform
+            const baseWidth = 80;
+            const baseHeight = 15;
+            ctx.fillStyle = 'rgba(255, 20, 147, 0.3)';
+            ctx.fillRect(CENTER.x - baseWidth/2, CENTER.y - baseHeight/2, baseWidth, baseHeight);
+            ctx.strokeRect(CENTER.x - baseWidth/2, CENTER.y - baseHeight/2, baseWidth, baseHeight);
+            
+            // Build levels (Tower of Babel style - pyramidal)
+            for(let level = 0; level < levels; level++) {
+              const levelY = CENTER.y - 15 - level * 20;
+              const levelWidth = baseWidth - level * 10;
+              const levelHeight = 18;
+              
+              // Level platform
+              ctx.fillStyle = `rgba(255, 20, 147, ${0.3 - level * 0.03})`;
+              ctx.fillRect(CENTER.x - levelWidth/2, levelY - levelHeight/2, levelWidth, levelHeight);
+              ctx.strokeRect(CENTER.x - levelWidth/2, levelY - levelHeight/2, levelWidth, levelHeight);
+              
+              // Spiral scaffolding
+              const spiralAngle = (level * Math.PI / 3) + (performance.now() * 0.0005);
+              for(let i = 0; i < 4; i++) {
+                const angle = spiralAngle + (i * Math.PI / 2);
+                const sx = CENTER.x + Math.cos(angle) * (levelWidth/2 + 10);
+                const sy = levelY + Math.sin(angle) * 8;
+                
+                ctx.beginPath();
+                ctx.moveTo(CENTER.x - levelWidth/2, levelY);
+                ctx.lineTo(sx, sy);
+                ctx.stroke();
+              }
+            }
+            
+            // Progress bar
+            const barWidth = 100;
+            const barHeight = 8;
+            const barX = CENTER.x - barWidth/2;
+            const barY = CENTER.y - 60 - levels * 20;
+            
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(barX, barY, barWidth, barHeight);
+            
+            ctx.fillStyle = '#ff1493';
+            ctx.fillRect(barX, barY, barWidth * progress, barHeight);
+            
+            ctx.fillStyle = '#ff1493';
+            ctx.font = 'bold 14px Orbitron';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${Math.round(progress * 100)}%`, CENTER.x, barY - 15);
+            
+            // Resource counter
+            if(tower.engineerState === 'collecting') {
+              ctx.fillStyle = '#ffffff';
+              ctx.font = 'bold 12px Orbitron';
+              ctx.fillText(`Stone: ${tower.stonesCollected}/${tower.stonesNeeded}`, CENTER.x - 40, CENTER.y + 40);
+              ctx.fillText(`Wood: ${tower.woodCollected}/${tower.woodNeeded}`, CENTER.x + 40, CENTER.y + 40);
+            }
+            
+          } else {
+            // Draw completed Tower of Babel
+            const pulseIntensity = Math.sin(performance.now() * 0.004) * 0.3 + 0.7;
+            
+            ctx.fillStyle = '#ff1493';
+            ctx.shadowColor = '#ff1493';
+            ctx.shadowBlur = 25 * pulseIntensity;
+            
+            // Draw all 7 levels
+            for(let level = 0; level < tower.maxLevels; level++) {
+              const levelY = CENTER.y - 15 - level * 20;
+              const levelWidth = 80 - level * 10;
+              const levelHeight = 18;
+              
+              // Gradient for each level
+              const gradient = ctx.createLinearGradient(
+                CENTER.x - levelWidth/2, levelY,
+                CENTER.x + levelWidth/2, levelY
+              );
+              gradient.addColorStop(0, '#ff1493');
+              gradient.addColorStop(0.5, '#ffffff');
+              gradient.addColorStop(1, '#ff1493');
+              
+              ctx.fillStyle = gradient;
+              ctx.fillRect(CENTER.x - levelWidth/2, levelY - levelHeight/2, levelWidth, levelHeight);
+              
+              // Level borders
+              ctx.strokeStyle = '#ffffff';
+              ctx.lineWidth = 2;
+              ctx.strokeRect(CENTER.x - levelWidth/2, levelY - levelHeight/2, levelWidth, levelHeight);
+              
+              // Windows on each level
+              ctx.fillStyle = '#000000';
+              for(let i = 0; i < 3; i++) {
+                if(levelWidth > 30) {
+                  const windowX = CENTER.x - levelWidth/2 + 10 + i * (levelWidth/4);
+                  const windowY = levelY;
+                  ctx.fillRect(windowX, windowY - 4, 6, 8);
+                }
+              }
+              
+              // Floating energy orbs
+              const orbAngle = performance.now() * 0.002 + level * Math.PI / 4;
+              const orbX = CENTER.x + Math.cos(orbAngle) * (levelWidth/2 + 15);
+              const orbY = levelY + Math.sin(orbAngle) * 5;
+              
+              ctx.fillStyle = '#ffffff';
+              ctx.shadowColor = '#ffffff';
+              ctx.shadowBlur = 15;
+              ctx.beginPath();
+              ctx.arc(orbX, orbY, 4, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            
+            // Tower spire with lightning rod
+            const spireY = CENTER.y - 15 - tower.maxLevels * 20;
+            ctx.fillStyle = '#ff1493';
+            ctx.beginPath();
+            ctx.moveTo(CENTER.x, spireY - 10);
+            ctx.lineTo(CENTER.x - 8, spireY - 35);
+            ctx.lineTo(CENTER.x, spireY - 50);
+            ctx.lineTo(CENTER.x + 8, spireY - 35);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Lightning rod
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#ffffff';
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.moveTo(CENTER.x, spireY - 50);
+            ctx.lineTo(CENTER.x, spireY - 65);
+            ctx.stroke();
+            
+            // Energy ball (pulses when firing)
+            const energySize = tower.lastShotTime < 0.2 ? 12 : 8;
+            ctx.fillStyle = '#ff00ff';
+            ctx.shadowColor = '#ff00ff';
+            ctx.shadowBlur = 30;
+            ctx.beginPath();
+            ctx.arc(CENTER.x, spireY - 65, energySize, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          
+          ctx.shadowBlur = 0;
+          
+          // Draw engineer
+          if(tower.engineerActive && tower.engineerHp > 0) {
+            ctx.fillStyle = '#ff1493';
+            ctx.shadowColor = '#ff1493';
+            ctx.shadowBlur = 10;
+            
+            // Engineer body
+            ctx.beginPath();
+            ctx.arc(tower.engineerX, tower.engineerY, 12, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Hard hat
+            ctx.fillStyle = '#ffff00';
+            ctx.beginPath();
+            ctx.arc(tower.engineerX, tower.engineerY - 8, 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Show carried resource
+            if(tower.carryingResource) {
+              ctx.fillStyle = tower.carryingResource === 'stone' ? '#888888' : '#8B4513';
+              ctx.fillRect(tower.engineerX + 8, tower.engineerY - 4, 8, 8);
+            }
+            
+            // Health bar
+            const healthBarWidth = 24;
+            const healthBarHeight = 4;
+            const healthBarX = tower.engineerX - healthBarWidth/2;
+            const healthBarY = tower.engineerY - 25;
+            
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
+            
+            const healthPercent = tower.engineerHp / tower.engineerMaxHp;
+            ctx.fillStyle = healthPercent > 0.5 ? '#00ff00' : healthPercent > 0.25 ? '#ffff00' : '#ff0000';
+            ctx.fillRect(healthBarX, healthBarY, healthBarWidth * healthPercent, healthBarHeight);
+            
+            ctx.shadowBlur = 0;
+          }
+          
+          // Draw lightning bolts
+          if(game.lightningBolts) {
+            for(const bolt of game.lightningBolts) {
+              const alpha = Math.min(1, bolt.life / 0.4);
+              
+              ctx.globalAlpha = alpha;
+              ctx.strokeStyle = bolt.color;
+              ctx.lineWidth = bolt.thickness;
+              ctx.shadowColor = bolt.color;
+              ctx.shadowBlur = 20;
+              
+              // Draw jagged lightning path
+              ctx.beginPath();
+              if(bolt.segments && bolt.segments.length > 0) {
+                ctx.moveTo(bolt.segments[0].x, bolt.segments[0].y);
+                for(let i = 1; i < bolt.segments.length; i++) {
+                  ctx.lineTo(bolt.segments[i].x, bolt.segments[i].y);
+                }
+              }
+              ctx.stroke();
+              
+              // Extra glow layer
+              ctx.lineWidth = bolt.thickness * 0.5;
+              ctx.strokeStyle = '#ffffff';
+              ctx.shadowBlur = 30;
+              ctx.stroke();
+              
+              ctx.shadowBlur = 0;
+              ctx.globalAlpha = 1;
+            }
           }
         }
         
@@ -4682,6 +5759,146 @@
             spawnParticles(e.x, e.y+bob, '#ff8800', 3, 0.5);
           }
         }
+        else if(e.type==='golem'){
+          // Boss golem with attached units
+          
+          // Enhanced golem body with stone texture effect
+          const stoneGradient = ctx.createRadialGradient(e.x, e.y+bob, 0, e.x, e.y+bob, e.radius*1.5);
+          stoneGradient.addColorStop(0, '#A0522D');
+          stoneGradient.addColorStop(0.3, '#8B4513');
+          stoneGradient.addColorStop(0.7, '#654321');
+          stoneGradient.addColorStop(1, '#3E2723');
+          
+          ctx.fillStyle = stoneGradient;
+          ctx.fillRect(e.x-e.radius*1.2, e.y+bob-e.radius*1.2, e.radius*2.4, e.radius*2.4);
+          
+          // Stone texture details
+          ctx.strokeStyle = '#654321';
+          ctx.lineWidth = 1;
+          for(let i = 0; i < 8; i++) {
+            const angle = (Math.PI * 2 / 8) * i;
+            const x1 = e.x + Math.cos(angle) * e.radius * 0.8;
+            const y1 = e.y + bob + Math.sin(angle) * e.radius * 0.8;
+            const x2 = e.x + Math.cos(angle) * e.radius * 1.1;
+            const y2 = e.y + bob + Math.sin(angle) * e.radius * 1.1;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+          }
+          
+          // Golem eyes with glowing effect
+          ctx.shadowColor = '#ff0000';
+          ctx.shadowBlur = 15;
+          ctx.fillStyle='#ff0000';
+          ctx.beginPath();
+          ctx.arc(e.x-e.radius*0.4, e.y+bob-e.radius*0.3, e.radius*0.25, 0, Math.PI*2);
+          ctx.arc(e.x+e.radius*0.4, e.y+bob-e.radius*0.3, e.radius*0.25, 0, Math.PI*2);
+          ctx.fill();
+          
+          // Eye pupils
+          ctx.fillStyle='#000000';
+          ctx.beginPath();
+          ctx.arc(e.x-e.radius*0.4, e.y+bob-e.radius*0.3, e.radius*0.1, 0, Math.PI*2);
+          ctx.arc(e.x+e.radius*0.4, e.y+bob-e.radius*0.3, e.radius*0.1, 0, Math.PI*2);
+          ctx.fill();
+          
+          // Golem mouth with jagged teeth effect
+          ctx.strokeStyle='#ff0000';
+          ctx.lineWidth = 4;
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          ctx.arc(e.x, e.y+bob+e.radius*0.2, e.radius*0.4, 0, Math.PI);
+          ctx.stroke();
+          
+          // Jagged teeth
+          ctx.fillStyle='#ffffff';
+          for(let i = 0; i < 5; i++) {
+            const angle = (Math.PI / 6) * (i - 2);
+            const x = e.x + Math.cos(angle) * e.radius * 0.3;
+            const y = e.y + bob + e.radius * 0.2 + Math.sin(angle) * e.radius * 0.1;
+            ctx.beginPath();
+            ctx.arc(x, y, 2, 0, Math.PI*2);
+            ctx.fill();
+          }
+          
+          // Render attached units around the golem
+          if(e.attachedUnits && e.attachedUnits.length > 0) {
+            for(let i = 0; i < e.attachedUnits.length; i++) {
+              const unit = e.attachedUnits[i];
+              const angle = unit.angle || (Math.PI * 2 / e.attachedUnits.length) * i;
+              const distance = e.radius * 1.8; // Distance from golem center
+              const unitX = e.x + Math.cos(angle) * distance;
+              const unitY = e.y + bob + Math.sin(angle) * distance;
+              const unitRadius = 10; // Slightly larger attached units
+              
+              // Unit body with type-specific color
+              let unitColor = '#8B4513';
+              if(unit.type === 'squire') unitColor = '#ff00ff';
+              else if(unit.type === 'knight') unitColor = '#00ffff';
+              else if(unit.type === 'lancer') unitColor = '#ffff00';
+              else if(unit.type === 'pegasus') unitColor = '#00ff88';
+              else if(unit.type === 'cleric') unitColor = '#88ff00';
+              else if(unit.type === 'wizard') unitColor = '#ff88ff';
+              else if(unit.type === 'jester') unitColor = '#ff8800';
+              else if(unit.type === 'page') unitColor = '#ffff88';
+              
+              ctx.fillStyle = unitColor;
+              ctx.beginPath();
+              ctx.arc(unitX, unitY, unitRadius, 0, Math.PI*2);
+              ctx.fill();
+              
+              // Unit type indicator (white border)
+              ctx.strokeStyle = '#ffffff';
+              ctx.lineWidth = 2;
+              ctx.beginPath();
+              ctx.arc(unitX, unitY, unitRadius, 0, Math.PI*2);
+              ctx.stroke();
+              
+              // Connection line to golem (thicker and more visible)
+              ctx.strokeStyle = '#8B4513';
+              ctx.lineWidth = 3;
+              ctx.beginPath();
+              ctx.moveTo(e.x, e.y + bob);
+              ctx.lineTo(unitX, unitY);
+              ctx.stroke();
+              
+              // Unit type symbol
+              ctx.fillStyle = '#ffffff';
+              ctx.font = 'bold 8px Arial';
+              ctx.textAlign = 'center';
+              ctx.fillText(unit.type.charAt(0).toUpperCase(), unitX, unitY + 3);
+            }
+          }
+          
+          // Ground slam visual effect
+          if(e.slamCooldown !== undefined && e.slamCooldown > 4.5) { // During slam animation
+            const slamProgress = (5.0 - e.slamCooldown) / 0.5; // 0.5 second animation
+            if(slamProgress <= 1.0) {
+              // Three rippling circles
+              for(let ring = 0; ring < 3; ring++) {
+                const ringProgress = Math.max(0, slamProgress - ring * 0.2);
+                if(ringProgress > 0) {
+                  const ringRadius = e.radius * 2 + ringProgress * 100;
+                  const alpha = (1 - ringProgress) * 0.6;
+                  
+                  ctx.strokeStyle = `rgba(139, 69, 19, ${alpha})`;
+                  ctx.lineWidth = 4;
+                  ctx.beginPath();
+                  ctx.arc(e.x, e.y + bob, ringRadius, 0, Math.PI*2);
+                  ctx.stroke();
+                  
+                  // Inner glow
+                  ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.5})`;
+                  ctx.lineWidth = 2;
+                  ctx.beginPath();
+                  ctx.arc(e.x, e.y + bob, ringRadius, 0, Math.PI*2);
+                  ctx.stroke();
+                }
+              }
+            }
+          }
+        }
         else if(e.type==='cavalry'){
           // Friendly cavalry knight
           ctx.fillStyle=e.color; 
@@ -4923,7 +6140,7 @@
         }
         
         // Name label for special enemies
-        if(e.type === 'dragon' || e.type === 'wizard'){
+        if(e.type === 'dragon' || e.type === 'wizard' || e.type === 'golem'){
           ctx.fillStyle = '#ffffff';
           ctx.font = 'bold 10px Orbitron';
           ctx.textAlign = 'center';
@@ -5078,19 +6295,48 @@
           ctx.shadowBlur = 0;
         }
         
-        // Cavalry Cooldown display (separate from combo indicator)
-        if(game.upgrades.cavalry > 0 && game.cavalryTimer > 0) {
-          const cooldownText = `CAVALRY COOLDOWN ${game.cavalryTimer.toFixed(1)}s`;
-          const cooldownColor = '#00ff88';
-          const cooldownSize = 16;
+        // Cavalry Cooldown display with bar (separate from combo indicator)
+        if(game.upgrades.cavalry > 0) {
+          const maxCooldown = 10.0;
+          const remainingCooldown = Math.max(0, game.cavalryTimer);
+          const cooldownProgress = 1 - (remainingCooldown / maxCooldown);
+          
+          // Draw cooldown bar
+          const barWidth = 200;
+          const barHeight = 8;
+          const barX = W/2 - barWidth/2;
+          const barY = 130;
+          
+          // Bar background
+          ctx.fillStyle = 'rgba(0,0,0,0.5)';
+          ctx.fillRect(barX, barY, barWidth, barHeight);
+          
+          // Bar border
+          ctx.strokeStyle = '#00ff88';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(barX, barY, barWidth, barHeight);
+          
+          // Bar fill
+          const fillWidth = barWidth * cooldownProgress;
+          if(fillWidth > 0) {
+            ctx.fillStyle = remainingCooldown <= 0 ? 
+              'linear-gradient(90deg, #00ff88, #00ffff)' : 
+              '#00ff88';
+            ctx.fillRect(barX, barY, fillWidth, barHeight);
+          }
+          
+          // Cooldown text
+          const cooldownText = remainingCooldown <= 0 ? 'CAVALRY READY!' : `CAVALRY: ${remainingCooldown.toFixed(1)}s`;
+          const cooldownColor = remainingCooldown <= 0 ? '#00ff88' : '#ffffff';
+          const cooldownSize = 14;
           
           ctx.fillStyle = cooldownColor;
           ctx.font = `bold ${cooldownSize}px Orbitron`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.shadowColor = cooldownColor;
-          ctx.shadowBlur = 15;
-          ctx.fillText(cooldownText, W/2, 130); // Position below combo indicator
+          ctx.shadowBlur = 10;
+          ctx.fillText(cooldownText, W/2, barY + barHeight + 20); // Position below the bar
           ctx.shadowBlur = 0;
         }
 
@@ -5246,7 +6492,7 @@
         
         const r = clamp(game.castleHp/game.castleMax,0,1); 
         ui.hpbar.style.width = `${240*r}px`; 
-        ui.hpbar.style.background = r>0.5? 'linear-gradient(90deg,#00ff00,#00ffff)': r>0.2? 'linear-gradient(90deg,#ffff00,#ff8800)': 'linear-gradient(90deg,#ff00ff,#ff0088)'; 
+        ui.hpbar.style.background = r>0.5? 'linear-gradient(90deg,#00ff00,#00ffff)': r>0.2? 'linear-gradient(90deg,#ffff00,#ff8800)': 'linear-gradient(90deg,#ff00ff,#ff0088)';
       }
       
       function previewWaveString(){ 
@@ -5361,4 +6607,5 @@
 
     </script>
   </body>
+  </html>
   </html>
