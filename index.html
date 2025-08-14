@@ -2607,18 +2607,88 @@
       // ============================
       // Wave Spawning & Enemy Behavior
       // ============================
+      function spawnGolemWithMinions(game, x, y, hpScale) {
+        // Create the golem
+        const golem = {
+          type: 'golem',
+          x: x || CENTER.x,
+          y: y || CENTER.y,
+          vx: 0,
+          vy: 0,
+          speed: 8,
+          radius: 40,
+          hp: 12000 * hpScale * DIFFICULTY.ENEMY_HP_MULT,
+          maxHp: 12000 * hpScale * DIFFICULTY.ENEMY_HP_MULT,
+          damage: 35,
+          reward: 100,
+          heading: 0,
+          dead: false,
+          color: '#8B4513',
+          glowColor: '#8B4513',
+          wobble: 0,
+          
+          // Enhanced golem properties
+          suckCooldown: 2.0, // Start ready to suck immediately
+          slamCooldown: 5.0,
+          attachedUnits: [],
+          limbUnits: {
+            leftArm: [],
+            rightArm: [],
+            leftLeg: [],
+            rightLeg: []
+          },
+          walkCycle: 0,
+          bodyPulse: 0,
+          isSlamming: false,
+          initialSuckComplete: false
+        };
+        
+        game.enemies.push(golem);
+        
+        // Spawn sacrificial minions around the golem for immediate absorption
+        const minionTypes = ['squire', 'knight', 'lancer', 'pegasus', 'page'];
+        const minionCount = 8; // Spawn 8 units to be absorbed
+        
+        for(let i = 0; i < minionCount; i++) {
+          const angle = (Math.PI * 2 / minionCount) * i;
+          const distance = 60 + Math.random() * 40;
+          const minionX = golem.x + Math.cos(angle) * distance;
+          const minionY = golem.y + Math.sin(angle) * distance;
+          
+          const minionType = minionTypes[Math.floor(Math.random() * minionTypes.length)];
+          const minion = makeEnemy(minionType, hpScale);
+          minion.x = minionX;
+          minion.y = minionY;
+          minion.isGolemSacrifice = true; // Mark for immediate absorption
+          
+          game.enemies.push(minion);
+        }
+        
+        // Visual effect
+        spawnParticles(golem.x, golem.y, '#8B4513', 50, 2.0);
+        setBattleMessage('🗿 THE GOLEM AWAKENS!', 3.0, '#8B4513');
+        game.shake = 20;
+        
+        return golem;
+      }
+
       function trySpawn(dt){ 
         if(!game._spawns) return; 
         for(let i=game._spawns.length-1;i>=0;i--){ 
           const s=game._spawns[i]; 
           s.t-=dt; 
           if(s.t<=0){ 
-            const enemy = makeEnemy(s.s.type, s.s.hpScale);
-            game.enemies.push(enemy); 
+            if(s.s.type === 'golem') {
+              // Use enhanced golem spawning with sacrificial minions
+              spawnGolemWithMinions(game, undefined, undefined, s.s.hpScale);
+            } else {
+              const enemy = makeEnemy(s.s.type, s.s.hpScale);
+              game.enemies.push(enemy); 
+              // Spawn effect
+              spawnParticles(enemy.x, enemy.y, enemy.glowColor, 12, 0.8);
+            }
             game._spawns.splice(i,1);
             game._spawnedAny = true;
-            // Spawn effect
-            spawnParticles(enemy.x, enemy.y, enemy.glowColor, 12, 0.8);
           } 
         } 
       }
@@ -3357,21 +3427,72 @@
           if(Math.random()<3*dt) spawnParticles(e.x,e.y,'#ff0088',6,0.6); 
         }
         
-        // Golem behavior - suck in nearby units and slam attack
+        // Enhanced Golem behavior - body horror design
         if(e.type === 'golem') {
-          // Initialize golem properties if not set
-          if(e.suckCooldown === undefined) e.suckCooldown = 0;
-          if(e.slamCooldown === undefined) e.slamCooldown = 0;
-          if(e.attachedUnits === undefined) e.attachedUnits = [];
+          // Initialize enhanced golem properties if not set
+          if(e.suckCooldown === undefined) e.suckCooldown = 2.0;
+          if(e.slamCooldown === undefined) e.slamCooldown = 5.0;
+          if(e.limbUnits === undefined) {
+            e.limbUnits = {
+              leftArm: [],
+              rightArm: [],
+              leftLeg: [],
+              rightLeg: []
+            };
+          }
+          if(e.walkCycle === undefined) e.walkCycle = 0;
+          if(e.bodyPulse === undefined) e.bodyPulse = 0;
+          if(e.initialSuckComplete === undefined) e.initialSuckComplete = false;
           
+          // Update animation timers
+          e.walkCycle += dt * 2; // Walking animation
+          e.bodyPulse += dt * 3; // Body pulsing
+          
+          // Initial dramatic absorption on spawn
+          if(!e.initialSuckComplete && e.suckCooldown <= 2.0) {
+            // Immediately suck in all sacrificial units
+            for(const unit of game.enemies) {
+              if(unit.isGolemSacrifice && !unit.dead && unit !== e) {
+                const dx = unit.x - e.x;
+                const dy = unit.y - e.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if(dist < 200) { // Large initial suck radius
+                  // Animate unit being pulled in
+                  unit.x += (-dx/dist) * 300 * dt;
+                  unit.y += (-dy/dist) * 300 * dt;
+                  
+                  if(dist < 30) {
+                    // Absorb the unit
+                    absorbUnitIntoLimb(e, unit);
+                    unit.dead = true;
+                    
+                    // Heal golem
+                    const healAmount = unit.maxHp * 0.5;
+                    e.maxHp += healAmount;
+                    e.hp = Math.min(e.hp + healAmount, e.maxHp);
+                    
+                    // Visual effect
+                    spawnParticles(e.x, e.y, '#8B4513', 20, 1.0);
+                  }
+                }
+              }
+            }
+            
+            // Check if initial absorption is complete
+            const sacrificesLeft = game.enemies.filter(enemy => enemy.isGolemSacrifice && !enemy.dead).length;
+            if(sacrificesLeft === 0) {
+              e.initialSuckComplete = true;
+              setBattleMessage('🗿 GOLEM ABSORBS MINIONS!', 2.0, '#8B4513');
+            }
+          }
+          
+          // Regular suck ability
           e.suckCooldown -= dt;
-          e.slamCooldown -= dt;
-          
-          // Suck in nearby units every 3 seconds
-          if(e.suckCooldown <= 0) {
+          if(e.suckCooldown <= 0 && e.initialSuckComplete) {
             e.suckCooldown = 3.0;
             
-            // Find nearby units to suck in
+            // Find nearby units to absorb
             for(const unit of game.enemies) {
               if(unit.dead || unit === e) continue;
               if(unit.type === 'cavalry' || unit.type === 'angelic' || unit.type === 'midas' || unit.type === 'goldenangelic' || unit.type === 'converted') continue;
@@ -3380,36 +3501,35 @@
               const dy = unit.y - e.y;
               const dist = Math.sqrt(dx*dx + dy*dy);
               
-                             if(dist < 160) { // Suck radius (increased by 100% from 80 to 160)
-                 // Attach unit to golem
-                 unit.dead = true;
-                 e.attachedUnits.push({
-                   type: unit.type,
-                   hp: unit.maxHp,
-                   originalHp: unit.maxHp,
-                   angle: Math.atan2(dy, dx), // Store angle for positioning
-                   distance: dist // Store distance for visual effect
-                 });
-                 
-                 // Heal golem and increase max HP
-                 const healAmount = unit.maxHp * 0.5;
-                 e.maxHp += healAmount;
-                 e.hp = Math.min(e.hp + healAmount, e.maxHp);
-                 
-                 // Visual effect
-                 spawnText(e.x, e.y-e.radius-20, `+${Math.round(healAmount)}`, '#8B4513', 1.0, 18);
-                 spawnParticles(e.x, e.y, '#8B4513', 15, 0.8);
-                 setBattleMessage('🗿 GOLEM ABSORBS UNIT!', 2.0, '#8B4513');
-               }
+              if(dist < 160) {
+                // Pull unit towards golem
+                unit.x += (-dx/dist) * 200 * dt;
+                unit.y += (-dy/dist) * 200 * dt;
+                
+                if(dist < 30) {
+                  // Absorb unit
+                  absorbUnitIntoLimb(e, unit);
+                  unit.dead = true;
+                  
+                  // Heal and grow
+                  const healAmount = unit.maxHp * 0.5;
+                  e.maxHp += healAmount;
+                  e.hp = Math.min(e.hp + healAmount, e.maxHp);
+                  
+                  spawnText(e.x, e.y-e.radius-20, `+${Math.round(healAmount)}`, '#8B4513', 1.0, 18);
+                  spawnParticles(e.x, e.y, '#8B4513', 15, 0.8);
+                }
+              }
             }
           }
           
-          // Slam attack every 5 seconds
+          // Slam attack
+          e.slamCooldown -= dt;
           if(e.slamCooldown <= 0) {
             e.slamCooldown = 5.0;
-            e.isSlamming = true; // Mark as slamming to prevent movement
+            e.isSlamming = true;
             
-            // Stun all nearby friendly units
+            // Slam effect - stun nearby units
             for(const unit of game.enemies) {
               if(unit.dead) continue;
               if(unit.type === 'cavalry' || unit.type === 'angelic' || unit.type === 'midas' || unit.type === 'goldenangelic' || unit.type === 'converted') {
@@ -3417,28 +3537,49 @@
                 const dy = unit.y - e.y;
                 const dist = Math.sqrt(dx*dx + dy*dy);
                 
-                if(dist < 120) { // Slam radius
-                  // Stun the unit
+                if(dist < 120) {
                   unit.stunned = true;
-                  unit.stunTimer = 2.0; // 2 second stun
-                  
-                  // Visual effect
-                  spawnText(unit.x, unit.y-unit.radius-15, 'STUNNED!', '#ff0000', 1.0, 16);
+                  unit.stunTimer = 2.0;
+                  spawnText(unit.x, unit.y-15, 'STUNNED!', '#ff0000', 1.0, 16);
                   spawnParticles(unit.x, unit.y, '#ff0000', 8, 0.6);
                 }
               }
             }
             
-            // Visual slam effect
-            spawnText(e.x, e.y-e.radius-30, 'SLAM!', '#8B4513', 1.5, 24);
-            spawnParticles(e.x, e.y, '#8B4513', 30, 1.2);
             setBattleMessage('🗿 GOLEM SLAM!', 2.0, '#8B4513');
             game.shake = Math.min(20, game.shake + 8);
           }
           
-          // Reset slamming state after animation
+          // Reset slamming state
           if(e.isSlamming && e.slamCooldown < 4.5) {
             e.isSlamming = false;
+          }
+        }
+        
+        // Helper function to assign units to limbs
+        function absorbUnitIntoLimb(golem, unit) {
+          // Determine which limb needs units
+          const limbs = ['leftArm', 'rightArm', 'leftLeg', 'rightLeg'];
+          let targetLimb = null;
+          let minCount = Infinity;
+          
+          // Find the limb with fewest units
+          for(const limb of limbs) {
+            if(golem.limbUnits[limb].length < minCount) {
+              minCount = golem.limbUnits[limb].length;
+              targetLimb = limb;
+            }
+          }
+          
+          // Add unit to the chosen limb
+          if(targetLimb) {
+            golem.limbUnits[targetLimb].push({
+              type: unit.type,
+              color: ENEMY[unit.type].color,
+              hp: unit.maxHp,
+              offset: Math.random() * Math.PI * 2, // Random rotation offset
+              squiggle: Math.random() * Math.PI * 2 // Random squiggle phase
+            });
           }
         }
         
@@ -4726,6 +4867,259 @@
         sfx.death();
       }
 
+      // Enhanced Golem rendering functions
+      function drawEnhancedGolem(ctx, golem, game) {
+        const bob = Math.sin(golem.wobble) * 2;
+        const walkOffset = Math.sin(golem.walkCycle) * 3;
+        const pulseScale = 1 + Math.sin(golem.bodyPulse) * 0.05;
+        
+        ctx.save();
+        
+        // Main body shadow
+        ctx.shadowColor = '#000000';
+        ctx.shadowBlur = 20;
+        ctx.shadowOffsetY = 5;
+        
+        // ROCK BODY - Multiple layers for depth
+        const bodyX = golem.x;
+        const bodyY = golem.y + bob;
+        
+        // Outer rock layer
+        ctx.fillStyle = '#654321';
+        ctx.beginPath();
+        ctx.ellipse(bodyX, bodyY, golem.radius * pulseScale, golem.radius * 0.9 * pulseScale, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Inner rock layer with gradient
+        const rockGradient = ctx.createRadialGradient(bodyX, bodyY - 5, 0, bodyX, bodyY, golem.radius);
+        rockGradient.addColorStop(0, '#8B4513');
+        rockGradient.addColorStop(0.5, '#654321');
+        rockGradient.addColorStop(1, '#3E2723');
+        
+        ctx.fillStyle = rockGradient;
+        ctx.beginPath();
+        ctx.ellipse(bodyX, bodyY, golem.radius * 0.95 * pulseScale, golem.radius * 0.85 * pulseScale, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Rock cracks and texture
+        ctx.strokeStyle = '#3E2723';
+        ctx.lineWidth = 2;
+        for(let i = 0; i < 6; i++) {
+          const angle = (Math.PI * 2 / 6) * i + golem.bodyPulse * 0.1;
+          const x1 = bodyX + Math.cos(angle) * golem.radius * 0.3;
+          const y1 = bodyY + Math.sin(angle) * golem.radius * 0.3;
+          const x2 = bodyX + Math.cos(angle + 0.3) * golem.radius * 0.8;
+          const y2 = bodyY + Math.sin(angle + 0.3) * golem.radius * 0.8;
+          
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.quadraticCurveTo(
+            bodyX + Math.cos(angle + 0.15) * golem.radius * 0.6,
+            bodyY + Math.sin(angle + 0.15) * golem.radius * 0.6,
+            x2, y2
+          );
+          ctx.stroke();
+        }
+        
+        // GLOWING EYES
+        const eyeGlow = 0.5 + Math.sin(golem.bodyPulse * 2) * 0.5;
+        ctx.shadowColor = '#ff0000';
+        ctx.shadowBlur = 20 * eyeGlow;
+        
+        // Left eye
+        ctx.fillStyle = '#ff0000';
+        ctx.beginPath();
+        ctx.arc(bodyX - golem.radius * 0.3, bodyY - golem.radius * 0.2, golem.radius * 0.15, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Right eye
+        ctx.beginPath();
+        ctx.arc(bodyX + golem.radius * 0.3, bodyY - golem.radius * 0.2, golem.radius * 0.15, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Eye pupils (track player)
+        ctx.fillStyle = '#000000';
+        const pupilOffset = 3;
+        const angleToPlayer = Math.atan2(game.player.y - bodyY, game.player.x - bodyX);
+        
+        ctx.beginPath();
+        ctx.arc(
+          bodyX - golem.radius * 0.3 + Math.cos(angleToPlayer) * pupilOffset,
+          bodyY - golem.radius * 0.2 + Math.sin(angleToPlayer) * pupilOffset,
+          golem.radius * 0.06, 0, Math.PI * 2
+        );
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.arc(
+          bodyX + golem.radius * 0.3 + Math.cos(angleToPlayer) * pupilOffset,
+          bodyY - golem.radius * 0.2 + Math.sin(angleToPlayer) * pupilOffset,
+          golem.radius * 0.06, 0, Math.PI * 2
+        );
+        ctx.fill();
+        
+        // MOUTH (jagged cave opening)
+        ctx.strokeStyle = '#000000';
+        ctx.fillStyle = '#000000';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(bodyX - golem.radius * 0.4, bodyY + golem.radius * 0.1);
+        ctx.lineTo(bodyX - golem.radius * 0.2, bodyY + golem.radius * 0.3);
+        ctx.lineTo(bodyX, bodyY + golem.radius * 0.2);
+        ctx.lineTo(bodyX + golem.radius * 0.2, bodyY + golem.radius * 0.3);
+        ctx.lineTo(bodyX + golem.radius * 0.4, bodyY + golem.radius * 0.1);
+        ctx.lineTo(bodyX + golem.radius * 0.25, bodyY + golem.radius * 0.15);
+        ctx.lineTo(bodyX, bodyY + golem.radius * 0.05);
+        ctx.lineTo(bodyX - golem.radius * 0.25, bodyY + golem.radius * 0.15);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        
+        ctx.shadowBlur = 0;
+        
+        // DRAW LIMBS MADE OF ABSORBED UNITS
+        drawGolemLimbs(ctx, golem, bodyX, bodyY, walkOffset);
+        
+        // Draw slam effect
+        if(golem.isSlamming && golem.slamCooldown > 4.5) {
+          const slamProgress = (5.0 - golem.slamCooldown) / 0.5;
+          if(slamProgress <= 1.0) {
+            for(let ring = 0; ring < 3; ring++) {
+              const ringProgress = Math.max(0, slamProgress - ring * 0.2);
+              if(ringProgress > 0) {
+                const ringRadius = golem.radius * 2 + ringProgress * 100;
+                const alpha = (1 - ringProgress) * 0.6;
+                
+                ctx.strokeStyle = `rgba(139, 69, 19, ${alpha})`;
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(bodyX, bodyY, ringRadius, 0, Math.PI * 2);
+                ctx.stroke();
+              }
+            }
+          }
+        }
+        
+        ctx.restore();
+        
+        // HP Bar
+        const hpRatio = golem.hp / golem.maxHp;
+        const barWidth = golem.radius * 2.5;
+        const barHeight = 6;
+        
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(bodyX - barWidth/2, bodyY - golem.radius - 20, barWidth, barHeight);
+        
+        ctx.fillStyle = hpRatio > 0.5 ? '#00ff00' : hpRatio > 0.2 ? '#ffff00' : '#ff00ff';
+        ctx.fillRect(bodyX - barWidth/2, bodyY - golem.radius - 20, barWidth * hpRatio, barHeight);
+        
+        // Name
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 12px Orbitron';
+        ctx.textAlign = 'center';
+        ctx.fillText('GOLEM', bodyX, bodyY + golem.radius + 15);
+        
+        // Absorbed unit count
+        const totalAbsorbed = Object.values(golem.limbUnits).reduce((sum, limb) => sum + limb.length, 0);
+        if(totalAbsorbed > 0) {
+          ctx.fillStyle = '#8B4513';
+          ctx.font = 'bold 10px Orbitron';
+          ctx.fillText(`[${totalAbsorbed} absorbed]`, bodyX, bodyY + golem.radius + 28);
+        }
+      }
+
+      // Helper function to draw animated limbs
+      function drawGolemLimbs(ctx, golem, bodyX, bodyY, walkOffset) {
+        const limbPositions = {
+          leftArm: { x: bodyX - golem.radius * 0.8, y: bodyY - golem.radius * 0.1, angle: -Math.PI/3 },
+          rightArm: { x: bodyX + golem.radius * 0.8, y: bodyY - golem.radius * 0.1, angle: Math.PI/3 },
+          leftLeg: { x: bodyX - golem.radius * 0.4, y: bodyY + golem.radius * 0.7, angle: -Math.PI/2 },
+          rightLeg: { x: bodyX + golem.radius * 0.4, y: bodyY + golem.radius * 0.7, angle: -Math.PI/2 }
+        };
+        
+        // Draw each limb
+        for(const [limbName, units] of Object.entries(golem.limbUnits)) {
+          if(units.length === 0) continue;
+          
+          const limbPos = limbPositions[limbName];
+          const isArm = limbName.includes('Arm');
+          const isLeft = limbName.includes('left');
+          
+          // Animate limb movement
+          let limbAngle = limbPos.angle;
+          if(isArm) {
+            // Arms swing
+            limbAngle += Math.sin(golem.walkCycle + (isLeft ? 0 : Math.PI)) * 0.3;
+          } else {
+            // Legs step
+            limbAngle += Math.sin(golem.walkCycle * 2 + (isLeft ? 0 : Math.PI)) * 0.2;
+          }
+          
+          // Draw squiggly connection to body
+          ctx.strokeStyle = '#3E2723';
+          ctx.lineWidth = 8;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(limbPos.x, limbPos.y);
+          
+          // Create squiggly path
+          const segments = 5;
+          for(let i = 1; i <= segments; i++) {
+            const t = i / segments;
+            const baseX = limbPos.x + Math.cos(limbAngle) * (30 * t);
+            const baseY = limbPos.y + Math.sin(limbAngle) * (30 * t);
+            const squiggleX = baseX + Math.sin(golem.walkCycle * 3 + i) * 5;
+            const squiggleY = baseY + Math.cos(golem.walkCycle * 3 + i) * 5;
+            ctx.lineTo(squiggleX, squiggleY);
+          }
+          ctx.stroke();
+          
+          // Draw absorbed units as part of the limb
+          units.forEach((unit, index) => {
+            const t = (index + 1) / (units.length + 1); // Position along limb
+            const unitX = limbPos.x + Math.cos(limbAngle) * (40 * t + 20);
+            const unitY = limbPos.y + Math.sin(limbAngle) * (40 * t + 20);
+            
+            // Squiggle animation for each unit
+            const squiggleAmount = 3;
+            const squiggleX = unitX + Math.sin(golem.walkCycle * 4 + unit.squiggle) * squiggleAmount;
+            const squiggleY = unitY + Math.cos(golem.walkCycle * 4 + unit.squiggle) * squiggleAmount;
+            
+            // Draw unit as part of limb
+            ctx.fillStyle = unit.color;
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 1;
+            
+            // Unit body (smaller than normal)
+            ctx.beginPath();
+            ctx.arc(squiggleX, squiggleY, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Unit details (simplified)
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(squiggleX - 2, squiggleY - 2, 1.5, 0, Math.PI * 2);
+            ctx.arc(squiggleX + 2, squiggleY - 2, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Connecting tissue
+            if(index < units.length - 1) {
+              ctx.strokeStyle = 'rgba(139, 69, 19, 0.5)';
+              ctx.lineWidth = 4;
+              ctx.beginPath();
+              ctx.moveTo(squiggleX, squiggleY);
+              const nextT = (index + 2) / (units.length + 1);
+              const nextX = limbPos.x + Math.cos(limbAngle) * (40 * nextT + 20);
+              const nextY = limbPos.y + Math.sin(limbAngle) * (40 * nextT + 20);
+              ctx.lineTo(nextX + Math.sin(golem.walkCycle * 4 + units[index + 1].squiggle) * squiggleAmount,
+                        nextY + Math.cos(golem.walkCycle * 4 + units[index + 1].squiggle) * squiggleAmount);
+              ctx.stroke();
+            }
+          });
+        }
+      }
+
       function render(dt=0.016){
         // Clear
         ctx.clearRect(0,0,W,H);
@@ -5760,144 +6154,9 @@
           }
         }
         else if(e.type==='golem'){
-          // Boss golem with attached units
-          
-          // Enhanced golem body with stone texture effect
-          const stoneGradient = ctx.createRadialGradient(e.x, e.y+bob, 0, e.x, e.y+bob, e.radius*1.5);
-          stoneGradient.addColorStop(0, '#A0522D');
-          stoneGradient.addColorStop(0.3, '#8B4513');
-          stoneGradient.addColorStop(0.7, '#654321');
-          stoneGradient.addColorStop(1, '#3E2723');
-          
-          ctx.fillStyle = stoneGradient;
-          ctx.fillRect(e.x-e.radius*1.2, e.y+bob-e.radius*1.2, e.radius*2.4, e.radius*2.4);
-          
-          // Stone texture details
-          ctx.strokeStyle = '#654321';
-          ctx.lineWidth = 1;
-          for(let i = 0; i < 8; i++) {
-            const angle = (Math.PI * 2 / 8) * i;
-            const x1 = e.x + Math.cos(angle) * e.radius * 0.8;
-            const y1 = e.y + bob + Math.sin(angle) * e.radius * 0.8;
-            const x2 = e.x + Math.cos(angle) * e.radius * 1.1;
-            const y2 = e.y + bob + Math.sin(angle) * e.radius * 1.1;
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.stroke();
-          }
-          
-          // Golem eyes with glowing effect
-          ctx.shadowColor = '#ff0000';
-          ctx.shadowBlur = 15;
-          ctx.fillStyle='#ff0000';
-          ctx.beginPath();
-          ctx.arc(e.x-e.radius*0.4, e.y+bob-e.radius*0.3, e.radius*0.25, 0, Math.PI*2);
-          ctx.arc(e.x+e.radius*0.4, e.y+bob-e.radius*0.3, e.radius*0.25, 0, Math.PI*2);
-          ctx.fill();
-          
-          // Eye pupils
-          ctx.fillStyle='#000000';
-          ctx.beginPath();
-          ctx.arc(e.x-e.radius*0.4, e.y+bob-e.radius*0.3, e.radius*0.1, 0, Math.PI*2);
-          ctx.arc(e.x+e.radius*0.4, e.y+bob-e.radius*0.3, e.radius*0.1, 0, Math.PI*2);
-          ctx.fill();
-          
-          // Golem mouth with jagged teeth effect
-          ctx.strokeStyle='#ff0000';
-          ctx.lineWidth = 4;
-          ctx.shadowBlur = 8;
-          ctx.beginPath();
-          ctx.arc(e.x, e.y+bob+e.radius*0.2, e.radius*0.4, 0, Math.PI);
-          ctx.stroke();
-          
-          // Jagged teeth
-          ctx.fillStyle='#ffffff';
-          for(let i = 0; i < 5; i++) {
-            const angle = (Math.PI / 6) * (i - 2);
-            const x = e.x + Math.cos(angle) * e.radius * 0.3;
-            const y = e.y + bob + e.radius * 0.2 + Math.sin(angle) * e.radius * 0.1;
-            ctx.beginPath();
-            ctx.arc(x, y, 2, 0, Math.PI*2);
-            ctx.fill();
-          }
-          
-          // Render attached units around the golem
-          if(e.attachedUnits && e.attachedUnits.length > 0) {
-            for(let i = 0; i < e.attachedUnits.length; i++) {
-              const unit = e.attachedUnits[i];
-              const angle = unit.angle || (Math.PI * 2 / e.attachedUnits.length) * i;
-              const distance = e.radius * 1.8; // Distance from golem center
-              const unitX = e.x + Math.cos(angle) * distance;
-              const unitY = e.y + bob + Math.sin(angle) * distance;
-              const unitRadius = 10; // Slightly larger attached units
-              
-              // Unit body with type-specific color
-              let unitColor = '#8B4513';
-              if(unit.type === 'squire') unitColor = '#ff00ff';
-              else if(unit.type === 'knight') unitColor = '#00ffff';
-              else if(unit.type === 'lancer') unitColor = '#ffff00';
-              else if(unit.type === 'pegasus') unitColor = '#00ff88';
-              else if(unit.type === 'cleric') unitColor = '#88ff00';
-              else if(unit.type === 'wizard') unitColor = '#ff88ff';
-              else if(unit.type === 'jester') unitColor = '#ff8800';
-              else if(unit.type === 'page') unitColor = '#ffff88';
-              
-              ctx.fillStyle = unitColor;
-              ctx.beginPath();
-              ctx.arc(unitX, unitY, unitRadius, 0, Math.PI*2);
-              ctx.fill();
-              
-              // Unit type indicator (white border)
-              ctx.strokeStyle = '#ffffff';
-              ctx.lineWidth = 2;
-              ctx.beginPath();
-              ctx.arc(unitX, unitY, unitRadius, 0, Math.PI*2);
-              ctx.stroke();
-              
-              // Connection line to golem (thicker and more visible)
-              ctx.strokeStyle = '#8B4513';
-              ctx.lineWidth = 3;
-              ctx.beginPath();
-              ctx.moveTo(e.x, e.y + bob);
-              ctx.lineTo(unitX, unitY);
-              ctx.stroke();
-              
-              // Unit type symbol
-              ctx.fillStyle = '#ffffff';
-              ctx.font = 'bold 8px Arial';
-              ctx.textAlign = 'center';
-              ctx.fillText(unit.type.charAt(0).toUpperCase(), unitX, unitY + 3);
-            }
-          }
-          
-          // Ground slam visual effect
-          if(e.slamCooldown !== undefined && e.slamCooldown > 4.5) { // During slam animation
-            const slamProgress = (5.0 - e.slamCooldown) / 0.5; // 0.5 second animation
-            if(slamProgress <= 1.0) {
-              // Three rippling circles
-              for(let ring = 0; ring < 3; ring++) {
-                const ringProgress = Math.max(0, slamProgress - ring * 0.2);
-                if(ringProgress > 0) {
-                  const ringRadius = e.radius * 2 + ringProgress * 100;
-                  const alpha = (1 - ringProgress) * 0.6;
-                  
-                  ctx.strokeStyle = `rgba(139, 69, 19, ${alpha})`;
-                  ctx.lineWidth = 4;
-                  ctx.beginPath();
-                  ctx.arc(e.x, e.y + bob, ringRadius, 0, Math.PI*2);
-                  ctx.stroke();
-                  
-                  // Inner glow
-                  ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.5})`;
-                  ctx.lineWidth = 2;
-                  ctx.beginPath();
-                  ctx.arc(e.x, e.y + bob, ringRadius, 0, Math.PI*2);
-                  ctx.stroke();
-                }
-              }
-            }
-          }
+          // Enhanced Golem with body horror design
+          drawEnhancedGolem(ctx, e, game);
+        }
         }
         else if(e.type==='cavalry'){
           // Friendly cavalry knight
