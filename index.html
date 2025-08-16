@@ -544,24 +544,24 @@
       
       .intel-box {
         position: absolute;
-        bottom: -200px;
+        top: -200px;
         left: 50%;
         transform: translateX(-50%);
-        width: 1400px;
+        width: 90vw;
         height: 240px;
         background: linear-gradient(135deg, rgba(255,0,255,0.15), rgba(0,255,255,0.1));
         border: 2px solid;
         border-image: linear-gradient(45deg, #ff00ff, #00ffff) 1;
         border-radius: 15px;
-        padding: 20px;
-        z-index: 50;
-        transition: bottom 0.5s ease-in-out;
+        padding: 15px 20px;
+        z-index: 150;
+        transition: top 0.5s ease-in-out;
         backdrop-filter: blur(10px);
         box-shadow: 0 0 40px rgba(255,0,255,0.4);
       }
       
       .intel-box.show {
-        bottom: 280px;
+        top: 90px;
       }
       
       .intel-title {
@@ -1368,7 +1368,7 @@
         const intelBox = document.getElementById('intelBox');
         if(intelBox) {
           intelBox.style.display = 'none';
-          intelBox.style.bottom = '-200px';
+          intelBox.style.top = '-200px';
         }
       }
       function endWave(){ 
@@ -1425,7 +1425,7 @@
         const intelBox = document.getElementById('intelBox');
         if(intelBox) {
           intelBox.style.display = 'block';
-          intelBox.style.bottom = '20px';
+          intelBox.style.top = '90px';
         }
       }
       function gameOver(){ game.state = STATE.OVER; game.high = Math.max(game.high, Math.floor(game.score)); persist(); buildGameOverUI(); showOverlay(true); }
@@ -2272,13 +2272,13 @@
           const e=ENEMY[t];
           const lines=[];
           if(t==='squire') lines.push('⚔️ Basic melee fighter');
-          if(t==='knight') lines.push('🛡️ Shielded front — break shield or flank');
-          if(t==='lancer') lines.push('🗡️ Throws arcing spears');
+          if(t==='knight') lines.push('🛡️ Shielded');
+          if(t==='lancer') lines.push('🗡️ Throws spears');
           if(t==='pegasus') lines.push('🦅 Flies over moat');
           if(t==='cleric') lines.push('💚 Heals nearby allies');
           if(t==='wizard') lines.push('⭐ Raises fallen once');
-          if(t==='jester') lines.push('🃏 Splits into Pages on death');
-          if(t==='dragon') lines.push('🐉 Boss — very tough');
+          if(t==='jester') lines.push('🃏 Splits into Pages');
+          if(t==='dragon') lines.push('🐉 Boss - High health');
           if(t==='golem') lines.push('🗿 Boss — absorbs units, ground slam');
           return lines.join(' · ');
         };
@@ -2328,7 +2328,7 @@
           
           // Force show for debugging
           intelBox.style.display = 'block';
-          intelBox.style.bottom = '20px';
+          intelBox.style.top = '90px';
         } else {
           // Fallback - show some basic enemy info
           const fallbackVisual = createEnemyVisual('squire');
@@ -2360,7 +2360,7 @@
           
           // Force show for debugging
           intelBox.style.display = 'block';
-          intelBox.style.bottom = '20px';
+          intelBox.style.top = '90px';
         }
         
 
@@ -6792,7 +6792,7 @@
         const intelBox = document.getElementById('intelBox');
         if(intelBox) {
           intelBox.style.display = 'none';
-          intelBox.style.bottom = '-200px';
+          intelBox.style.top = '-200px';
         }
         
         // Check if it's the very first wave (Wave 1)
