@@ -1,0 +1,168 @@
+{
+  "baseline": "2259a28da440df56e30426371c5461201ada2248",
+  "purpose": "Reproduce design shortcomings. Passing original tests did not demonstrate combat or art quality.",
+  "schedule": [
+    {
+      "wave": 5,
+      "bossSpawns": [
+        {
+          "time": 1.5,
+          "kind": "dragon",
+          "sector": 0,
+          "offset": 28.026209255913273,
+          "reward": true
+        }
+      ]
+    },
+    {
+      "wave": 10,
+      "bossSpawns": [
+        {
+          "time": 1.5,
+          "kind": "golem",
+          "sector": 2,
+          "offset": 28.026209255913273,
+          "reward": true
+        }
+      ]
+    },
+    {
+      "wave": 15,
+      "bossSpawns": [
+        {
+          "time": 1.5,
+          "kind": "king",
+          "sector": 0,
+          "offset": 28.026209255913273,
+          "reward": true
+        }
+      ]
+    }
+  ],
+  "isolatedBosses": [
+    {
+      "kind": "dragon",
+      "wave": 5,
+      "interrupt": false,
+      "seconds": 20.000000000000146,
+      "windups": 3,
+      "interrupted": 0,
+      "fortressDamageEvents": 2,
+      "fortressDamage": 48,
+      "maxMovement": 0,
+      "bossDefeated": false,
+      "originalPosition": {
+        "x": 640,
+        "y": 200
+      },
+      "loadout": {
+        "weapon": "stormbow",
+        "rank": 3,
+        "branch": 0,
+        "capstone": true
+      },
+      "notes": "At most 20 seconds, ending on boss death. Controlled north placement for comparison; natural spawn schedule is reported separately. No purchased structures or player knights."
+    },
+    {
+      "kind": "dragon",
+      "wave": 5,
+      "interrupt": true,
+      "seconds": 8.600000000000007,
+      "windups": 2,
+      "interrupted": 1,
+      "fortressDamageEvents": 0,
+      "fortressDamage": 0,
+      "maxMovement": 0,
+      "bossDefeated": true,
+      "originalPosition": {
+        "x": 640,
+        "y": 200
+      },
+      "loadout": {
+        "weapon": "stormbow",
+        "rank": 3,
+        "branch": 0,
+        "capstone": true
+      },
+      "notes": "At most 20 seconds, ending on boss death. Controlled north placement for comparison; natural spawn schedule is reported separately. No purchased structures or player knights."
+    },
+    {
+      "kind": "golem",
+      "wave": 10,
+      "interrupt": false,
+      "seconds": 20.000000000000146,
+      "windups": 3,
+      "interrupted": 0,
+      "fortressDamageEvents": 2,
+      "fortressDamage": 64,
+      "maxMovement": 0,
+      "bossDefeated": false,
+      "originalPosition": {
+        "x": 640,
+        "y": 200
+      },
+      "loadout": {
+        "weapon": "stormbow",
+        "rank": 3,
+        "branch": 0,
+        "capstone": true
+      },
+      "notes": "At most 20 seconds, ending on boss death. Controlled north placement for comparison; natural spawn schedule is reported separately. No purchased structures or player knights."
+    },
+    {
+      "kind": "king",
+      "wave": 15,
+      "interrupt": false,
+      "seconds": 20.000000000000146,
+      "windups": 3,
+      "interrupted": 0,
+      "fortressDamageEvents": 2,
+      "fortressDamage": 72,
+      "maxMovement": 0,
+      "bossDefeated": false,
+      "originalPosition": {
+        "x": 640,
+        "y": 200
+      },
+      "loadout": {
+        "weapon": "stormbow",
+        "rank": 3,
+        "branch": 0,
+        "capstone": true
+      },
+      "notes": "At most 20 seconds, ending on boss death. Controlled north placement for comparison; natural spawn schedule is reported separately. No purchased structures or player knights."
+    }
+  ],
+  "saturatedShop": {
+    "wave": 11,
+    "rank": 3,
+    "runes": {
+      "chain": 3,
+      "rapid": 3,
+      "venom": 1
+    },
+    "occupiedPads": 4,
+    "offers": [
+      {
+        "kind": "fort",
+        "key": "fort"
+      },
+      {
+        "kind": "fort",
+        "key": "fort"
+      },
+      {
+        "kind": "fort",
+        "key": "fort"
+      }
+    ]
+  },
+  "dragonInterruptThreshold": 74.25,
+  "rankThreeChargedStormbowDamageBeforeWeakpointBonuses": 109.19999999999999,
+  "knightContract": {
+    "initialCount": 2,
+    "durationSeconds": 8,
+    "commandCooldownSeconds": 12,
+    "remainingAfterEightPointOneSeconds": 0
+  }
+}

@@ -8,13 +8,17 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "test": "tsx --test tests/*.test.ts",
-    "balance": "tsx tools/balance.ts"
+    "balance": "tsx tools/balance.ts",
+    "assets:check": "tsx tools/validate-next-assets.ts",
+    "assets:stamp": "tsx tools/validate-next-assets.ts --stamp"
   },
   "dependencies": {
-    "phaser": "3.90.0"
+    "phaser": "3.90.0",
+    "three": "0.185.1"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",
+    "@types/three": "0.185.4",
     "prettier": "3.6.2",
     "tsx": "^4.20.6",
     "typescript": "~5.9.3",

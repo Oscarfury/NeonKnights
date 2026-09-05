@@ -1,5 +1,7 @@
 # Neon Knights: The Last Bastion
 
+> Historical proposal for the v2 prototype. The [second overhaul design](overhaul-v3/README.md) supersedes this direction after the user's full playthrough and updated art reference.
+
 An overhaul proposal, 5 September 2026. Working subtitle, not a final naming decision.
 
 [Current-game review and evidence](REVIEW.md) · [Architecture and Blender pipeline](ARCHITECTURE.md)

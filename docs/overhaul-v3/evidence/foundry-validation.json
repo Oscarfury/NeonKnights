@@ -1,0 +1,53 @@
+{
+  "candidate": "Foundry art and movement preview",
+  "assetRevision": "5d5674a3dc4b",
+  "artifact": "Vite production build served under /NeonKnights/next/",
+  "tests": { "passed": 42, "failed": 0 },
+  "build": "passed",
+  "assetValidation": "passed",
+  "desktopBrowser": {
+    "failures": [],
+    "independentInspectionActors": 2,
+    "primaryShots": 1,
+    "primaryHits": 1,
+    "wardDamage": 22,
+    "persistentCompanions": 2,
+    "checks": [
+      "independent mixers",
+      "inspection pause",
+      "weapon inspection",
+      "movement",
+      "projectile contact",
+      "weapon swap",
+      "dodge charge",
+      "hold order",
+      "ward damage",
+      "simulation pause"
+    ]
+  },
+  "emulatedTouch": {
+    "portrait": [412, 915],
+    "landscape": [915, 412],
+    "pageErrors": [],
+    "externalRequests": [],
+    "checks": ["swap", "movement pad", "dodge", "short fire tap", "hold order", "focus-loss pause"]
+  },
+  "desktopPerformance": {
+    "scenario": "Three paladins and training court",
+    "sampleFrames": 120,
+    "viewport": [1600, 1000],
+    "browser": "Headless Edge 152",
+    "renderer": "ANGLE NVIDIA GeForce RTX 2080 Ti Direct3D11",
+    "medianFrameMs": 16.7,
+    "p95FrameMs": 16.8,
+    "drawCalls": 182,
+    "renderedTrianglesIncludingPasses": 361054,
+    "productionHelpers": ["snapshot"]
+  },
+  "limitations": [
+    "This is not the three-encounter siege or full campaign.",
+    "Animation studies still require production polish and visual acceptance.",
+    "Touch is browser emulation; physical mobile devices are untested.",
+    "The desktop sample does not establish full-battle performance."
+  ]
+}

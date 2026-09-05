@@ -1,0 +1,106 @@
+{
+  "id": "paladin-v3-01",
+  "model": "paladin.glb",
+  "author": "Silver Delivery",
+  "source": "https://www.cgtrader.com/free-3d-models/character/fantasy-character/hand-painted-paladin-knight-rigged-and-game-ready",
+  "height": 1.98,
+  "forward": "+Z",
+  "sockets": {
+    "leftHand": "DEF-hand.L",
+    "rightHand": "DEF-hand.R",
+    "chest": "DEF-spine.003"
+  },
+  "clips": [
+    {
+      "name": "bow_idle",
+      "duration": 2.4,
+      "loop": true
+    },
+    {
+      "name": "bow_draw",
+      "duration": 0.8,
+      "loop": false
+    },
+    {
+      "name": "bow_hold",
+      "duration": 1.4,
+      "loop": true
+    },
+    {
+      "name": "bow_release",
+      "duration": 0.32,
+      "loop": false
+    },
+    {
+      "name": "bow_fire",
+      "duration": 1.15,
+      "loop": false
+    },
+    {
+      "name": "lance_idle",
+      "duration": 2.4,
+      "loop": true
+    },
+    {
+      "name": "lance_fire",
+      "duration": 0.65,
+      "loop": false
+    },
+    {
+      "name": "walk",
+      "duration": 1,
+      "loop": true
+    },
+    {
+      "name": "run",
+      "duration": 0.7,
+      "loop": true
+    },
+    {
+      "name": "backpedal",
+      "duration": 1.1,
+      "loop": true
+    },
+    {
+      "name": "strafe_left",
+      "duration": 1,
+      "loop": true
+    },
+    {
+      "name": "strafe_right",
+      "duration": 1,
+      "loop": true
+    },
+    {
+      "name": "dodge",
+      "duration": 0.5,
+      "loop": false
+    },
+    {
+      "name": "hit",
+      "duration": 0.4,
+      "loop": false
+    },
+    {
+      "name": "downed",
+      "duration": 1.3,
+      "loop": false
+    }
+  ],
+  "events": {
+    "bow_fire": {
+      "release": 0.66,
+      "recover": 0.96
+    },
+    "bow_release": {
+      "release": 0.06,
+      "recover": 0.9
+    },
+    "lance_fire": {
+      "release": 0.08,
+      "recover": 0.9
+    }
+  },
+  "status": "Animation review candidate; full art acceptance remains open",
+  "revision": "5d5674a3dc4b"
+}

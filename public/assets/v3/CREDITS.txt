@@ -1,0 +1,20 @@
+NEON KNIGHTS — THE FOUNDRY
+
+Paladin geometry, UVs and original painted textures: Silver Delivery.
+Asset: Hand Painted Paladin Knight — Rigged & Game Ready.
+Source supplied by the project owner as blend.zip.
+Creator: https://silver-delivery.itch.io/hand-painted-paladin-knight-rigged-game-ready
+Reference listing: https://www.cgtrader.com/free-3d-models/character/fantasy-character/hand-painted-paladin-knight-rigged-and-game-ready
+
+The reference listing identifies a Royalty Free License (no AI). The artist's
+rights are retained. This artwork is incorporated in Neon Knights; it is not
+an independently redistributable asset pack or part of a source-code license.
+The original archive, source textures and Blender vendor scene are kept local.
+
+Neon Knights additions: runtime deform-rig conversion, animation studies,
+Stormbow, Sunlance, training courtyard and game code. Animation acceptance is
+still in progress; the Foundry is a character and movement preview.
+
+Cormorant Garamond and Manrope: SIL Open Font License 1.1.
+The corresponding license texts are included in /licenses/.
+Three.js: MIT license. Phaser (current game): MIT license.

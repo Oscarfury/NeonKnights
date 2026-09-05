@@ -1,5 +1,7 @@
 # Architecture and Blender as an asset workshop
 
+> Historical proposal for the v2 prototype. Future development follows the [second overhaul plan](overhaul-v3/README.md), which replaces sprite-atlas presentation with skinned 3D models to meet the user's revised art requirements.
+
 [Overhaul proposal](OVERHAUL.md) · [Current-game review](REVIEW.md)
 
 ## Recommendation

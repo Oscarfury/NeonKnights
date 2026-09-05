@@ -1,0 +1,15 @@
+{
+  "archive": "blend.zip",
+  "suppliedBy": "Project owner",
+  "sha256": "c61f80f392965c16ca0b3ed6241685a07f12b6ded12e25f75d5ba3b4bef3ddf5",
+  "artist": "Silver Delivery",
+  "title": "Hand Painted Paladin Knight - Rigged & Game Ready",
+  "reference": "https://www.cgtrader.com/free-3d-models/character/fantasy-character/hand-painted-paladin-knight-rigged-and-game-ready",
+  "creatorPage": "https://silver-delivery.itch.io/hand-painted-paladin-knight-rigged-game-ready",
+  "sourceControlRigBones": 410,
+  "exportedGameRigBones": 74,
+  "sourceActions": ["pose"],
+  "exportedAnimationStudies": 15,
+  "sourceScriptsExecuted": false,
+  "sourceArchiveModified": false
+}

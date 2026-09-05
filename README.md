@@ -2,6 +2,8 @@
 
 [Play the overhaul](https://oscarfury.github.io/NeonKnights/) · [Classic draft](https://oscarfury.github.io/NeonKnights/classic/)
 
+**Next overhaul:** [The Foundry preview](https://oscarfury.github.io/NeonKnights/next/) adds the supplied rigged paladin, skeletal animation studies and a playable 3D training courtyard. See [implementation progress](docs/overhaul-v3/PROGRESS.md) and the [design/implementation plan](docs/overhaul-v3/README.md). The campaign described below is still the v2 prototype; the Foundry is an art and movement preview.
+
 A static browser siege roguelite built with TypeScript, Vite, Phaser 3, and an original Blender character atlas. The playable campaign has fifteen authored waves, three bosses, and an optional endless continuation.
 
 - Five weapon families, charged or alternate actions, two rank-III branches per weapon, and boss-seal awakenings.
