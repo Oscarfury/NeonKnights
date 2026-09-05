@@ -185,10 +185,39 @@ def pose(t, mode):
             wrist = Vector((sign*.2,-.45,1.05+.06*math.sin(math.tau*t)))
         if dodging:
             wrist.y += .12*math.sin(math.pi*t)
+        # Shield and staff roles have their own anticipation/contact/recovery,
+        # rather than borrowing a ranged pose for a melee attack.
+        hand_direction=Vector((0,-.079,-.014))
+        if mode.startswith(('sword','shield')):
+            wrist=Vector((.32,-.32,1.27)) if side=='L' else Vector((-.32,-.22,1.13))
+            if mode=='shield_brace' and side=='L': wrist=Vector((.13,-.43,1.43))
+            if mode=='shield_bash' and side=='L':
+                pulse=math.sin(math.pi*min(1,max(0,t-.30)/.50))
+                wrist=Vector((.16,-.29-.26*pulse,1.38))
+            if mode=='sword_slash' and side=='R':
+                if t<.44:
+                    k=t/.44;wrist=wrist.lerp(Vector((-.42,.02,1.84)),k)
+                    hand_direction=Vector((0,-.079,-.014)).lerp(Vector((-.06,-.045,.04)),k)
+                elif t<.69:
+                    k=(t-.44)/.25;wrist=Vector((-.42,.02,1.84)).lerp(Vector((.26,-.52,1.02)),k)
+                    hand_direction=Vector((-.06,-.045,.04)).lerp(Vector((.06,-.045,-.08)),k)
+                else:
+                    k=(t-.69)/.31;wrist=Vector((.26,-.52,1.02)).lerp(wrist,k)
+                    hand_direction=Vector((.06,-.045,-.08)).lerp(Vector((0,-.079,-.014)),k)
+            if mode=='sword_thrust' and side=='R':
+                pulse=math.sin(math.pi*min(1,max(0,t-.22)/.58))
+                wrist=Vector((-.22,-.18-.46*pulse,1.3))
+                hand_direction=Vector((0,-.079,-.014)).lerp(Vector((0,-.016,-.08)),pulse)
+        if mode.startswith('staff'):
+            wrist=Vector((.24,-.28,1.10)) if side=='L' else Vector((-.33,-.18,1.34))
+            if mode=='staff_cast':
+                pulse=math.sin(math.pi*t)
+                wrist.z+=pulse*(.48 if side=='L' else .17)
+                wrist.y-=pulse*.12
         wrist += hips
         elbow = solve_ik(shoulder,wrist,.315,.314,(sign*.68,.14,1.45 if side=='R' else 1.15))
         limb(side,'upper_arm','forearm',shoulder,elbow,wrist)
-        basis_pose(f'DEF-hand.{side}',wrist,wrist+Vector((0,-.079,-.014)))
+        basis_pose(f'DEF-hand.{side}',wrist,wrist+hand_direction)
     bpy.context.view_layer.update()
     for bone in rig.pose.bones:
         if bone.name.startswith('DEF-f_'):
@@ -210,6 +239,7 @@ clips = [('bow_idle',2.4),('bow_draw',.8),('bow_hold',1.4),('bow_release',.32),(
          ('dodge_forward',.5),('dodge_backward',.5),('dodge_left',.5),('dodge_right',.5),
          ('weapon_stow',.6),('weapon_equip',.6),('bow_cancel',.45),
          ('lance_charge',.8),('lance_release',.9),('interact',1.8),('recover',1.3)]
+clips += [('sword_idle',2.4),('sword_slash',1.2),('sword_thrust',1.1),('shield_brace',1.8),('shield_bash',1.0),('staff_idle',2.4),('staff_cast',1.5)]
 rig.animation_data_create()
 bpy.context.scene.render.fps = 30
 for name, duration in clips:
@@ -300,9 +330,10 @@ bpy.context.view_layer.objects.active=rig
 bpy.ops.wm.save_as_mainfile(filepath=str(WORK/('paladin-motion.blend' if ANIMATIONS_ONLY else 'paladin-runtime.blend')))
 manifest={'id':'paladin-v3-01','model':'paladin.glb','author':'Silver Delivery','source':'https://www.cgtrader.com/free-3d-models/character/fantasy-character/hand-painted-paladin-knight-rigged-and-game-ready',
     'height':1.98,'forward':'+Z','sockets':{'leftHand':'DEF-hand.L','rightHand':'DEF-hand.R','chest':'DEF-spine.003','back':'DEF-spine.003'},
-    'clips':[{ 'name':name,'duration':duration,'loop':name in ['bow_idle','bow_hold','lance_idle','walk','run','backpedal','strafe_left','strafe_right']} for name,duration in clips],
+    'clips':[{ 'name':name,'duration':duration,'loop':name in ['bow_idle','bow_hold','lance_idle','walk','run','backpedal','strafe_left','strafe_right','sword_idle','shield_brace','staff_idle']} for name,duration in clips],
     'events':{'bow_fire':{'release':.66,'recover':.96},'bow_release':{'release':.06,'recover':.9},'lance_fire':{'release':.08,'recover':.9},'lance_release':{'release':.24,'recover':.9}},
     'status':'Animation review candidate; full art acceptance remains open'}
+manifest['events'].update({'sword_slash':{'release':.55,'recover':.96},'sword_thrust':{'release':.45,'recover':.95},'shield_bash':{'release':.50,'recover':.94},'staff_cast':{'release':.60,'recover':.96}})
 manifest['revision']=hashlib.sha256(b''.join((OUT/name).read_bytes() for name in ['paladin.glb','stormbow.glb','sunlance.glb','courtyard.glb'] if (OUT/name).exists())).hexdigest()[:12]
 (WORK/'paladin-motion.json' if ANIMATIONS_ONLY else OUT/'paladin.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf8')
 print('EXPORTED',len(rest)+1,'bones',len(clips),'clips')

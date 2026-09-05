@@ -117,9 +117,10 @@ export class DefenseView {
     const winch = this.model.getObjectByName('Winch');
     if (winch && b.reload > 0 && b.hp > 0) winch.rotation.x = b.age * 3.5;
     const bolt = this.model.getObjectByName('LoadedBolt');
-    if (bolt) bolt.visible = b.reload < spec(b.kind, b.rank).interval * 0.3 && b.hp > 0;
+    const interval = b.reloadDuration ?? spec(b.kind, b.rank).interval;
+    if (bolt) bolt.visible = b.reload < interval * 0.3 && b.hp > 0;
     const cable = this.model.getObjectByName('Bowstring');
-    if (cable) cable.scale.z = 0.08 + 0.92 * (1 - b.reload / spec(b.kind, b.rank).interval);
+    if (cable) cable.scale.z = 0.08 + 0.92 * Math.max(0, 1 - b.reload / interval);
     const core = this.model.getObjectByName('Core');
     if (core && b.hp > 0) core.rotation.z = Math.sin(b.age * 0.5) * 0.14;
     for (const side of ['L', 'R']) {

@@ -1,0 +1,30 @@
+{
+  "fixture": "Recorded legal second-encounter checkpoint, restored for VFX inspection",
+  "viewport": {
+    "width": 1600,
+    "height": 1000
+  },
+  "sample": {
+    "median": 16.69999998807907,
+    "p95": 20.700000002980232,
+    "actors": 7,
+    "render": {
+      "frame": 1393,
+      "calls": 460,
+      "triangles": 821492,
+      "points": 0,
+      "lines": 4
+    },
+    "kingHp": 121,
+    "stats": {
+      "royalDamage": 94,
+      "companyDamage": 296,
+      "defenseDamage": 221.5,
+      "wallDamage": 136,
+      "bossDamage": 268,
+      "shielded": 7.8,
+      "rescues": 0
+    }
+  },
+  "errors": []
+}

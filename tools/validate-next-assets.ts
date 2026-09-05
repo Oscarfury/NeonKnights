@@ -119,10 +119,62 @@ for (const name of assetIds) {
           `${name}: missing ${part}`,
         );
   }
-  if (name === 'paladin') {
+  if (name === 'prism-dragon') {
+    assert.equal(gltf.skins?.length, 1);
+    assert.ok(gltf.skins[0].joints.length >= 20);
+    for (const action of ['idle', 'walk', 'arrive', 'breath', 'rake', 'tail', 'stagger', 'death']) {
+      const clip = gltf.animations?.find((a) => a.name === action);
+      assert.ok(clip, `Dragon missing ${action}`);
+      assert.ok(
+        clip.samplers.some((s) => new Set(accessor(s.output).map((v) => v.toFixed(5))).size > 4),
+        `Dragon ${action} is static`,
+      );
+    }
+  }
+  if (name.startsWith('castle-') && name !== 'castle-ground')
+    for (const part of [
+      'RoyalKeep',
+      'NorthWall',
+      'EastWall',
+      'SouthWall',
+      'WestWall',
+      'NorthGate',
+      'SouthGate',
+      'Bastion_0',
+      'Bastion_1',
+      'Bastion_2',
+      'Bastion_3',
+    ])
+      assert.ok(
+        gltf.nodes.some((n) => n.name === part),
+        `${name}: missing ${part}`,
+      );
+  if (name === 'company-kit')
+    for (const part of [
+      'RoyalCrown',
+      'RoyalMantle',
+      'WardenShield',
+      'WardenBlade',
+      'RaiderAxe',
+      'RaiderCrest',
+      'BulwarkShield',
+      'BulwarkMace',
+      'HexStaff',
+      'HexCrown',
+      'MarksmanQuiver',
+      'WardInsignia',
+      'StormInsignia',
+      'BlackStandard',
+      'WorldpiercerModule',
+    ])
+      assert.ok(
+        gltf.nodes.some((n) => n.name === part),
+        `Company equipment missing ${part}`,
+      );
+  if (name === 'paladin' || name === 'prism-dragon') {
     assert.equal(gltf.skins?.length, 1);
     const skin = gltf.skins![0];
-    assert.ok(skin.joints.length >= 60);
+    assert.ok(skin.joints.length >= (name === 'paladin' ? 60 : 20));
     for (const node of gltf.nodes.filter((n) => n.mesh !== undefined && n.skin !== undefined))
       for (const p of gltf.meshes[node.mesh!].primitives) {
         const joints = accessor(p.attributes.JOINTS_0),
@@ -134,29 +186,36 @@ for (const name of assetIds) {
             'Unnormalized skin weights',
           );
       }
-    for (const socket of Object.values(manifest.sockets))
-      assert.ok(
-        gltf.nodes.some((n) => n.name === socket),
-        `Missing socket ${socket}`,
-      );
-    assert.equal(gltf.animations?.length, manifest.clips.length);
-    for (const expected of manifest.clips) {
-      const clip = gltf.animations!.find((a) => a.name === expected.name);
-      assert.ok(clip, `Missing ${expected.name}`);
-      const duration = Math.max(...clip.samplers.map((s) => Math.max(...accessor(s.input))));
-      assert.ok(
-        Math.abs(duration - expected.duration) < 0.025,
-        `${expected.name}: duration mismatch`,
-      );
-      let changing = 0;
-      for (const sampler of clip.samplers) {
-        const values = accessor(sampler.output);
-        if (new Set(values.map((v) => v.toFixed(5))).size > 4) changing++;
+    if (name === 'paladin') {
+      for (const socket of Object.values(manifest.sockets))
+        assert.ok(
+          gltf.nodes.some((n) => n.name === socket),
+          `Missing socket ${socket}`,
+        );
+      assert.equal(gltf.animations?.length, manifest.clips.length);
+      for (const expected of manifest.clips) {
+        const clip = gltf.animations!.find((a) => a.name === expected.name);
+        assert.ok(clip, `Missing ${expected.name}`);
+        const duration = Math.max(...clip.samplers.map((s) => Math.max(...accessor(s.input))));
+        assert.ok(
+          Math.abs(duration - expected.duration) < 0.025,
+          `${expected.name}: duration mismatch`,
+        );
+        let changing = 0;
+        for (const sampler of clip.samplers) {
+          const values = accessor(sampler.output);
+          if (new Set(values.map((v) => v.toFixed(5))).size > 4) changing++;
+        }
+        assert.ok(changing > 0, `${expected.name} is only a rest pose`);
       }
-      assert.ok(changing > 0, `${expected.name} is only a rest pose`);
+      for (const moments of Object.values(manifest.events) as {
+        release: number;
+        recover: number;
+      }[])
+        assert.ok(
+          moments.release >= 0 && moments.release < moments.recover && moments.recover <= 1,
+        );
     }
-    for (const moments of Object.values(manifest.events) as { release: number; recover: number }[])
-      assert.ok(moments.release >= 0 && moments.release < moments.recover && moments.recover <= 1);
   }
   const hash = createHash('sha256').update(data).digest('hex');
   reports.push({

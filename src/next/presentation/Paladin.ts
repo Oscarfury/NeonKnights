@@ -16,6 +16,7 @@ import {
   CylinderGeometry,
   ConeGeometry,
   Quaternion,
+  SkinnedMesh,
 } from 'three';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import type { Assets } from './Assets';
@@ -305,6 +306,11 @@ export class Paladin {
   dispose() {
     this.mixer.stopAllAction();
     this.mixer.uncacheRoot(this.model);
+    const skeletons = new Set<SkinnedMesh['skeleton']>();
+    this.model.traverse((o) => {
+      if (o instanceof SkinnedMesh) skeletons.add(o.skeleton);
+    });
+    skeletons.forEach((s) => s.dispose());
     this.string.geometry.dispose();
     (this.string.material as LineBasicMaterial).dispose();
     this.restingString.geometry.dispose();

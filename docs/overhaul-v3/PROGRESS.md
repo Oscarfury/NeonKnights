@@ -1,20 +1,20 @@
-# Foundry preview — implementation progress
+# Castle and Foundry preview — implementation progress
 
-The first implementation delivery is **The Foundry**, a real 3D character inspection scene and playable training courtyard at `/NeonKnights/next/`. It is an art, combat and construction review build. It is not the three-encounter siege or the completed overhaul.
+The preview at `/NeonKnights/next/` now opens **The King's Battlements**, a connected three-encounter castle siege. The King fights on the walls; recruited, equipped knights deploy and fight automatically. See [the castle preview](CASTLE_PREVIEW.md) for controls, rules, persistence and verification, and [the latest direction](CASTLE_DIRECTION.md) for the design change.
 
-The [combat and recovery revision](COMBAT_PREVIEW.md) extends that foundation with weapon transitions, directional dodges, three physical ward patterns, interrupted assistance and gate occlusion fading.
+The earlier [combat courtyard](COMBAT_PREVIEW.md), [Royal Workshop](CONSTRUCTION_PREVIEW.md) and Foundry inspection remain available under Art & training. Their free-movement and sandbox rules are separate from the castle campaign.
 
-The [construction revision](CONSTRUCTION_PREVIEW.md) adds a separate Royal Workshop, six articulated defense models, persistent construction transactions, physical siege bolts and directional shield interception.
+The full campaign and final art/balance acceptance remain outstanding. This delivery connects the foundations; it does not close every work package below.
 
 ## Implemented
 
 - An independent Three.js entry with static GitHub Pages delivery, asset loading/error/retry, separate skeletal instances, inspection controls and a read-only runtime snapshot.
 - The user's supplied Silver Delivery paladin, retaining its original geometry, UVs and painted textures. A clean 74-bone deformation rig replaces the source scene's 410-bone control rig for runtime use.
-- Twenty-six animation studies cover bow and Sunlance actions, locomotion, four dodge directions, stow/equip, draw cancellation, hit/downed and assistance/recovery. These need further animation polish and do not yet meet the full R02 clip/quality contract.
+- Thirty-three animation studies cover bow and Sunlance actions, locomotion, four dodge directions, stow/equip, draw cancellation, hit/downed and assistance/recovery. These need further animation polish and do not yet meet the full R02 clip/quality contract.
 - Separate Blender-authored Stormbow and Sunlance equipment, hand-following attachments, a bowstring following the drawing hand and a visible nocked arrow.
 - A Blender-authored training courtyard, raised firing balcony and a continuous ramp. Characters can move continuously and aim independently, swap weapons, fire travelling projectiles, charge, dodge and use bounded slow time.
-- Two named companions with independent skeletons, persistent follow/hold orders, formation spacing and routing up and down the ramp. Held assistance consumes one of two field dressings and restores a downed ally to 35 health; a surviving knight can rescue the commander. Recruiting, equipment inventories, promotions and campaign recovery remain future work.
-- Physical ward hazards now include circular impacts, swept rays and lingering fire with explicit team/elevation filtering and fixed damage cadence. The danger display and collision use the same shape data. These remain ward drills, not a replacement Dragon fight.
+- Two named companions with independent skeletons, persistent follow/hold orders, formation spacing and routing up and down the ramp. Held assistance consumes one of two field dressings and restores a downed ally to 35 health; a surviving knight can rescue the commander. The castle adds recruiting, equipment, service promotions and persistent wounds with its own automatic company rules.
+- Physical ward hazards now include circular impacts, swept rays and lingering fire with explicit team/elevation filtering and fixed damage cadence. The danger display and collision use the same shape data. These remain ward drills; the castle now contains a separate physical Dragon encounter.
 - A construction catalogue with Ballista and Aegis at ranks I–III, emission-free tier comparison, placement ghosts, facing and coverage, a separate saved ledger, known-cost upgrades, relocation, repair and salvage. Defenses operate and take damage in the courtyard; company routes avoid machines and wrecks.
 - Desktop controls and touch movement, aim/fire, alternate, dodge, swap, order and slow controls. Focus loss pauses the courtyard and clears input.
 - All runtime models, textures and fonts load from the game deployment. Model revisions are checked and included in asset URLs to avoid keeping an old model after an update.
@@ -28,9 +28,12 @@ The [construction revision](CONSTRUCTION_PREVIEW.md) adds a separate Royal Works
 | R02 hero art and animation | In progress                                      | Refine gait, grips, torso/aim blending, weapon transitions, reactions and directional dodges; add the missing production clips and review at the reference bar |
 | R03 commander/world        | Partial                                          | Courtyard, ramp, gate fading and training rescue work; operable gates, breaches, outer objectives and campaign recovery remain                                 |
 | R04 ability/hazard rules   | Partial                                          | Projectiles, impacts, swept rays, fire, actor/structure masks and directional shields work; terrain line of sight and boss interrupt/resolve remain            |
-| R05–R06                    | Outstanding campaign work                        | Accepted enemy roles, recruits, equipment and persistent campaign company lifecycle remain                                                                     |
-| R07 construction           | Partial; workshop and courtyard implementation   | Enemy integration, branch equipment, richer destruction and final art acceptance remain                                                                        |
-| R08–R15                    | Outstanding                                      | Separate progression shops, legends, bosses, campaign balance, full campaign saves and promotion remain                                                        |
+| R05?R06 | Connected castle implementation | Three enemy roles, radial staging, persistent automatic company, recruitment, equipment and wounds work; final art acceptance and richer outer objectives remain |
+| R07 construction | Mounted castle integration | Three wall tiers and six defenses work with enemies, damage, repairs and the Worldpiercer conversion; richer destruction and final art acceptance remain |
+| R08?R10 progression and boss | First integrated implementation | Separate council systems, six stable offers, free rune equipment, three relics and an animated Dragon with real attacks work; expanded content and acceptance remain |
+| R11 connected siege | Implemented; review in progress | Three encounters connect the King, company, defenses, boss, rewards and saved council choices |
+| R12?R15 | Outstanding | Full campaign expansion, additional boss/weapon families, final balance, accessibility and promotion remain |
+
 
 The main game continues to serve the existing campaign. The preview's source art and generated Blender working scenes are local, ignored files; they are not included as a downloadable source-asset pack.
 

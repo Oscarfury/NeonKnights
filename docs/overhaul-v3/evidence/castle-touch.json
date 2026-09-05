@@ -1,0 +1,44 @@
+{
+  "productionHasNoDebugControls": true,
+  "portrait": {
+    "width": 412,
+    "height": 915,
+    "rotationChanged": true,
+    "chargeWidth": "91.6667%"
+  },
+  "landscape": {
+    "width": 915,
+    "height": 412,
+    "controls": [
+      {
+        "name": "\u21b6",
+        "x": 196,
+        "y": 342,
+        "width": 43,
+        "height": 50
+      },
+      {
+        "name": "\u21b7",
+        "x": 247,
+        "y": 342,
+        "width": 43,
+        "height": 50
+      },
+      {
+        "name": "Charged shot HOLD E",
+        "x": 378,
+        "y": 342,
+        "width": 90,
+        "height": 50
+      },
+      {
+        "name": "Royal Decree 73 / 100 \u00b7 SPACE",
+        "x": 475,
+        "y": 342,
+        "width": 90,
+        "height": 50
+      }
+    ]
+  },
+  "errors": []
+}

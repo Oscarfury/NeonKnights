@@ -1,4 +1,4 @@
-NEON KNIGHTS — THE FOUNDRY
+NEON KNIGHTS — THE KING’S BATTLEMENTS & THE FOUNDRY
 
 Paladin geometry, UVs and original painted textures: Silver Delivery.
 Asset: Hand Painted Paladin Knight — Rigged & Game Ready.
@@ -13,7 +13,8 @@ The original archive, source textures and Blender vendor scene are kept local.
 
 Neon Knights additions: runtime deform-rig conversion, animation studies,
 Stormbow, Sunlance, training courtyard, Royal Ballista and Aegis Projector
-(three Blender-authored ranks each), and game code. Defense mechanisms use
+(three Blender-authored ranks each), three castle wall tiers, company and royal
+equipment, packed stone and terrain textures, the rigged Prism Dragon, and game code. Defense mechanisms use
 separate mechanical pivots driven by the simulation. Character animation and
 final art acceptance are still in progress.
 

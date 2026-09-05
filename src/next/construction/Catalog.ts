@@ -122,5 +122,17 @@ export const investment = (kind: DefenseKind, rank: Rank) =>
 export const modelIds = (['ballista', 'aegis'] as const).flatMap((kind) =>
   [1, 2, 3].map((rank) => `${kind}-${rank}`),
 );
-export const assetIds = ['paladin', 'stormbow', 'sunlance', 'courtyard', ...modelIds];
+export const assetIds = [
+  'paladin',
+  'stormbow',
+  'sunlance',
+  'courtyard',
+  ...modelIds,
+  'company-kit',
+  'castle-1',
+  'castle-2',
+  'castle-3',
+  'castle-ground',
+  'prism-dragon',
+];
 export const defaultYaw = (site: (typeof sites)[number]) => Math.atan2(-site.x, -7 - site.z);

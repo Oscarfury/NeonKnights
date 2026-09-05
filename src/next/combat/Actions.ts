@@ -9,4 +9,8 @@ export const actionTiming: Record<string, { duration: number; release?: number }
   recover: { duration: 1.3 },
   interact: { duration: 1.8 },
   hit: { duration: 0.4 },
+  sword_slash: { duration: 1.2, release: 0.55 },
+  sword_thrust: { duration: 1.1, release: 0.45 },
+  shield_bash: { duration: 1, release: 0.5 },
+  staff_cast: { duration: 1.5, release: 0.6 },
 };

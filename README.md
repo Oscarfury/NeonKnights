@@ -2,7 +2,7 @@
 
 [Play the overhaul](https://oscarfury.github.io/NeonKnights/) · [Classic draft](https://oscarfury.github.io/NeonKnights/classic/)
 
-**Next overhaul:** [The Foundry preview](https://oscarfury.github.io/NeonKnights/next/) adds the supplied rigged paladin, skeletal animation studies and a playable 3D training courtyard. See [implementation progress](docs/overhaul-v3/PROGRESS.md) and the [design/implementation plan](docs/overhaul-v3/README.md). The campaign described below is still the v2 prototype; the Foundry is an art and movement preview.
+**Next overhaul:** [The King's Battlements](https://oscarfury.github.io/NeonKnights/next/) is the connected castle preview: a legendary King on the walls, an automatic equippable company, three visual wall tiers, mounted defenses, separate council progression and a three-encounter siege with the Prism Dragon. The Foundry, courtyard and workshop remain available under Art & training. See [castle controls and scope](docs/overhaul-v3/CASTLE_PREVIEW.md) and [implementation progress](docs/overhaul-v3/PROGRESS.md). The root game described below remains the v2 prototype; full campaign expansion is still in progress.
 
 A static browser siege roguelite built with TypeScript, Vite, Phaser 3, and an original Blender character atlas. The playable campaign has fifteen authored waves, three bosses, and an optional endless continuation.
 

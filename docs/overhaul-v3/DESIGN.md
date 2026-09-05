@@ -1,5 +1,7 @@
 # Neon Knights: command a living fortress
 
+Current direction: [King on the battlements, automatic company, three wall tiers](CASTLE_DIRECTION.md). This supersedes the earlier ground-roaming commander loop where they conflict.
+
 The player is a commander fighting beside a company they have recruited and equipped. The fortress is a changing battlefield and a visible record of their decisions. Attacks have physical consequences; expensive purchases transform something the player can point to.
 
 The existing siege-on-a-basalt-island identity remains valuable. The overhead view, dark stone, restrained neon, short browser launch and time control also remain. The four-anchor movement, temporary knight summons, generic structure shapes and single mixed three-card shop are replaced.

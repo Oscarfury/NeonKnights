@@ -1,0 +1,581 @@
+{
+  "results": [
+    {
+      "checkpoint": {
+        "version": 1,
+        "gold": 105,
+        "encounter": 0,
+        "wallTier": 2,
+        "walls": [
+          360,
+          360,
+          360,
+          360
+        ],
+        "kingHp": 160,
+        "weapon": "stormbow",
+        "ranks": {
+          "stormbow": 1,
+          "sunlance": 1
+        },
+        "sockets": {
+          "stormbow": [],
+          "sunlance": []
+        },
+        "knights": [
+          {
+            "id": "aldren",
+            "active": true,
+            "hp": 135,
+            "rank": 1,
+            "xp": 0,
+            "gear": 3,
+            "stance": "guard"
+          },
+          {
+            "id": "elin",
+            "active": true,
+            "hp": 95,
+            "rank": 1,
+            "xp": 0,
+            "gear": null,
+            "stance": "hunt"
+          },
+          {
+            "id": "corvin",
+            "active": true,
+            "hp": 135,
+            "rank": 1,
+            "xp": 0,
+            "gear": null,
+            "stance": "guard"
+          }
+        ],
+        "inventory": [
+          {
+            "id": 3,
+            "kind": "ward-seal"
+          }
+        ],
+        "offers": [
+          "ward-seal",
+          "storm-seal",
+          "field-kit",
+          "quickdraw",
+          "sundering",
+          "vital-spark"
+        ],
+        "bought": [
+          0
+        ],
+        "rerolls": 0,
+        "nextId": 4,
+        "buildings": [
+          {
+            "id": 1,
+            "kind": "ballista",
+            "site": "east-court",
+            "rank": 1,
+            "yaw": 0.7853981633974483,
+            "hp": 140
+          },
+          {
+            "id": 2,
+            "kind": "ballista",
+            "site": "west-watch",
+            "rank": 1,
+            "yaw": -2.356194490192345,
+            "hp": 140
+          }
+        ],
+        "relic": null,
+        "difficulty": "normal",
+        "wins": 0
+      },
+      "phase": "won",
+      "time": 58.283333333331306,
+      "stats": {
+        "royalDamage": 905.3,
+        "companyDamage": 380.69999999999993,
+        "defenseDamage": 264.99999999999994,
+        "wallDamage": 215,
+        "bossDamage": 0,
+        "shielded": 31.8,
+        "rescues": 0
+      },
+      "state": {
+        "version": 1,
+        "gold": 535,
+        "encounter": 1,
+        "wallTier": 2,
+        "walls": [
+          303,
+          280,
+          360,
+          282
+        ],
+        "kingHp": 160,
+        "weapon": "stormbow",
+        "ranks": {
+          "stormbow": 1,
+          "sunlance": 1
+        },
+        "sockets": {
+          "stormbow": [],
+          "sunlance": []
+        },
+        "knights": [
+          {
+            "id": "aldren",
+            "active": true,
+            "hp": 111.00000000000001,
+            "rank": 1,
+            "xp": 2,
+            "gear": 3,
+            "stance": "guard"
+          },
+          {
+            "id": "elin",
+            "active": true,
+            "hp": 25,
+            "rank": 1,
+            "xp": 2,
+            "gear": null,
+            "stance": "hunt"
+          },
+          {
+            "id": "corvin",
+            "active": true,
+            "hp": 67.20000000000002,
+            "rank": 1,
+            "xp": 2,
+            "gear": null,
+            "stance": "guard"
+          }
+        ],
+        "inventory": [
+          {
+            "id": 3,
+            "kind": "ward-seal"
+          }
+        ],
+        "offers": [
+          "storm-seal",
+          "field-kit",
+          "quickdraw",
+          "sundering",
+          "vital-spark",
+          "forked-light"
+        ],
+        "bought": [],
+        "rerolls": 0,
+        "nextId": 4,
+        "buildings": [
+          {
+            "id": 1,
+            "kind": "ballista",
+            "site": "east-court",
+            "rank": 1,
+            "yaw": 0.7853981633974483,
+            "hp": 140
+          },
+          {
+            "id": 2,
+            "kind": "ballista",
+            "site": "west-watch",
+            "rank": 1,
+            "yaw": -2.356194490192345,
+            "hp": 140
+          }
+        ],
+        "relic": null,
+        "difficulty": "normal",
+        "wins": 1
+      }
+    },
+    {
+      "checkpoint": {
+        "version": 1,
+        "gold": 124,
+        "encounter": 1,
+        "wallTier": 2,
+        "walls": [
+          360,
+          360,
+          360,
+          360
+        ],
+        "kingHp": 160,
+        "weapon": "stormbow",
+        "ranks": {
+          "stormbow": 1,
+          "sunlance": 1
+        },
+        "sockets": {
+          "stormbow": [],
+          "sunlance": []
+        },
+        "knights": [
+          {
+            "id": "aldren",
+            "active": true,
+            "hp": 135,
+            "rank": 1,
+            "xp": 2,
+            "gear": 3,
+            "stance": "guard"
+          },
+          {
+            "id": "elin",
+            "active": true,
+            "hp": 95,
+            "rank": 1,
+            "xp": 2,
+            "gear": null,
+            "stance": "hunt"
+          },
+          {
+            "id": "corvin",
+            "active": true,
+            "hp": 135,
+            "rank": 1,
+            "xp": 2,
+            "gear": null,
+            "stance": "guard"
+          }
+        ],
+        "inventory": [
+          {
+            "id": 3,
+            "kind": "ward-seal"
+          }
+        ],
+        "offers": [
+          "storm-seal",
+          "field-kit",
+          "quickdraw",
+          "sundering",
+          "vital-spark",
+          "forked-light"
+        ],
+        "bought": [],
+        "rerolls": 0,
+        "nextId": 4,
+        "buildings": [
+          {
+            "id": 1,
+            "kind": "ballista",
+            "site": "east-court",
+            "rank": 2,
+            "yaw": 0.7853981633974483,
+            "hp": 220
+          },
+          {
+            "id": 2,
+            "kind": "ballista",
+            "site": "west-watch",
+            "rank": 2,
+            "yaw": -2.356194490192345,
+            "hp": 220
+          }
+        ],
+        "relic": null,
+        "difficulty": "normal",
+        "wins": 1
+      },
+      "phase": "won",
+      "time": 69.1333333333307,
+      "stats": {
+        "royalDamage": 1393,
+        "companyDamage": 859,
+        "defenseDamage": 623,
+        "wallDamage": 547,
+        "bossDamage": 1650,
+        "shielded": 27.6,
+        "rescues": 0
+      },
+      "state": {
+        "version": 1,
+        "gold": 864,
+        "encounter": 2,
+        "wallTier": 2,
+        "walls": [
+          263,
+          224,
+          234,
+          172
+        ],
+        "kingHp": 69,
+        "weapon": "stormbow",
+        "ranks": {
+          "stormbow": 1,
+          "sunlance": 1
+        },
+        "sockets": {
+          "stormbow": [],
+          "sunlance": []
+        },
+        "knights": [
+          {
+            "id": "aldren",
+            "active": true,
+            "hp": 96.2,
+            "rank": 1,
+            "xp": 4,
+            "gear": 3,
+            "stance": "guard"
+          },
+          {
+            "id": "elin",
+            "active": true,
+            "hp": 29,
+            "rank": 1,
+            "xp": 4,
+            "gear": null,
+            "stance": "hunt"
+          },
+          {
+            "id": "corvin",
+            "active": true,
+            "hp": 65.39999999999999,
+            "rank": 1,
+            "xp": 4,
+            "gear": null,
+            "stance": "guard"
+          }
+        ],
+        "inventory": [
+          {
+            "id": 3,
+            "kind": "ward-seal"
+          }
+        ],
+        "offers": [
+          "field-kit",
+          "quickdraw",
+          "sundering",
+          "vital-spark",
+          "forked-light",
+          "ward-seal"
+        ],
+        "bought": [],
+        "rerolls": 0,
+        "nextId": 4,
+        "buildings": [
+          {
+            "id": 1,
+            "kind": "ballista",
+            "site": "east-court",
+            "rank": 2,
+            "yaw": 0.7853981633974483,
+            "hp": 220
+          },
+          {
+            "id": 2,
+            "kind": "ballista",
+            "site": "west-watch",
+            "rank": 2,
+            "yaw": -2.356194490192345,
+            "hp": 191
+          }
+        ],
+        "relic": null,
+        "difficulty": "normal",
+        "wins": 2
+      }
+    },
+    {
+      "checkpoint": {
+        "version": 1,
+        "gold": 207,
+        "encounter": 2,
+        "wallTier": 3,
+        "walls": [
+          520,
+          520,
+          520,
+          520
+        ],
+        "kingHp": 160,
+        "weapon": "stormbow",
+        "ranks": {
+          "stormbow": 1,
+          "sunlance": 1
+        },
+        "sockets": {
+          "stormbow": [],
+          "sunlance": []
+        },
+        "knights": [
+          {
+            "id": "aldren",
+            "active": true,
+            "hp": 135,
+            "rank": 1,
+            "xp": 4,
+            "gear": 3,
+            "stance": "guard"
+          },
+          {
+            "id": "elin",
+            "active": true,
+            "hp": 95,
+            "rank": 1,
+            "xp": 4,
+            "gear": null,
+            "stance": "hunt"
+          },
+          {
+            "id": "corvin",
+            "active": true,
+            "hp": 135,
+            "rank": 1,
+            "xp": 4,
+            "gear": null,
+            "stance": "guard"
+          }
+        ],
+        "inventory": [
+          {
+            "id": 3,
+            "kind": "ward-seal"
+          }
+        ],
+        "offers": [
+          "field-kit",
+          "quickdraw",
+          "sundering",
+          "vital-spark",
+          "forked-light",
+          "ward-seal"
+        ],
+        "bought": [],
+        "rerolls": 0,
+        "nextId": 4,
+        "buildings": [
+          {
+            "id": 1,
+            "kind": "ballista",
+            "site": "east-court",
+            "rank": 2,
+            "yaw": 0.7853981633974483,
+            "hp": 220
+          },
+          {
+            "id": 2,
+            "kind": "ballista",
+            "site": "west-watch",
+            "rank": 2,
+            "yaw": -2.356194490192345,
+            "hp": 191
+          }
+        ],
+        "relic": "storm-oath",
+        "difficulty": "normal",
+        "wins": 2
+      },
+      "phase": "lost",
+      "time": 80.18333333333007,
+      "stats": {
+        "royalDamage": 1681.6000000000008,
+        "companyDamage": 302.7999999999999,
+        "defenseDamage": 652.6,
+        "wallDamage": 487,
+        "bossDamage": 0,
+        "shielded": 23.4,
+        "rescues": 0
+      },
+      "state": {
+        "version": 1,
+        "gold": 207,
+        "encounter": 2,
+        "wallTier": 3,
+        "walls": [
+          520,
+          409,
+          363,
+          301
+        ],
+        "kingHp": 160,
+        "weapon": "stormbow",
+        "ranks": {
+          "stormbow": 1,
+          "sunlance": 1
+        },
+        "sockets": {
+          "stormbow": [],
+          "sunlance": []
+        },
+        "knights": [
+          {
+            "id": "aldren",
+            "active": true,
+            "hp": 135,
+            "rank": 1,
+            "xp": 4,
+            "gear": 3,
+            "stance": "guard"
+          },
+          {
+            "id": "elin",
+            "active": true,
+            "hp": 95,
+            "rank": 1,
+            "xp": 4,
+            "gear": null,
+            "stance": "hunt"
+          },
+          {
+            "id": "corvin",
+            "active": true,
+            "hp": 135,
+            "rank": 1,
+            "xp": 4,
+            "gear": null,
+            "stance": "guard"
+          }
+        ],
+        "inventory": [
+          {
+            "id": 3,
+            "kind": "ward-seal"
+          }
+        ],
+        "offers": [
+          "field-kit",
+          "quickdraw",
+          "sundering",
+          "vital-spark",
+          "forked-light",
+          "ward-seal"
+        ],
+        "bought": [],
+        "rerolls": 0,
+        "nextId": 4,
+        "buildings": [
+          {
+            "id": 1,
+            "kind": "ballista",
+            "site": "east-court",
+            "rank": 2,
+            "yaw": 0.7853981633974483,
+            "hp": 220
+          },
+          {
+            "id": 2,
+            "kind": "ballista",
+            "site": "west-watch",
+            "rank": 2,
+            "yaw": -2.356194490192345,
+            "hp": 191
+          }
+        ],
+        "relic": "storm-oath",
+        "difficulty": "normal",
+        "wins": 2
+      }
+    }
+  ],
+  "errors": [],
+  "failed": "Encounter 3 ended lost"
+}

@@ -1,6 +1,7 @@
 import './style.css';
 import './construction.css';
 import { mountConstruction } from './ConstructionView';
+import { mountCastle } from './castle/CastleView';
 import {
   ACESFilmicToneMapping,
   AmbientLight,
@@ -39,12 +40,12 @@ window.addEventListener(
 );
 async function boot() {
   app.innerHTML =
-    '<div class="boot" role="status"><span class="seal">N</span><p>Opening the foundry…</p></div>';
+    '<div class="boot" role="status"><span class="seal">N</span><p>Opening the castle…</p></div>';
   try {
     await assets.load((message) => {
       app.querySelector('p')!.textContent = message;
     });
-    start();
+    showCastle();
   } catch (error) {
     cleanup?.();
     assets.dispose();
@@ -59,6 +60,10 @@ async function boot() {
 function showArmory() {
   cleanup?.();
   start();
+}
+function showCastle() {
+  cleanup?.();
+  cleanup = mountCastle(app, assets, showArmory);
 }
 function showCourtyard() {
   cleanup?.();
@@ -76,6 +81,11 @@ function start() {
     <aside class="inspector"><span class="eyebrow">EQUIPMENT</span><div class="weapon-tabs"><button class="selected" data-weapon="stormbow"><span>01</span>Stormbow</button><button data-weapon="sunlance"><span>02</span>Sunlance</button></div><h2 id="weapon-name">Stormbow</h2><p id="weapon-description">A recurved bow with an electrum spine. Draw, hold your line, and release a charged arrow.</p><label for="clip">ANIMATION</label><select id="clip"></select><label for="speed">PLAYBACK <output id="speed-label">1.0×</output></label><input id="speed" type="range" min="0" max="1.5" step=".1" value="1"><button id="pause" class="secondary">Pause movement</button><div class="inspector-note"><span class="diamond">◇</span><p>These are the actual models and skeletal clips used by the preview.</p></div><details><summary>Inspect the rig</summary><label class="check"><input id="skeleton" type="checkbox"> Show skeleton</label><p class="fine">Compare two knights to see independent animation playback.</p></details></aside></main>
     <footer><span>A FORTRESS IS ONLY AS STRONG AS ITS COMPANY.</span><span>PALADIN ART · SILVER DELIVERY</span><a href="${import.meta.env.BASE_URL}">Return to current game ↗</a></footer><dialog id="credit-dialog"><button class="quiet close">Close ×</button><span class="eyebrow">ART & CRAFT</span><h2>The new paladin</h2><p>Original paladin geometry and painted textures by <a href="https://silver-delivery.itch.io/hand-painted-paladin-knight-rigged-game-ready" target="_blank" rel="noreferrer">Silver Delivery</a>, supplied by the project owner.</p><p>Runtime rig conversion, animation studies and weapon models were created for Neon Knights. The animation set is under review.</p></dialog>`;
   const stage = app.querySelector<HTMLDivElement>('.stage')!;
+  const castleButton = document.createElement('button');
+  castleButton.className = 'primary';
+  castleButton.textContent = 'Return to the castle ↗';
+  castleButton.onclick = showCastle;
+  app.querySelector('.intro')!.append(castleButton);
   const scene = new Scene();
   scene.background = new Color(0x151e25);
   scene.fog = new Fog(0x151e25, 10, 26);

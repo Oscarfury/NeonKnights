@@ -1,6 +1,6 @@
 # Implementation plan for the next overhaul
 
-Status: **implementation in progress**. The [progress ledger](PROGRESS.md) records the Foundry runtime and courtyard delivery, partial packages, and remaining work. This plan follows the [game design](DESIGN.md) and the user's reference-based [art standard](ART_STANDARD.md). The main campaign remains the v2 prototype at baseline `2259a28`.
+Status: **implementation in progress**. The [castle direction](CASTLE_DIRECTION.md) supersedes the ground-roaming commander controls below. The [connected castle preview](CASTLE_PREVIEW.md) now implements the first three-encounter siege. The [progress ledger](PROGRESS.md) records the Foundry runtime and courtyard delivery, partial packages, and remaining work. This plan follows the [game design](DESIGN.md) and the user's reference-based [art standard](ART_STANDARD.md). The main campaign remains the v2 prototype at baseline `2259a28`.
 
 The next milestone is a polished three-encounter slice that demonstrates the new foundations. The full campaign comes after that milestone. There is no reliable completion date until the asset sourcing/creation pass establishes how many usable models and animations already exist.
 

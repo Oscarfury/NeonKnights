@@ -1,0 +1,38 @@
+async (page) => {
+  await page.getByRole('button',{name:'Sound the horns ↗',exact:true}).waitFor();
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  const overflow=()=>page.evaluate(()=>document.documentElement.scrollWidth>innerWidth||document.documentElement.scrollHeight>innerHeight+1);
+  if(await overflow())throw new Error('Portrait council overflows the viewport');
+  const prod=await page.evaluate(()=>typeof window.__castle==='undefined');
+  await page.getByRole('button',{name:'Sound the horns ↗',exact:true}).click();
+  const before=await page.locator('.unit-label.legendary').getAttribute('style');
+  const client=await page.context().newCDPSession(page);
+  const right=await page.getByRole('button',{name:'Move King counterclockwise',exact:true}).boundingBox();
+  if(right.y+right.height>915)throw new Error('Rotation is outside the viewport');
+  await client.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:right.x+right.width/2,y:right.y+right.height/2,id:1}]});
+  await page.waitForTimeout(1000);
+  await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  const after=await page.locator('.unit-label.legendary').getAttribute('style');
+  if(before===after)throw new Error('Touch rotation did not move the King');
+  await page.waitForTimeout(300);
+  const stopped=await page.locator('.unit-label.legendary').getAttribute('style');
+  await page.waitForTimeout(300);
+  if(stopped!==await page.locator('.unit-label.legendary').getAttribute('style'))throw new Error('Touch rotation remained stuck after release');
+  const charge=await page.getByRole('button',{name:'Charged shot HOLD E',exact:true}).boundingBox();
+  await client.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:charge.x+charge.width/2,y:charge.y+charge.height/2,id:2}]});
+  await page.waitForTimeout(900);const width=await page.locator('#royal-charge').evaluate(e=>e.style.width);
+  await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  if(parseFloat(width)<50)throw new Error('Touch charge did not fill');
+  await page.waitForTimeout(250);
+  await page.screenshot({path:'output/playwright/castle-touch-battle.png'});
+  if(await overflow())throw new Error('Portrait battle overflows');
+  await page.getByRole('button',{name:'Pause',exact:true}).click();
+  await page.getByRole('button',{name:'Resume the watch',exact:true}).waitFor();
+  await page.setViewportSize({width:915,height:412});
+  await page.screenshot({path:'output/playwright/castle-touch-landscape.png'});
+  if(await overflow())throw new Error('Landscape battle overflows');
+  const shapes=await page.locator('.castle-hud button').evaluateAll(list=>list.map(e=>{const r=e.getBoundingClientRect();return {name:e.textContent.trim(),x:r.x,y:r.y,width:r.width,height:r.height};}));
+  if(shapes.some(s=>s.x<0||s.y<0||s.x+s.width>915||s.y+s.height>412))throw new Error('Landscape controls are clipped');
+  await client.detach();
+  return {productionHasNoDebugControls:prod,portrait:{width:412,height:915,rotationChanged:before!==after,chargeWidth:width},landscape:{width:915,height:412,controls:shapes},errors};
+}
