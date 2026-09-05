@@ -1,4 +1,6 @@
 import './style.css';
+import './construction.css';
+import { mountConstruction } from './ConstructionView';
 import {
   ACESFilmicToneMapping,
   AmbientLight,
@@ -54,10 +56,22 @@ async function boot() {
     app.querySelector('button')!.onclick = () => void boot();
   }
 }
+function showArmory() {
+  cleanup?.();
+  start();
+}
+function showCourtyard() {
+  cleanup?.();
+  cleanup = mountTraining(app, assets, showArmory, showWorkshop);
+}
+function showWorkshop() {
+  cleanup?.();
+  cleanup = mountConstruction(app, assets, showArmory, showCourtyard);
+}
 function start() {
   app.innerHTML = `
     <header><a class="wordmark" href="${import.meta.env.BASE_URL}"><span class="crest">N</span>NEON <b>KNIGHTS</b></a><span class="build-label">THE FOUNDRY <i></i> REBUILD PREVIEW</span><button class="quiet" id="credits">Asset credits ↗</button></header>
-    <main class="foundry"><section class="intro"><span class="eyebrow">01 / A NEW COMPANY</span><h1>Steel with<br><em>a soul.</em></h1><p class="lede">Meet the new commander. Inspect the armor, turn the model, and put each movement through its paces.</p><div class="rule"></div><span class="eyebrow">THE STORMBOW COMMANDER</span><p class="description">Layered plate. Weathered leather. A hand-painted knight, brought into the battlefield with a full skeleton and purpose-built weapons.</p><div class="traits"><span>ROYAL GUARD</span><span>RANGED</span><span>HEAVY ARMOR</span></div><button class="primary" id="training">Enter the courtyard <span>↗</span></button><p class="scope">Character and movement study.<br>The new campaign is still being built.</p></section>
+    <main class="foundry"><section class="intro"><span class="eyebrow">01 / A NEW COMPANY</span><h1>Steel with<br><em>a soul.</em></h1><p class="lede">Meet the new commander. Inspect the armor, turn the model, and put each movement through its paces.</p><div class="rule"></div><span class="eyebrow">THE STORMBOW COMMANDER</span><p class="description">Layered plate. Weathered leather. A hand-painted knight, brought into the battlefield with a full skeleton and purpose-built weapons.</p><div class="traits"><span>ROYAL GUARD</span><span>RANGED</span><span>HEAVY ARMOR</span></div><button class="primary" id="training">Enter the courtyard <span>↗</span></button><button class="secondary" id="workshop">Visit the workshop ↗</button><p class="scope">Character, combat and construction study.<br>The new campaign is still being built.</p></section>
     <section class="viewport" aria-label="Interactive paladin inspection"><div class="stage"></div><div class="stage-top"><span><i class="live-dot"></i> ARMORY INSPECTION</span><button id="pair" class="quiet">Compare two knights</button></div><div class="stage-bottom"><span>DRAG TO ROTATE · SCROLL TO INSPECT</span><button id="reset" class="quiet">Reset view ↺</button></div></section>
     <aside class="inspector"><span class="eyebrow">EQUIPMENT</span><div class="weapon-tabs"><button class="selected" data-weapon="stormbow"><span>01</span>Stormbow</button><button data-weapon="sunlance"><span>02</span>Sunlance</button></div><h2 id="weapon-name">Stormbow</h2><p id="weapon-description">A recurved bow with an electrum spine. Draw, hold your line, and release a charged arrow.</p><label for="clip">ANIMATION</label><select id="clip"></select><label for="speed">PLAYBACK <output id="speed-label">1.0×</output></label><input id="speed" type="range" min="0" max="1.5" step=".1" value="1"><button id="pause" class="secondary">Pause movement</button><div class="inspector-note"><span class="diamond">◇</span><p>These are the actual models and skeletal clips used by the preview.</p></div><details><summary>Inspect the rig</summary><label class="check"><input id="skeleton" type="checkbox"> Show skeleton</label><p class="fine">Compare two knights to see independent animation playback.</p></details></aside></main>
     <footer><span>A FORTRESS IS ONLY AS STRONG AS ITS COMPANY.</span><span>PALADIN ART · SILVER DELIVERY</span><a href="${import.meta.env.BASE_URL}">Return to current game ↗</a></footer><dialog id="credit-dialog"><button class="quiet close">Close ×</button><span class="eyebrow">ART & CRAFT</span><h2>The new paladin</h2><p>Original paladin geometry and painted textures by <a href="https://silver-delivery.itch.io/hand-painted-paladin-knight-rigged-game-ready" target="_blank" rel="noreferrer">Silver Delivery</a>, supplied by the project owner.</p><p>Runtime rig conversion, animation studies and weapon models were created for Neon Knights. The animation set is under review.</p></dialog>`;
@@ -223,13 +237,8 @@ function start() {
   const dialog = app.querySelector<HTMLDialogElement>('dialog')!;
   app.querySelector<HTMLButtonElement>('#credits')!.onclick = () => dialog.showModal();
   dialog.querySelector<HTMLButtonElement>('.close')!.onclick = () => dialog.close();
-  app.querySelector<HTMLButtonElement>('#training')!.onclick = () => {
-    cleanup?.();
-    cleanup = mountTraining(app, assets, () => {
-      cleanup?.();
-      start();
-    });
-  };
+  app.querySelector<HTMLButtonElement>('#training')!.onclick = showCourtyard;
+  app.querySelector<HTMLButtonElement>('#workshop')!.onclick = showWorkshop;
   const resize = new ResizeObserver(() => {
     const { width, height } = stage.getBoundingClientRect();
     renderer!.setSize(width, height);

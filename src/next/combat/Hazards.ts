@@ -16,13 +16,14 @@ export interface Danger extends Position {
   recovery: number;
   damage: number;
   cadence: number;
-  targets: ('commander' | 'company')[];
+  targets: ('commander' | 'company' | 'structure')[];
   contacts: Record<string, number>;
 }
 export interface DangerTarget extends Position {
   id: string;
-  team: 'commander' | 'company';
+  team: 'commander' | 'company' | 'structure';
   previous: Position;
+  radius?: number;
   immune: boolean;
   alive: boolean;
 }
@@ -97,7 +98,7 @@ function contactDuring(
       y: target.previous.y + (target.y - target.previous.y) * t,
       z: target.previous.z + (target.z - target.previous.z) * t,
     };
-    if (insideDanger(h, p, age)) return true;
+    if (insideDanger(h, p, age, target.radius)) return true;
   }
   return false;
 }
@@ -145,7 +146,7 @@ export function makeDanger(
     id,
     age: 0,
     contacts: {},
-    targets: ['commander', 'company'],
+    targets: ['commander', 'company', 'structure'],
     label:
       kind === 'impact' ? 'Ward impact' : kind === 'sweep' ? 'Sweeping ray' : 'Scorched ground',
     shape:

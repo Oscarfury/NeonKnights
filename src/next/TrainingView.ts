@@ -1,3 +1,6 @@
+import { DefenseView } from './presentation/DefenseView';
+import { loadWorkshop, saveWorkshop } from './construction/Workshop';
+import { defenses as defenseCatalog, spec } from './construction/Catalog';
 import {
   ACESFilmicToneMapping,
   Color,
@@ -32,8 +35,13 @@ import {
   stepTraining,
 } from './world/Training';
 
-export function mountTraining(app: HTMLElement, assets: Assets, back: () => void) {
-  app.innerHTML = `<div class="training-root"><header><button class="quiet" id="back-armory">← The armory</button><span class="build-label">THE TRAINING COURTYARD</span><div class="header-actions"><button class="quiet" id="trial">Start ward trial</button><button class="quiet" id="restore">Restore company</button><button class="quiet" id="field-pause">Pause Ⅱ</button></div></header><div class="field-stage" aria-label="Playable training courtyard"></div><div class="field-heading"><span class="eyebrow">LEARN YOUR GROUND</span><h1>The first watch.</h1><p id="drill-message">Try both weapons. Lead your company. Take the high ground.</p></div><div class="company-panel"><span class="eyebrow">YOUR COMPANY</span><article><span class="company-number">I</span><div><b>Elin</b><small>ROYAL MARKSMAN · <span id="elin-order">FOLLOWING</span></small><meter id="elin-health" min="0" max="100" value="100"></meter></div></article><article><span class="company-number">II</span><div><b>Corvin</b><small>ROYAL MARKSMAN · <span id="corvin-order">FOLLOWING</span></small><meter id="corvin-health" min="0" max="100" value="100"></meter></div></article><button class="secondary" id="recall">Regroup at commander <kbd>E</kbd></button><p>Hold <kbd>Tab</kbd> and click to hold a formation.</p></div><details class="field-help" open><summary>Field guide</summary><p><kbd>W A S D</kbd> Move<br><kbd>Mouse</kbd> Aim · hold to fire<br><kbd>Right mouse</kbd> Charge & release<br><kbd>Space</kbd> Dodge<br><kbd>Q</kbd> Switch weapon<br><kbd>Shift</kbd> Slow time<br><kbd>Tab + click</kbd> Order company<br><kbd>F</kbd> Hold to rescue<br><kbd>E</kbd> Regroup · <kbd>Esc</kbd> Pause</p><p>The brass-edged ramp leads to the east balcony. Ward impacts, sweeping rays and lingering fire test your footwork. Hold F near a fallen knight to assist. Two field dressings are shared by the company.</p></details><div class="rescue-status" id="rescue-status" role="status"><span id="rescue-text">FIELD DRESSINGS 2</span><progress id="rescue-progress" max="1.8" value="0"></progress></div><div class="field-bottom"><div class="vitality"><span class="eyebrow">COMMANDER</span><strong><span id="hp">100</span> <small>/ 100</small></strong><meter id="hp-bar" min="0" max="100" value="100"></meter></div><div class="weapon-hud"><span class="eyebrow" id="field-weapon">STORMBOW</span><div class="charge-track"><i id="charge-fill"></i></div><span id="weapon-hint">Hold primary to draw and loose</span></div><div class="charges"><span class="eyebrow">DODGE</span><div id="dodge-pips">◆ ◆</div><small id="focus">FOCUS 100</small></div><div class="accuracy"><span class="eyebrow">RANGE RECORD</span><strong id="hits">0 <small>hits</small></strong><small id="evades">0 attacks evaded</small></div></div><div class="touch-controls"><div id="move-pad" aria-label="Move joystick"><i></i><span>MOVE</span></div><div class="touch-actions"><button id="touch-alt">Charge</button><button id="touch-slow">Slow</button><button id="touch-dodge">Dodge</button><button id="touch-swap">Swap</button><button id="touch-order">Order</button><button id="touch-rescue">Rescue</button></div></div><div class="pause-screen" hidden><span class="eyebrow">THE COMPANY WAITS</span><h2 id="pause-title">Take a breath.</h2><button class="primary" id="resume">Return to the courtyard</button><button class="secondary" id="pause-restore">Restore company</button></div></div>`;
+export function mountTraining(
+  app: HTMLElement,
+  assets: Assets,
+  back: () => void,
+  workshop: () => void,
+) {
+  app.innerHTML = `<div class="training-root"><header><button class="quiet" id="back-armory">← The armory</button><span class="build-label">THE TRAINING COURTYARD</span><div class="header-actions"><button class="quiet" id="field-workshop">Workshop</button><button class="quiet" id="trial">Start ward trial</button><button class="quiet" id="restore">Restore company</button><button class="quiet" id="field-pause">Pause Ⅱ</button></div></header><div class="field-stage" aria-label="Playable training courtyard"></div><div class="field-heading"><span class="eyebrow">LEARN YOUR GROUND</span><h1>The first watch.</h1><p id="drill-message">Try both weapons. Lead your company. Take the high ground.</p></div><div class="company-panel"><span class="eyebrow">YOUR COMPANY</span><article><span class="company-number">I</span><div><b>Elin</b><small>ROYAL MARKSMAN · <span id="elin-order">FOLLOWING</span></small><meter id="elin-health" min="0" max="100" value="100"></meter></div></article><article><span class="company-number">II</span><div><b>Corvin</b><small>ROYAL MARKSMAN · <span id="corvin-order">FOLLOWING</span></small><meter id="corvin-health" min="0" max="100" value="100"></meter></div></article><button class="secondary" id="recall">Regroup at commander <kbd>E</kbd></button><p>Hold <kbd>Tab</kbd> and click to hold a formation.</p><div class="defense-status" id="defense-status"></div></div><details class="field-help" open><summary>Field guide</summary><p><kbd>W A S D</kbd> Move<br><kbd>Mouse</kbd> Aim · hold to fire<br><kbd>Right mouse</kbd> Charge & release<br><kbd>Space</kbd> Dodge<br><kbd>Q</kbd> Switch weapon<br><kbd>Shift</kbd> Slow time<br><kbd>Tab + click</kbd> Order company<br><kbd>F</kbd> Hold to rescue<br><kbd>E</kbd> Regroup · <kbd>Esc</kbd> Pause</p><p>The brass-edged ramp leads to the east balcony. Ward impacts, sweeping rays and lingering fire test your footwork. Hold F near a fallen knight to assist. Two field dressings are shared by the company.</p></details><div class="rescue-status" id="rescue-status" role="status"><span id="rescue-text">FIELD DRESSINGS 2</span><progress id="rescue-progress" max="1.8" value="0"></progress></div><div class="field-bottom"><div class="vitality"><span class="eyebrow">COMMANDER</span><strong><span id="hp">100</span> <small>/ 100</small></strong><meter id="hp-bar" min="0" max="100" value="100"></meter></div><div class="weapon-hud"><span class="eyebrow" id="field-weapon">STORMBOW</span><div class="charge-track"><i id="charge-fill"></i></div><span id="weapon-hint">Hold primary to draw and loose</span></div><div class="charges"><span class="eyebrow">DODGE</span><div id="dodge-pips">◆ ◆</div><small id="focus">FOCUS 100</small></div><div class="accuracy"><span class="eyebrow">RANGE RECORD</span><strong id="hits">0 <small>hits</small></strong><small id="evades">0 attacks evaded</small></div></div><div class="touch-controls"><div id="move-pad" aria-label="Move joystick"><i></i><span>MOVE</span></div><div class="touch-actions"><button id="touch-alt">Charge</button><button id="touch-slow">Slow</button><button id="touch-dodge">Dodge</button><button id="touch-swap">Swap</button><button id="touch-order">Order</button><button id="touch-rescue">Rescue</button></div></div><div class="pause-screen" hidden><span class="eyebrow">THE COMPANY WAITS</span><h2 id="pause-title">Take a breath.</h2><button class="primary" id="resume">Return to the courtyard</button><button class="secondary" id="pause-restore">Restore company</button></div></div>`;
   const stage = app.querySelector<HTMLElement>('.field-stage')!;
   const scene = new Scene();
   scene.background = new Color(0x111c27);
@@ -74,7 +82,25 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
   scene.add(courtyard);
   const occlusionRay = new Raycaster();
   const sightline = new Vector3();
-  let state = createTraining();
+  const plan = loadWorkshop().state;
+  let state = createTraining(plan);
+  const defenseViews = state.defenses.map((b) => {
+    const v = new DefenseView(assets, b.kind, b.rank);
+    scene.add(v.root);
+    return v;
+  });
+  function persistDefenses() {
+    let changed = false;
+    for (const b of state.defenses) {
+      const saved = plan.buildings.find((s) => s.id === b.id);
+      if (saved && saved.hp !== b.hp) {
+        saved.hp = b.hp;
+        changed = true;
+      }
+    }
+    if (changed) saveWorkshop(plan);
+  }
+  let lastSave = 0;
   const input = neutralInput();
   const actors = [
     new Paladin(assets),
@@ -223,10 +249,12 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
     app.querySelector('#field-pause')!.textContent = value ? 'Resume ▷' : 'Pause Ⅱ';
   }
   function reset() {
-    state = createTraining();
+    persistDefenses();
+    state = createTraining(plan);
     pause(false);
     oldHits = oldShots = 0;
     defeatElapsed = 0;
+    lastSave = 0;
     app.querySelector('#trial')!.textContent = 'Start ward trial';
     app.querySelector('#pause-title')!.textContent = 'Take a breath.';
   }
@@ -305,6 +333,7 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
     app.querySelector<HTMLButtonElement>(`#${id}`)!.onclick = fn;
   };
   action('back-armory', back);
+  action('field-workshop', workshop);
   action('restore', reset);
   action('pause-restore', reset);
   action('field-pause', () => pause());
@@ -437,10 +466,20 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
     }
     cursor.position.set(input.aim.x, input.aim.y + 0.02, input.aim.z);
     cursor.visible = !state.paused;
-    for (const bolt of state.bolts) {
+    defenseViews.forEach((view, index) => view.update(state.defenses[index]));
+    if (state.time - lastSave > 1) {
+      persistDefenses();
+      lastSave = state.time;
+    }
+    const projectiles = [...state.bolts, ...state.siegeBolts];
+    for (const bolt of projectiles) {
       let mesh = boltMeshes.get(bolt.id);
       if (!mesh) {
-        mesh = new Mesh(boltGeo, bolt.weapon === 'stormbow' ? arrowMat : lanceMat);
+        mesh = new Mesh(
+          boltGeo,
+          'owner' in bolt ? gold : bolt.weapon === 'stormbow' ? arrowMat : lanceMat,
+        );
+        if ('owner' in bolt) mesh.scale.set(2.5, 2.5, 1.5);
         boltMeshes.set(bolt.id, mesh);
         scene.add(mesh);
       }
@@ -448,7 +487,7 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
       mesh.lookAt(bolt.x + bolt.vx, bolt.y + bolt.vy, bolt.z + bolt.vz);
     }
     for (const [id, mesh] of boltMeshes)
-      if (!state.bolts.some((b) => b.id === id)) {
+      if (!projectiles.some((b) => b.id === id)) {
         mesh.removeFromParent();
         boltMeshes.delete(id);
       }
@@ -476,6 +515,16 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
       const x = state.destination.x + (index ? 0.8 : -0.8);
       m.position.set(x, groundHeight(x, state.destination.z) + 0.025, state.destination.z);
     });
+    app.querySelector('#defense-status')!.innerHTML = state.defenses.length
+      ? '<strong>DEPLOYED DEFENSES</strong>' +
+        state.defenses
+          .map(
+            (b) =>
+              `${defenseCatalog[b.kind].name} ${spec(b.kind, b.rank).title} · ${Math.ceil(b.hp)} HP${b.hp <= 0 ? ' · REPAIR' : b.kind === 'aegis' ? ` · ${Math.floor(b.charge)} shield` : ''}`,
+          )
+          .join('<br>') +
+        `<br>${state.structureHits} bolt hits · ${Math.round(state.blockedDamage)} damage blocked`
+      : 'Visit the workshop to deploy defenses.';
     app.querySelector('#hp')!.textContent = String(Math.ceil(state.player.hp));
     (app.querySelector('#hp-bar') as HTMLMeterElement).value = state.player.hp;
     app.querySelector('#field-weapon')!.textContent = state.player.weapon.toUpperCase();
@@ -590,6 +639,10 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
   frame = requestAnimationFrame(tick);
   const snapshot = () => ({
     mode: 'courtyard',
+    defenses: state.defenses.map((b) => ({ ...b })),
+    siegeBolts: structuredClone(state.siegeBolts),
+    structureHits: state.structureHits,
+    blockedDamage: state.blockedDamage,
     time: state.time,
     player: { ...state.player },
     company: state.company.map((a) => ({ ...a })),
@@ -639,6 +692,8 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
       },
     });
   return () => {
+    persistDefenses();
+    defenseViews.forEach((v) => v.dispose());
     cancelAnimationFrame(frame);
     listeners.forEach((fn) => fn());
     resize.disconnect();

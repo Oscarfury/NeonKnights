@@ -1,0 +1,239 @@
+{
+  "candidate": "Foundry construction preview",
+  "date": "2026-09-05",
+  "assetRevision": "f4d3aa8d5062",
+  "runtimeModelBytes": 15034388,
+  "assets": [
+    {
+      "name": "paladin",
+      "bytes": 3389292,
+      "vertices": 15852,
+      "triangles": 26055,
+      "skins": 1,
+      "clips": 26,
+      "sha256": "0dd955b7bceb286ec186523bb8bd0cd079ce6c2714a25302ea2896e1d347868a"
+    },
+    {
+      "name": "stormbow",
+      "bytes": 183652,
+      "vertices": 4972,
+      "triangles": 6212,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "e56e4cec8776a4be82c79646609d3d640a07e80d700d3720bd15a8c3618ff84a"
+    },
+    {
+      "name": "sunlance",
+      "bytes": 93504,
+      "vertices": 2433,
+      "triangles": 2608,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "17082dc0bde96f3a282ee86cdee904e95ce085b28bd5354a054e686adf713c4f"
+    },
+    {
+      "name": "courtyard",
+      "bytes": 5788236,
+      "vertices": 164946,
+      "triangles": 83108,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "ecdd36479fe0919944f660529fe12d03da5f36983d228f548ec9cde70a5f9720"
+    },
+    {
+      "name": "ballista-1",
+      "bytes": 781608,
+      "vertices": 21432,
+      "triangles": 13862,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "3f3792458dcf7f423acbebee2de2d89c06c9164d3d2edb94d3f1f608e70dfade"
+    },
+    {
+      "name": "ballista-2",
+      "bytes": 1311712,
+      "vertices": 36434,
+      "triangles": 21182,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "86f696f46c150bba05e2b71f88302d2d62cd475a3f16d14586c119306b6cd78f"
+    },
+    {
+      "name": "ballista-3",
+      "bytes": 1626696,
+      "vertices": 45412,
+      "triangles": 25736,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "53c3bb29936a4dcf56303f20674a47974ef4756aae483dda0c412c6e1b9bb9a9"
+    },
+    {
+      "name": "aegis-1",
+      "bytes": 322796,
+      "vertices": 8964,
+      "triangles": 4516,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "58c62ff9b1a0e457701b8a20b8c7cc508189a46e0543063d205a9e899a952ad5"
+    },
+    {
+      "name": "aegis-2",
+      "bytes": 640260,
+      "vertices": 17830,
+      "triangles": 8910,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "c8193c7f705f6ed7a322e9716e83c8303921f2833b6c2cb5238ccb8b62b0f02f"
+    },
+    {
+      "name": "aegis-3",
+      "bytes": 896632,
+      "vertices": 25033,
+      "triangles": 12899,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "e3443aebbdce54f26ff9acdd4d8e78be0bb330c760da27ae70030ac5f6567158"
+    }
+  ],
+  "tests": {
+    "passed": 68,
+    "failed": 0
+  },
+  "productionBuild": "passed",
+  "desktop": {
+    "plan": {
+      "version": 1,
+      "gold": 150,
+      "nextId": 3,
+      "buildings": [
+        {
+          "id": 1,
+          "kind": "ballista",
+          "site": "east-watch",
+          "yaw": -1.7955074952095393,
+          "rank": 3,
+          "hp": 320
+        },
+        {
+          "id": 2,
+          "kind": "aegis",
+          "site": "west-court",
+          "yaw": 2.5535900500422257,
+          "rank": 3,
+          "hp": 330
+        }
+      ]
+    },
+    "combat": {
+      "structureHits": 4,
+      "blockedDamage": 18,
+      "playerHP": 78,
+      "defenses": [
+        {
+          "id": 1,
+          "kind": "ballista",
+          "rank": 3,
+          "site": "east-watch",
+          "yaw": -1.7955074952095393,
+          "hp": 320,
+          "x": 7,
+          "y": 0,
+          "z": -5.4,
+          "age": 11.950000000000173,
+          "reload": 1.2833333333333385,
+          "recoil": 0,
+          "aimYaw": -1.9513027039072615,
+          "charge": 0,
+          "lastBlocked": 0,
+          "shots": 4,
+          "blocked": 0,
+          "flash": 0
+        },
+        {
+          "id": 2,
+          "kind": "aegis",
+          "rank": 3,
+          "site": "west-court",
+          "yaw": 2.5535900500422257,
+          "hp": 330,
+          "x": -7,
+          "y": 0,
+          "z": 3.5,
+          "age": 11.950000000000173,
+          "reload": 0.8,
+          "recoil": 0,
+          "aimYaw": 2.5535900500422257,
+          "charge": 122,
+          "lastBlocked": 1.5,
+          "shots": 0,
+          "blocked": 18,
+          "flash": 0.35
+        }
+      ]
+    },
+    "errors": []
+  },
+  "repairPersistence": {
+    "wound": 308,
+    "repairPrice": 6,
+    "plan": {
+      "version": 1,
+      "gold": 529,
+      "nextId": 3,
+      "buildings": [
+        {
+          "id": 1,
+          "kind": "ballista",
+          "rank": 3,
+          "site": "east-watch",
+          "yaw": -1.7955074952095393,
+          "hp": 320
+        }
+      ]
+    }
+  },
+  "touch": {
+    "plan": {
+      "version": 1,
+      "gold": 700,
+      "nextId": 2,
+      "buildings": [
+        {
+          "id": 1,
+          "kind": "ballista",
+          "rank": 3,
+          "site": "west-watch",
+          "yaw": 1.849095985800008,
+          "hp": 320
+        }
+      ]
+    },
+    "portrait": [412, 915],
+    "landscape": [915, 412],
+    "errors": []
+  },
+  "performance": {
+    "samples": 120,
+    "viewport": [1600, 1000],
+    "medianFrameMs": 16.7,
+    "p95FrameMs": 16.8,
+    "drawCalls": 248,
+    "trianglesIncludingPasses": 449984,
+    "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2080 Ti (0x00001E07) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/149.0.0.0 Safari/537.36",
+    "defenses": [
+      ["ballista", 3],
+      ["aegis", 3]
+    ],
+    "visiblePaladins": 3,
+    "externalRequests": [],
+    "helpers": ["snapshot"],
+    "interpretation": "One quiet-courtyard sample on this desktop, with three paladins and two rank III defenses. It does not establish full-battle or physical mobile performance; earlier samples varied. No comparative frame-rate gain is claimed."
+  },
+  "limitations": [
+    "Final art acceptance remains open; the six mechanical models are a construction study.",
+    "The planned enemy siege, branch equipment, recruitment, legends and campaign progression remain incomplete.",
+    "Siege bolts do not yet implement terrain line of sight.",
+    "Physical mobile hardware and full-battle performance are untested."
+  ]
+}

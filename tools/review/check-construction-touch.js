@@ -1,0 +1,34 @@
+async (page) => {
+  await page.waitForFunction(()=>window.__NEON_NEXT__);
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  const read=()=>page.evaluate(()=>window.__NEON_NEXT__.snapshot());
+  if((await read()).mode!=='construction')await page.getByRole('button',{name:/Visit the workshop/}).tap();
+  await page.getByText('Workshop ledger',{exact:true}).tap();await page.getByRole('button',{name:'Reset all defenses & crowns'}).tap();await page.getByText('Workshop ledger',{exact:true}).tap();
+  await page.getByRole('button',{name:/2 CAPACITY Royal Ballista/}).tap();
+  await page.getByRole('button',{name:'Compare all three ranks'}).tap();
+  await page.getByRole('button',{name:'Inspect machine',exact:true}).scrollIntoViewIfNeeded();
+  await page.screenshot({path:'output/playwright/construction-touch-ranks.png'});
+  await page.getByRole('button',{name:'III Siege frame',exact:true}).tap();
+  await page.getByRole('button',{name:'East watch Open site',exact:true}).tap();
+  await page.getByRole('button',{name:'Build rank III · 500 crowns',exact:true}).tap();
+  if((await read()).plan.gold!==700)throw new Error('Touch build did not spend once');
+  await page.getByRole('button',{name:'Relocate · free',exact:true}).tap();
+  await page.getByRole('button',{name:'West watch Open site',exact:true}).tap();
+  await page.getByRole('button',{name:'Confirm relocation · free',exact:true}).tap();
+  if((await read()).plan.buildings[0].site!=='west-watch')throw new Error('Touch relocation failed');
+  await page.getByRole('button',{name:'Place in courtyard',exact:true}).scrollIntoViewIfNeeded();
+  await page.screenshot({path:'output/playwright/construction-touch-placement.png'});
+  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);
+  if(overflow)throw new Error('Portrait horizontal overflow');
+  await page.setViewportSize({width:915,height:412});
+  await page.getByRole('button',{name:'Inspect machine',exact:true}).tap();
+  await page.screenshot({path:'output/playwright/construction-touch-landscape.png'});
+  if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw new Error('Landscape horizontal overflow');
+  await page.setViewportSize({width:412,height:915});
+  await page.getByRole('button',{name:'Enter courtyard ↗',exact:true}).tap();
+  await page.waitForFunction(()=>window.__NEON_NEXT__.snapshot().structureHits>0,{},{timeout:12000});
+  await page.getByRole('button',{name:'Workshop',exact:true}).tap();
+  if((await read()).plan.buildings.length!==1)throw new Error('Touch return lost the defense');
+  if(errors.length)throw new Error(JSON.stringify(errors));
+  return {plan:(await read()).plan,portrait:[412,915],landscape:[915,412],errors};
+}

@@ -12,8 +12,10 @@ an independently redistributable asset pack or part of a source-code license.
 The original archive, source textures and Blender vendor scene are kept local.
 
 Neon Knights additions: runtime deform-rig conversion, animation studies,
-Stormbow, Sunlance, training courtyard and game code. Animation acceptance is
-still in progress; the Foundry is a character and movement preview.
+Stormbow, Sunlance, training courtyard, Royal Ballista and Aegis Projector
+(three Blender-authored ranks each), and game code. Defense mechanisms use
+separate mechanical pivots driven by the simulation. Character animation and
+final art acceptance are still in progress.
 
 Cormorant Garamond and Manrope: SIL Open Font License 1.1.
 The corresponding license texts are included in /licenses/.

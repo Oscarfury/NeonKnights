@@ -10,6 +10,7 @@ import {
 } from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { assetIds } from '../construction/Catalog';
 
 export interface AssetManifest {
   id: string;
@@ -34,7 +35,7 @@ export class Assets {
     const loader = new GLTFLoader(manager);
     // Await all requests before disposal on failure: no late model can leak.
     const results = await Promise.allSettled(
-      ['paladin', 'stormbow', 'sunlance', 'courtyard'].map(async (name) => {
+      assetIds.map(async (name) => {
         this.models.set(
           name,
           await loader.loadAsync(

@@ -1,3 +1,13 @@
+import {
+  createDefenses,
+  footprint,
+  interceptRay,
+  stepDefenses,
+  type Defense,
+  type SiegeBolt,
+} from '../construction/DefenseSystem';
+import { routeAround } from '../construction/Navigation';
+import type { Workshop } from '../construction/Workshop';
 import type { Weapon } from '../presentation/Paladin';
 import { actionTiming } from '../combat/Actions';
 import { makeDanger, resolveDanger, type Danger } from '../combat/Hazards';
@@ -46,6 +56,10 @@ export interface TrainingState {
   order: 'follow' | 'hold';
   destination: Point;
   bolts: Bolt[];
+  defenses: Defense[];
+  siegeBolts: SiegeBolt[];
+  structureHits: number;
+  blockedDamage: number;
   hazards: Hazard[];
   targets: { id: number; x: number; z: number; hp: number; flash: number }[];
   dodgeCharges: number;
@@ -102,7 +116,7 @@ const actor = (x: number, z: number): Actor => ({
   protectedTime: 0,
   hurtTime: 0,
 });
-export function createTraining(): TrainingState {
+export function createTraining(plan?: Workshop): TrainingState {
   return {
     time: 0,
     player: actor(0, 5),
@@ -110,6 +124,10 @@ export function createTraining(): TrainingState {
     order: 'follow',
     destination: { x: 0, y: 0, z: 5 },
     bolts: [],
+    defenses: plan ? createDefenses(plan) : [],
+    siegeBolts: [],
+    structureHits: 0,
+    blockedDamage: 0,
     hazards: [],
     targets: [-3, 0, 3].map((x, id) => ({ id, x, z: -7, hp: 100, flash: 0 })),
     dodgeCharges: 2,
@@ -147,13 +165,22 @@ export function groundHeight(x: number, z: number) {
   if (x >= 2 && x < 6 && Math.abs(z) <= 1.3) return ((x - 2) / 4) * 1.8;
   return 0;
 }
-export function moveActor(a: Point, dx: number, dz: number) {
+export function moveActor(a: Point, dx: number, dz: number, obstacles: Defense[] = []) {
   // Resolve the axes separately for smooth sliding. A slope or same-level
   // connection is required; stepping through a balcony wall is impossible.
   const attempt = (x: number, z: number) => {
     if (x < -10.2 || x > 10.1 || z < -9 || z > 8.3) return;
     const y = groundHeight(x, z);
     if (Math.abs(y - a.y) > 0.13) return;
+    if (
+      obstacles.some(
+        (b) =>
+          Math.abs(b.y - y) < 0.5 &&
+          Math.hypot(x - b.x, z - b.z) < footprint(b.kind, b.rank) + 0.28 &&
+          Math.hypot(x - b.x, z - b.z) < Math.hypot(a.x - b.x, a.z - b.z),
+      )
+    )
+      return;
     a.x = x;
     a.z = z;
     a.y = y;
@@ -195,7 +222,7 @@ export function issueOrder(s: TrainingState, point: Point) {
   };
   s.destination.y = groundHeight(s.destination.x, s.destination.z);
 }
-function nextWaypoint(a: Point, target: Point): Point {
+function nextWaypoint(a: Point, target: Point, obstacles: Defense[]): Point {
   const targetHeight = groundHeight(target.x, target.z);
   if (targetHeight > 0 && a.y === 0) {
     if (Math.hypot(a.x - 1.7, a.z) > 0.28) return { x: 1.7, y: 0, z: 0 };
@@ -203,10 +230,24 @@ function nextWaypoint(a: Point, target: Point): Point {
   }
   if (targetHeight >= 1.8 && a.x < 6.2) return { x: 6.4, y: 1.8, z: 0 };
   if (targetHeight === 0 && a.y > 0) {
-    if (a.x > 6.45 || Math.abs(a.z) > 0.25) return { x: 6.2, y: 1.8, z: 0 };
+    if (a.x > 6.45 || (a.x >= 6 && Math.abs(a.z) > 0.25)) return { x: 6.2, y: 1.8, z: 0 };
     return { x: 1.5, y: 0, z: 0 };
   }
-  return target;
+  return routeAround(
+    a,
+    target,
+    obstacles,
+    (p) =>
+      p.x >= -10.1 &&
+      p.x <= 10 &&
+      p.z >= -8.9 &&
+      p.z <= 8.2 &&
+      Math.abs(groundHeight(p.x, p.z) - a.y) < 0.001,
+    [
+      { x: 1.5, y: 0, z: -3.5 },
+      { x: 1.5, y: 0, z: 3.5 },
+    ],
+  );
 }
 function shoot(s: TrainingState, damage: number, aim: Point) {
   const p = s.player,
@@ -323,6 +364,7 @@ export function stepTraining(s: TrainingState, i: TrainingInput, dt = 1 / 60) {
     p,
     (alive && isDodging ? s.dodgeX * 9 : mx * speed) * dt,
     (alive && isDodging ? s.dodgeZ * 9 : mz * speed) * dt,
+    s.defenses,
   );
   p.moving = Math.hypot(p.x - before.x, p.z - before.z) > 0.001;
   if (alive && !p.action && !isDodging && !i.rescue) {
@@ -383,14 +425,14 @@ export function stepTraining(s: TrainingState, i: TrainingInput, dt = 1 / 60) {
       goal.x = Math.max(6.5, Math.min(9.5, goal.x));
       goal.z = Math.max(-2.4, Math.min(2.4, goal.z));
     }
-    const target = nextWaypoint(k, goal);
+    const target = nextWaypoint(k, goal, s.defenses);
     const dx = target.x - k.x,
       dz = target.z - k.z,
       d = Math.hypot(dx, dz);
     k.moving = d > 0.18;
     if (k.moving) {
       const step = Math.min(d, dt * 3.5);
-      moveActor(k, (dx / d) * step, (dz / d) * step);
+      moveActor(k, (dx / d) * step, (dz / d) * step, s.defenses);
       k.yaw = angleLerp(k.yaw, Math.atan2(dx, dz), dt * 9);
     } else k.yaw = angleLerp(k.yaw, p.yaw, dt * 5);
     // Stable slots and short-range separation prevent a shared destination pile.
@@ -399,7 +441,7 @@ export function stepTraining(s: TrainingState, i: TrainingInput, dt = 1 / 60) {
       const x = k.x - other.x,
         z = k.z - other.z,
         l = Math.hypot(x, z);
-      if (l > 0 && l < 0.64) moveActor(k, (x / l) * dt * 0.9, (z / l) * dt * 0.9);
+      if (l > 0 && l < 0.64) moveActor(k, (x / l) * dt * 0.9, (z / l) * dt * 0.9, s.defenses);
     }
   }
   // A nearby knight can pull the commander up. The commander can hold F to
@@ -411,13 +453,14 @@ export function stepTraining(s: TrainingState, i: TrainingInput, dt = 1 / 60) {
       rescueBy = all.findIndex((a, index) => index > 0 && a.hp > 0 && a.action !== 'recover');
       if (rescueBy > 0) {
         const rescuer = all[rescueBy];
-        const waypoint = nextWaypoint(rescuer, p);
+        const waypoint = nextWaypoint(rescuer, p, s.defenses);
         const d = Math.hypot(waypoint.x - rescuer.x, waypoint.z - rescuer.z);
         if (d > 1.15 || Math.abs(rescuer.y - p.y) > 0.3) {
           moveActor(
             rescuer,
             ((waypoint.x - rescuer.x) / Math.max(0.01, d)) * dt * 3.5,
             ((waypoint.z - rescuer.z) / Math.max(0.01, d)) * dt * 3.5,
+            s.defenses,
           );
           rescuer.yaw = angleLerp(
             rescuer.yaw,
@@ -470,6 +513,34 @@ export function stepTraining(s: TrainingState, i: TrainingInput, dt = 1 / 60) {
     target.flash = Math.max(0, target.flash - dt);
     if (target.hp <= 0 && target.flash <= 0) target.hp = 100;
   }
+  s.siegeBolts.push(...stepDefenses(s.defenses, s.targets, dt, () => s.nextId++));
+  for (const bolt of s.siegeBolts) {
+    const old = { ...bolt };
+    bolt.x += bolt.vx * dt;
+    bolt.y += bolt.vy * dt;
+    bolt.z += bolt.vz * dt;
+    bolt.life -= dt;
+    const contacts = s.targets.filter(
+      (t) =>
+        t.hp > 0 &&
+        !bolt.hit.includes(t.id) &&
+        segmentSphere(old, bolt, { x: t.x, y: 1.4, z: t.z }, 0.6),
+    );
+    contacts.sort(
+      (a, b) => Math.hypot(a.x - old.x, a.z - old.z) - Math.hypot(b.x - old.x, b.z - old.z),
+    );
+    for (const target of contacts) {
+      target.hp = Math.max(0, target.hp - bolt.damage);
+      target.flash = 0.3;
+      bolt.hit.push(target.id);
+      s.structureHits++;
+      if (--bolt.remaining <= 0) {
+        bolt.life = 0;
+        break;
+      }
+    }
+  }
+  s.siegeBolts = s.siegeBolts.filter((b) => b.life > 0);
   for (const bolt of s.bolts) {
     const old = { ...bolt };
     bolt.x += bolt.vx * dt;
@@ -502,19 +573,40 @@ export function stepTraining(s: TrainingState, i: TrainingInput, dt = 1 / 60) {
   for (const hazard of s.hazards) {
     for (const hit of resolveDanger(
       hazard,
-      all.map((a, index) => ({
-        ...a,
-        id: String(index),
-        team: index ? 'company' : 'commander',
-        previous: previous[index],
-        immune: a.protectedTime > 0 || (index === 0 && isDodging),
-        alive: a.hp > 0,
-      })),
+      [
+        ...all.map((a, index) => ({
+          ...a,
+          id: String(index),
+          team: index ? ('company' as const) : ('commander' as const),
+          previous: previous[index],
+          immune: a.protectedTime > 0 || (index === 0 && isDodging),
+          alive: a.hp > 0,
+        })),
+        ...s.defenses.map((b) => ({
+          ...b,
+          id: `structure:${b.id}`,
+          team: 'structure' as const,
+          previous: b,
+          immune: false,
+          alive: b.hp > 0,
+          radius: footprint(b.kind, b.rank),
+        })),
+      ],
       dt,
     )) {
+      if (hit.target.startsWith('structure:')) {
+        const b = s.defenses.find((b) => b.id === Number(hit.target.split(':')[1]))!;
+        const damage = interceptRay(s.defenses, b, hazard, hit.damage);
+        s.blockedDamage += hit.damage - damage;
+        b.hp = Math.max(0, b.hp - damage);
+        if (damage) b.flash = 0.4;
+        continue;
+      }
       const index = Number(hit.target),
         a = all[index];
-      const damage = Math.min(a.hp, hit.damage);
+      const unblocked = interceptRay(s.defenses, a, hazard, hit.damage);
+      s.blockedDamage += hit.damage - unblocked;
+      const damage = Math.min(a.hp, unblocked);
       a.hp -= damage;
       if (damage) {
         a.hurtTime = 0.4;
