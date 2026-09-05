@@ -1,0 +1,14 @@
+﻿{
+  "url": "http://127.0.0.1:4173/NeonKnights/",
+  "errors": [],
+  "failed": [],
+  "settings": true,
+  "weapon": true,
+  "pause": true,
+  "devHooksAbsent": true,
+  "frameStats": {
+    "medianMs": 16.699999999999818,
+    "p95Ms": 17.200000000000273,
+    "sampleFrames": 89
+  }
+}

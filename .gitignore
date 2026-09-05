@@ -1,0 +1,7 @@
+/.playwright-cli/
+/output/
+*.blend1
+__pycache__/
+/node_modules/
+/dist/
+*.tsbuildinfo

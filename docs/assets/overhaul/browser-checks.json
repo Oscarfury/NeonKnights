@@ -1,0 +1,33 @@
+﻿{
+  "errors": [],
+  "checks": {
+    "pause": true,
+    "naturalWave": {
+      "hp": 200,
+      "gold": 139,
+      "seconds": 16.300000000000356
+    },
+    "stableOffers": true,
+    "previewIsolation": true,
+    "saveResume": true,
+    "mobileShop": {
+      "document": 390,
+      "viewport": 390,
+      "panel": {
+        "x": 16,
+        "y": 16,
+        "width": 358,
+        "height": 812,
+        "top": 16,
+        "right": 374,
+        "bottom": 828,
+        "left": 16
+      }
+    },
+    "mobileMenu": {
+      "scroll": 390,
+      "width": 390
+    }
+  },
+  "url": "http://127.0.0.1:5173/NeonKnights/"
+}

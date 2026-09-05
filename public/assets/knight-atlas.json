@@ -1,0 +1,26 @@
+{
+  "frameWidth": 128,
+  "frameHeight": 128,
+  "columns": 6,
+  "directions": 8,
+  "clips": {
+    "idle": [
+      0
+    ],
+    "walk": [
+      1,
+      2
+    ],
+    "attack": [
+      3,
+      4,
+      5
+    ]
+  },
+  "pivot": [
+    0.5,
+    0.83
+  ],
+  "hitFrame": 4,
+  "source": "tools/blender/render_atlas.py"
+}

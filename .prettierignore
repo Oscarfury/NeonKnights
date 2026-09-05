@@ -1,0 +1,3 @@
+# Playwright CLI consumes these files as function expressions, without a trailing semicolon.
+tools/review/*.js
+public/classic/

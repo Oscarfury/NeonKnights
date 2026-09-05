@@ -1,0 +1,188 @@
+{
+    "url":  "https://oscarfury.github.io/NeonKnights/",
+    "errors":  [
+
+               ],
+    "initial":  {
+                    "title":  "⚔️ NEON KNIGHTS: Castle Defense ⚔️",
+                    "viewport":  {
+                                     "width":  1440,
+                                     "height":  1000
+                                 },
+                    "canvas":  {
+                                   "width":  1400,
+                                   "height":  900,
+                                   "rect":  {
+                                                "x":  17,
+                                                "y":  122,
+                                                "width":  1406,
+                                                "height":  756,
+                                                "top":  122,
+                                                "right":  1423,
+                                                "bottom":  878,
+                                                "left":  17
+                                            }
+                               },
+                    "controls":  "function handleControls(dt){ \n        // Update player position based on mouse for 360-degree rotation\n        updatePlayerPos();\n        \n        // Automatic cavalry spawn on cooldown\n        if(game.upgrades.cavalry \u003e 0 \u0026\u0026 game.cavalryTimer \u003c= 0) {\n          // Spawn multiple cavalry based on upgrade level\n          const cavalryCount = game.upgrades.cavalry;\n          for(let i = 0; i \u003c cavalryCount; i++) {\n            // Spawn cavalry at slightly different positions around the player\n            const angle = (i / cavalryCount) * Math.PI * 2;\n            const offsetX = Math.cos(angle) * 20;\n            const offsetY = Math.sin(angle) * 20;\n            spawnCavalry(game.player.x + offsetX, game.player.y + offsetY);\n          }\n          game.cavalryTimer = 10.0; // 10 second cooldown\n          \n          // Visual effect for cavalry spawn\n          spawnParticles(game.player.x, game.player.y, \u0027#00ff88\u0027, 30, 1.0);\n          game.shake = Math.max(game.shake, 4);\n        }\n        \n        // WASD reserved for future special abilities\n        // (Currently disabled - will be used for special abilities later)\n        \n        // Slow motion\n        if(KEYS.has(\u0027shift\u0027)){ \n          if(game.stamina\u003e0){ \n            if(game.dtScale === 1) {\n              sfx.timeSlow(); // Play sound when time slow activates\n            }\n            game.dtScale=0.4; \n            game.stamina=Math.max(0, game.stamina - dt*0.35); \n          } else game.dtScale=1; \n        } else { \n          game.dtScale=1; \n          game.stamina=Math.min(1, game.stamina + dt*0.25); \n        }\n      }",
+                    "position":  "function updatePlayerPos(){ \n        // Calculate angle from castle center to mouse position for 360-degree rotation\n        const mouseAngle = Math.atan2(mouse.y - CENTER.y, mouse.x - CENTER.x);\n        const pos = V2.fromAngle(mouseAngle, CASTLE.r-8); \n        game.player.x = CENTER.x + pos.x; \n        game.player.y = CENTER.y + pos.y; \n        // Store the current angle for reference\n        game.player.angle = mouseAngle;\n      }",
+                    "reward":  "function onEnemyDeath(e){ \n        const mult = (e.type===\u0027dragon\u0027)? 3.0 : 1.0; \n        \n        // Epic death effect\n        spawnParticles(e.x,e.y, e.glowColor, 30*mult, 1.5); \n        spawnParticles(e.x,e.y,\u0027#ffffff\u0027, 20*mult, 1.2);\n        spawnCoins(e.x,e.y, Math.round(6*mult)); \n        \n        // Check if killed by Midas Knight for bonus gold\n        let midasBonus = 1;\n        if(e.killedBy \u0026\u0026 e.killedBy.midas) {\n          const midasLevel = game.upgrades.midasknights || 0;\n          midasBonus = 2 + midasLevel; // x2 base, +1 per level (x3, x4, x5, etc.)\n        }\n        \n        const goldGain = Math.round((e.reward||6)*(1+0.5*(game.upgrades.treasury||0))*game.combo * midasBonus); \n        game.gold += goldGain; \n        // Track interest for King\u0027s Treasury\n        if(game.upgrades.treasury \u003e 0) {\n          game.treasuryInterest = (game.treasuryInterest || 0) + goldGain * 0.1 * game.upgrades.treasury;\n        }\n        game.score += (10 + e.reward) * game.combo; \n        \n        spawnText(e.x,e.y,\u0027+\u0027+goldGain+\u0027g\u0027, \u0027#ffd700\u0027, 1.0, 20);\n        \n        // Special death effects\n        if(e.type===\u0027jester\u0027 \u0026\u0026 e.split\u003e0){ \n          for(let i=0;i\u003c2;i++){ \n            const m=makeEnemy(\u0027page\u0027,1); \n            m.x=e.x+rand(-10,10); \n            m.y=e.y+rand(-10,10); \n            game.enemies.push(m); \n          } \n                      setBattleMessage(\u0027JESTER SPLITS!\u0027, 1.5, \u0027#ff8800\u0027);\n        }\n        \n        if(e.type===\u0027dragon\u0027){\n          game.shake = 20;\n          showAchievement(\u0027DRAGON SLAYER!\u0027);\n                      setBattleMessage(\u0027LEGENDARY KILL!\u0027, 3.0, \u0027#ff0088\u0027);\n        }\n        \n        sfx.death();\n      }"
+                },
+    "playResult":  {
+                       "state":  "UPGRADE",
+                       "wave":  2,
+                       "gold":  225,
+                       "hp":  100,
+                       "enemies":  0
+                   },
+    "probes":  {
+                   "waves":  [
+                                 {
+                                     "wave":  1,
+                                     "types":  [
+                                                   "squire",
+                                                   "squire",
+                                                   "squire",
+                                                   "squire",
+                                                   "squire",
+                                                   "squire"
+                                               ],
+                                     "bosses":  [
+
+                                                ]
+                                 },
+                                 {
+                                     "wave":  5,
+                                     "types":  [
+                                                   "dragon",
+                                                   "squire",
+                                                   "squire",
+                                                   "squire",
+                                                   "squire",
+                                                   "squire",
+                                                   "squire",
+                                                   "squire",
+                                                   "squire"
+                                               ],
+                                     "bosses":  [
+                                                    {
+                                                        "type":  "dragon",
+                                                        "hp":  2899
+                                                    }
+                                                ]
+                                 },
+                                 {
+                                     "wave":  10,
+                                     "types":  [
+                                                   "squire",
+                                                   "squire",
+                                                   "squire",
+                                                   "squire",
+                                                   "knight",
+                                                   "knight",
+                                                   "knight",
+                                                   "lancer",
+                                                   "lancer",
+                                                   "pegasus",
+                                                   "pegasus",
+                                                   "cleric",
+                                                   "cleric"
+                                               ],
+                                     "bosses":  [
+
+                                                ]
+                                 },
+                                 {
+                                     "wave":  20,
+                                     "types":  [
+                                                   "golem",
+                                                   "squire",
+                                                   "squire",
+                                                   "squire",
+                                                   "squire",
+                                                   "squire",
+                                                   "squire",
+                                                   "squire",
+                                                   "squire"
+                                               ],
+                                     "bosses":  [
+                                                    {
+                                                        "type":  "golem",
+                                                        "hp":  22017
+                                                    }
+                                                ]
+                                 }
+                             ],
+                   "sniperOfferedAgain":  false,
+                   "normalSniper":  [
+                                        93.14999999999999
+                                    ],
+                   "chargedSniper":  [
+                                         93.14999999999999
+                                     ],
+                   "turretFactory":  {
+                                         "returnedProjectile":  false,
+                                         "createdSniperLines":  1
+                                     },
+                   "rapidIntervals":  [
+                                          {
+                                              "level":  0,
+                                              "interval":  0.36
+                                          },
+                                          {
+                                              "level":  1,
+                                              "interval":  0.32
+                                          },
+                                          {
+                                              "level":  2,
+                                              "interval":  0.27999999999999997
+                                          },
+                                          {
+                                              "level":  3,
+                                              "interval":  0.24
+                                          },
+                                          {
+                                              "level":  7,
+                                              "interval":  0.08
+                                          },
+                                          {
+                                              "level":  8,
+                                              "interval":  0.08
+                                          }
+                                      ],
+                   "upgradeCount":  23
+               },
+    "mobile":  {
+                   "viewportWidth":  390,
+                   "scrollWidth":  390,
+                   "canvas":  {
+                                  "x":  0,
+                                  "y":  102.5,
+                                  "width":  396,
+                                  "height":  639,
+                                  "top":  102.5,
+                                  "right":  396,
+                                  "bottom":  741.5,
+                                  "left":  0
+                              },
+                   "hud":  {
+                               "x":  3.90625,
+                               "y":  16,
+                               "width":  382.1875,
+                               "height":  99,
+                               "top":  16,
+                               "right":  386.09375,
+                               "bottom":  115,
+                               "left":  3.90625
+                           },
+                   "modal":  {
+                                 "x":  12.59375,
+                                 "y":  89.84375,
+                                 "width":  364.796875,
+                                 "height":  664.3125,
+                                 "top":  89.84375,
+                                 "right":  377.390625,
+                                 "bottom":  754.15625,
+                                 "left":  12.59375
+                             }
+               }
+}
