@@ -15,6 +15,7 @@ import {
   MeshStandardMaterial,
   CylinderGeometry,
   ConeGeometry,
+  Quaternion,
 } from 'three';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import type { Assets } from './Assets';
@@ -37,6 +38,15 @@ export class Paladin {
   private base?: AnimationAction;
   private upper?: AnimationAction;
   private review?: AnimationAction;
+  private full?: AnimationAction;
+  private synced?: { action: AnimationAction; time: number };
+  private back;
+  private stowedBow: Group;
+  private stowedLance: Group;
+  private restingString: Line;
+  private backRest = new Quaternion();
+  private backRotation = new Quaternion();
+  private rootRotation = new Quaternion();
   private p = new Vector3();
   private q = new Vector3();
   private tip = new Vector3();
@@ -44,7 +54,10 @@ export class Paladin {
   private leftHand;
   private rightHand;
 
-  constructor(readonly assets: Assets) {
+  constructor(
+    readonly assets: Assets,
+    readonly carriedWeapons: Weapon[] = ['stormbow', 'sunlance'],
+  ) {
     this.model = clone(assets.get('paladin').scene) as Group;
     this.root.add(this.model);
     this.mixer = new AnimationMixer(this.model);
@@ -65,9 +78,26 @@ export class Paladin {
     this.rightHand = this.model.getObjectByName(
       PropertyBinding.sanitizeNodeName(assets.manifest.sockets.rightHand),
     )!;
+    this.back = this.model.getObjectByName(
+      PropertyBinding.sanitizeNodeName(
+        assets.manifest.sockets.back || assets.manifest.sockets.chest,
+      ),
+    )!;
+    this.back.getWorldQuaternion(this.backRest).invert();
     this.bow = assets.get('stormbow').scene.clone(true);
     this.lance = assets.get('sunlance').scene.clone(true);
     this.root.add(this.bow, this.lance);
+    this.stowedBow = this.bow.clone(true);
+    this.stowedLance = this.lance.clone(true);
+    this.root.add(this.stowedBow, this.stowedLance);
+    this.restingString = new Line(
+      new BufferGeometry().setFromPoints([
+        new Vector3(0, -0.66, -0.13),
+        new Vector3(0, 0.66, -0.13),
+      ]),
+      new LineBasicMaterial({ color: 0x8fbdc5 }),
+    );
+    this.stowedBow.add(this.restingString);
     this.string = new Line(
       new BufferGeometry().setFromPoints([new Vector3(), new Vector3(), new Vector3()]),
       new LineBasicMaterial({ color: 0xade9f3 }),
@@ -103,10 +133,32 @@ export class Paladin {
     if (old) action.crossFadeFrom(old, 0.13, false);
     return action;
   }
-  animate(moving: boolean, strafe: number, action = '', forward = 1, dodging = false) {
+  animate(
+    moving: boolean,
+    strafe: number,
+    action = '',
+    forward = 1,
+    dodging = false,
+    actionTime?: number,
+    dodgeDirection = 'dodge_forward',
+  ) {
     if (this.review) return;
+    this.synced = undefined;
+    if (action === 'recover' || action === 'interact') {
+      this.base?.stop();
+      this.upper?.stop();
+      this.base = this.upper = undefined;
+      this.full = this.activate(action, this.full, true);
+      if (this.full && actionTime !== undefined)
+        this.synced = { action: this.full, time: actionTime };
+      return;
+    }
+    if (this.full) {
+      this.full.stop();
+      this.full = undefined;
+    }
     const gait = dodging
-      ? 'dodge'
+      ? dodgeDirection
       : moving
         ? Math.abs(strafe) > 0.6
           ? strafe > 0
@@ -122,8 +174,10 @@ export class Paladin {
     this.upper = this.activate(
       `${name}:upper`,
       this.upper,
-      ['bow_fire', 'bow_release', 'lance_fire', 'hit'].includes(name),
+      !['bow_idle', 'bow_hold', 'lance_idle'].includes(name),
     );
+    if (this.upper && actionTime !== undefined && action)
+      this.synced = { action: this.upper, time: actionTime };
   }
   setDowned(value: boolean) {
     if (this.downed === value) return;
@@ -139,6 +193,8 @@ export class Paladin {
     this.base = undefined;
     this.upper = undefined;
     this.review = undefined;
+    this.full = undefined;
+    this.synced = undefined;
     this.review = this.activate(name, undefined, false);
     if (name.startsWith('lance')) this.weapon = 'sunlance';
     else if (name.startsWith('bow')) this.weapon = 'stormbow';
@@ -146,12 +202,18 @@ export class Paladin {
   endInspection() {
     this.mixer.stopAllAction();
     this.review = undefined;
+    this.full = undefined;
+    this.synced = undefined;
     this.base = undefined;
     this.upper = undefined;
     this.animate(false, 0);
   }
   update(dt: number) {
     this.mixer.update(dt * this.speed);
+    if (this.synced) {
+      this.synced.action.time = Math.min(this.synced.time, this.synced.action.getClip().duration);
+      this.mixer.update(0);
+    }
     this.root.updateMatrixWorld(true);
     this.leftHand.getWorldPosition(this.p);
     this.root.worldToLocal(this.p);
@@ -164,16 +226,45 @@ export class Paladin {
     this.bow.position.copy(this.p);
     this.lance.position.copy(this.q);
     this.lance.position.y += 0.035;
-    this.bow.visible = this.string.visible = this.weapon === 'stormbow' && !this.downed;
-    this.lance.visible = this.weapon === 'sunlance' && !this.downed;
-    this.arrow.position.copy(this.q);
-    const action = this.review || this.upper;
+    const action = this.review || this.full || this.upper;
     const name = action?.getClip().name || '';
+    const assisting = name.startsWith('interact') || name.startsWith('recover');
+    this.bow.visible = this.string.visible =
+      this.weapon === 'stormbow' && !this.downed && !assisting;
+    this.lance.visible = this.weapon === 'sunlance' && !this.downed && !assisting;
+    this.back.getWorldPosition(this.tip);
+    this.root.worldToLocal(this.tip);
+    this.back.getWorldQuaternion(this.backRotation);
+    this.root.getWorldQuaternion(this.rootRotation).invert();
+    this.backRotation.premultiply(this.rootRotation).multiply(this.backRest);
+    this.stowedBow.position
+      .set(-0.1, -0.16, -0.23)
+      .applyQuaternion(this.backRotation)
+      .add(this.tip);
+    this.stowedBow.quaternion.copy(this.backRotation);
+    this.stowedBow.rotateZ(0.4);
+    this.stowedLance.position
+      .set(0.17, -0.5, -0.22)
+      .applyQuaternion(this.backRotation)
+      .add(this.tip);
+    this.stowedLance.quaternion.copy(this.backRotation);
+    this.stowedLance.rotateX(-Math.PI / 2);
+    this.stowedBow.visible =
+      this.carriedWeapons.includes('stormbow') &&
+      (this.weapon !== 'stormbow' || assisting || this.downed);
+    this.stowedLance.visible =
+      this.carriedWeapons.includes('sunlance') &&
+      (this.weapon !== 'sunlance' || assisting || this.downed);
+    this.arrow.position.copy(this.q);
     const shot = name.startsWith('bow_fire') || name.startsWith('bow_release');
     const released =
       shot &&
       action!.time / action!.getClip().duration >= (name.startsWith('bow_fire') ? 0.66 : 0.06);
-    this.arrow.visible = this.bow.visible && !released;
+    this.arrow.visible =
+      this.bow.visible &&
+      !released &&
+      !name.startsWith('weapon_') &&
+      !name.startsWith('bow_cancel');
     this.points.set([
       this.p.x,
       this.p.y + 0.66,
@@ -200,6 +291,12 @@ export class Paladin {
     return {
       time: this.mixer.time,
       speed: this.speed,
+      held: this.bow.visible ? 'stormbow' : this.lance.visible ? 'sunlance' : null,
+      stowed: [
+        this.stowedBow.visible ? 'stormbow' : null,
+        this.stowedLance.visible ? 'sunlance' : null,
+      ].filter(Boolean),
+      action: (this.review || this.full || this.upper)?.getClip().name,
       bones: names.map((name) =>
         this.model.getObjectByName(name)?.getWorldPosition(new Vector3()).toArray(),
       ),
@@ -210,6 +307,8 @@ export class Paladin {
     this.mixer.uncacheRoot(this.model);
     this.string.geometry.dispose();
     (this.string.material as LineBasicMaterial).dispose();
+    this.restingString.geometry.dispose();
+    (this.restingString.material as LineBasicMaterial).dispose();
     this.helper.dispose();
     this.root.removeFromParent();
     this.arrow.traverse((o) => {

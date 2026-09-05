@@ -8,7 +8,8 @@
   "sockets": {
     "leftHand": "DEF-hand.L",
     "rightHand": "DEF-hand.R",
-    "chest": "DEF-spine.003"
+    "chest": "DEF-spine.003",
+    "back": "DEF-spine.003"
   },
   "clips": [
     {
@@ -85,6 +86,61 @@
       "name": "downed",
       "duration": 1.3,
       "loop": false
+    },
+    {
+      "name": "dodge_forward",
+      "duration": 0.5,
+      "loop": false
+    },
+    {
+      "name": "dodge_backward",
+      "duration": 0.5,
+      "loop": false
+    },
+    {
+      "name": "dodge_left",
+      "duration": 0.5,
+      "loop": false
+    },
+    {
+      "name": "dodge_right",
+      "duration": 0.5,
+      "loop": false
+    },
+    {
+      "name": "weapon_stow",
+      "duration": 0.6,
+      "loop": false
+    },
+    {
+      "name": "weapon_equip",
+      "duration": 0.6,
+      "loop": false
+    },
+    {
+      "name": "bow_cancel",
+      "duration": 0.45,
+      "loop": false
+    },
+    {
+      "name": "lance_charge",
+      "duration": 0.8,
+      "loop": false
+    },
+    {
+      "name": "lance_release",
+      "duration": 0.9,
+      "loop": false
+    },
+    {
+      "name": "interact",
+      "duration": 1.8,
+      "loop": false
+    },
+    {
+      "name": "recover",
+      "duration": 1.3,
+      "loop": false
     }
   ],
   "events": {
@@ -99,8 +155,12 @@
     "lance_fire": {
       "release": 0.08,
       "recover": 0.9
+    },
+    "lance_release": {
+      "release": 0.24,
+      "recover": 0.9
     }
   },
   "status": "Animation review candidate; full art acceptance remains open",
-  "revision": "5d5674a3dc4b"
+  "revision": "80309370b190"
 }

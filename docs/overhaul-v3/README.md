@@ -1,6 +1,6 @@
 # Neon Knights: the second overhaul
 
-**Implementation status:** the [Foundry preview](PROGRESS.md) now implements the 3D runtime, imported paladin, animation studies and a playable movement courtyard. The replacement siege/campaign remains outstanding.
+**Implementation status:** the [Foundry preview](PROGRESS.md) now implements the 3D runtime, imported paladin, animation studies and a playable courtyard with [combat and recovery drills](COMBAT_PREVIEW.md). The replacement siege/campaign remains outstanding.
 
 **Baseline:** `2259a28`. The user's complete playthrough rates that build at roughly 15–20% of the intended game. Treat that as a prototype assessment, not as a release that needs a little polish.
 

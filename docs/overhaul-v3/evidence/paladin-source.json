@@ -9,7 +9,8 @@
   "sourceControlRigBones": 410,
   "exportedGameRigBones": 74,
   "sourceActions": ["pose"],
-  "exportedAnimationStudies": 15,
+  "exportedAnimationStudies": 26,
   "sourceScriptsExecuted": false,
-  "sourceArchiveModified": false
+  "sourceArchiveModified": false,
+  "initialAnimationStudies": 15
 }

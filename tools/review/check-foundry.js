@@ -26,7 +26,7 @@ async (page) => {
   await page.mouse.move(box.x+box.width*.5,box.y+box.height*.27);
   await page.mouse.down();await page.waitForTimeout(1900);await page.mouse.up();
   const shot=await read();check(shot.shots>=1,'Primary did not release');check(shot.hits>=1,'Projectile did not strike target');
-  await page.waitForTimeout(1000);await page.keyboard.press('KeyQ');await page.waitForTimeout(100);
+  await page.waitForTimeout(1000);await page.keyboard.press('KeyQ');await page.waitForTimeout(1300);
   check((await read()).player.weapon==='sunlance','Weapon swap failed');
   const beforeDodge=await read();await page.keyboard.press('Space');await page.waitForTimeout(120);
   check((await read()).dodgeCharges===beforeDodge.dodgeCharges-1,'Dodge charge not consumed');

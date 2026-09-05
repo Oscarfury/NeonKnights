@@ -150,6 +150,17 @@ function start() {
     dodge: 'Dodge',
     hit: 'Hit reaction',
     downed: 'Downed',
+    dodge_forward: 'Dodge · forward',
+    dodge_backward: 'Dodge · backward',
+    dodge_left: 'Dodge · left',
+    dodge_right: 'Dodge · right',
+    weapon_stow: 'Weapon · stow',
+    weapon_equip: 'Weapon · equip',
+    bow_cancel: 'Bow · cancel draw',
+    lance_charge: 'Sunlance · prime',
+    lance_release: 'Sunlance · charged discharge',
+    interact: 'Company · assist',
+    recover: 'Company · return to feet',
   };
   for (const clip of assets.manifest.clips) {
     const option = new Option(labels[clip.name] || clip.name, clip.name);

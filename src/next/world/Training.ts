@@ -1,4 +1,6 @@
 import type { Weapon } from '../presentation/Paladin';
+import { actionTiming } from '../combat/Actions';
+import { makeDanger, resolveDanger, type Danger } from '../combat/Hazards';
 
 export interface Point {
   x: number;
@@ -13,6 +15,8 @@ export interface Actor extends Point {
   action: string;
   actionTime: number;
   fired: boolean;
+  protectedTime: number;
+  hurtTime: number;
 }
 export interface Bolt extends Point {
   id: number;
@@ -23,15 +27,7 @@ export interface Bolt extends Point {
   damage: number;
   weapon: Weapon;
 }
-export interface Hazard {
-  id: number;
-  x: number;
-  y?: number;
-  z: number;
-  radius: number;
-  age: number;
-  hit: number[];
-}
+export type Hazard = Danger;
 export interface TrainingInput {
   x: number;
   z: number;
@@ -41,6 +37,7 @@ export interface TrainingInput {
   dodge: boolean;
   slow: boolean;
   swap: boolean;
+  rescue: boolean;
 }
 export interface TrainingState {
   time: number;
@@ -69,6 +66,16 @@ export interface TrainingState {
   dodged: number;
   damage: number;
   paused: boolean;
+  swapQueued: Weapon | null;
+  dodgeDirection: string;
+  trialPattern: number;
+  rescues: number;
+  rescueCharges: number;
+  rescueProgress: number;
+  rescueTarget: number;
+  rescueBy: number;
+  failed: boolean;
+  bufferedPrimary: number;
 }
 export const neutralInput = (): TrainingInput => ({
   x: 0,
@@ -79,6 +86,7 @@ export const neutralInput = (): TrainingInput => ({
   dodge: false,
   slow: false,
   swap: false,
+  rescue: false,
 });
 const actor = (x: number, z: number): Actor => ({
   x,
@@ -91,6 +99,8 @@ const actor = (x: number, z: number): Actor => ({
   action: '',
   actionTime: 0,
   fired: false,
+  protectedTime: 0,
+  hurtTime: 0,
 });
 export function createTraining(): TrainingState {
   return {
@@ -120,6 +130,16 @@ export function createTraining(): TrainingState {
     dodged: 0,
     damage: 0,
     paused: false,
+    swapQueued: null,
+    dodgeDirection: 'dodge_forward',
+    trialPattern: 0,
+    rescues: 0,
+    rescueCharges: 2,
+    rescueProgress: 0,
+    rescueTarget: -1,
+    rescueBy: -1,
+    failed: false,
+    bufferedPrimary: 0,
   };
 }
 export function groundHeight(x: number, z: number) {
@@ -216,7 +236,7 @@ function shoot(s: TrainingState, damage: number, aim: Point) {
   s.shots++;
 }
 export function stepTraining(s: TrainingState, i: TrainingInput, dt = 1 / 60) {
-  if (s.paused) return;
+  if (s.paused || s.failed) return;
   if (!i.slow && s.focus >= 25) s.slowLocked = false;
   const slow = i.slow && !s.slowLocked && s.focus > 0;
   s.focus = Math.max(0, Math.min(100, s.focus + (slow ? -32 : 17) * dt));
@@ -225,19 +245,61 @@ export function stepTraining(s: TrainingState, i: TrainingInput, dt = 1 / 60) {
   s.lastDelta = dt;
   s.time += dt;
   const p = s.player;
-  if (i.swap && !p.action && !s.wasAlt) {
-    p.weapon = p.weapon === 'stormbow' ? 'sunlance' : 'stormbow';
-    s.charge = 0;
+  const all = [p, ...s.company];
+  const previous = all.map((a) => ({ ...a }));
+  for (const a of all) {
+    a.protectedTime = Math.max(0, a.protectedTime - dt);
+    a.hurtTime = Math.max(0, a.hurtTime - dt);
   }
-  p.yaw = angleLerp(p.yaw, Math.atan2(i.aim.x - p.x, i.aim.z - p.z), dt * 18);
+  const alive = p.hp > 0;
+  if (
+    alive &&
+    i.swap &&
+    !s.swapQueued &&
+    (!p.action ||
+      (!p.fired && ['bow_fire', 'lance_fire', 'lance_release', 'bow_cancel'].includes(p.action)))
+  ) {
+    s.swapQueued = p.weapon === 'stormbow' ? 'sunlance' : 'stormbow';
+    p.action = 'weapon_stow';
+    p.actionTime = 0;
+    p.fired = false;
+    s.charge = 0;
+    s.wasAlt = false;
+  }
+  if (alive && !i.rescue)
+    p.yaw = angleLerp(p.yaw, Math.atan2(i.aim.x - p.x, i.aim.z - p.z), dt * 18);
   const inputLength = Math.hypot(i.x, i.z),
     mx = inputLength ? i.x / inputLength : 0,
     mz = inputLength ? i.z / inputLength : 0;
-  if (i.dodge && s.dodgeCharges > 0 && s.dodgeTime <= 0 && !s.wasAlt) {
+  if (
+    alive &&
+    i.dodge &&
+    s.dodgeCharges > 0 &&
+    s.dodgeTime <= 0 &&
+    !s.swapQueued &&
+    p.action !== 'recover'
+  ) {
     s.dodgeCharges--;
     s.dodgeTime = 0.27;
     s.dodgeX = inputLength ? mx : Math.sin(p.yaw);
     s.dodgeZ = inputLength ? mz : Math.cos(p.yaw);
+    const lateral = s.dodgeX * Math.cos(p.yaw) - s.dodgeZ * Math.sin(p.yaw);
+    const forward = s.dodgeX * Math.sin(p.yaw) + s.dodgeZ * Math.cos(p.yaw);
+    s.dodgeDirection =
+      Math.abs(lateral) > 0.6
+        ? lateral > 0
+          ? 'dodge_right'
+          : 'dodge_left'
+        : forward >= 0
+          ? 'dodge_forward'
+          : 'dodge_backward';
+    if (!p.fired) {
+      p.action =
+        p.weapon === 'stormbow' && (s.wasAlt || p.action === 'bow_fire') ? 'bow_cancel' : '';
+      p.actionTime = 0;
+    }
+    s.wasAlt = false;
+    s.charge = 0;
   }
   if (s.dodgeCharges < 2) {
     s.dodgeRecovery += dt;
@@ -247,41 +309,52 @@ export function stepTraining(s: TrainingState, i: TrainingInput, dt = 1 / 60) {
     }
   } else s.dodgeRecovery = 0;
   const isDodging = s.dodgeTime > 0;
+  s.bufferedPrimary =
+    alive && !i.rescue ? (isDodging && i.primary ? 0.3 : Math.max(0, s.bufferedPrimary - dt)) : 0;
   s.dodgeTime = Math.max(0, s.dodgeTime - dt);
-  const speed = s.wasAlt ? 1.9 : 4;
+  const speed =
+    !alive || i.rescue || p.action === 'recover' || p.action === 'lance_release'
+      ? 0
+      : s.wasAlt
+        ? 1.9
+        : 4;
   const before = { ...p };
   moveActor(
     p,
-    (isDodging ? s.dodgeX * 9 : mx * speed) * dt,
-    (isDodging ? s.dodgeZ * 9 : mz * speed) * dt,
+    (alive && isDodging ? s.dodgeX * 9 : mx * speed) * dt,
+    (alive && isDodging ? s.dodgeZ * 9 : mz * speed) * dt,
   );
   p.moving = Math.hypot(p.x - before.x, p.z - before.z) > 0.001;
-  if (!p.action) {
+  if (alive && !p.action && !isDodging && !i.rescue) {
     if (i.alternate) {
       s.charge = Math.min(1, s.charge + dt / 0.8);
       s.wasAlt = true;
     } else if (s.wasAlt) {
-      p.action = p.weapon === 'stormbow' ? 'bow_release' : 'lance_fire';
+      p.action = p.weapon === 'stormbow' ? 'bow_release' : 'lance_release';
       p.actionTime = 0;
       p.fired = false;
       s.wasAlt = false;
-    } else if (i.primary) {
+    } else if (i.primary || s.bufferedPrimary > 0) {
       p.action = p.weapon === 'stormbow' ? 'bow_fire' : 'lance_fire';
       p.actionTime = 0;
       p.fired = false;
       s.charge = 0;
+      s.bufferedPrimary = 0;
     }
   }
-  if (p.action) {
+  if (alive && p.action) {
     p.actionTime += dt;
-    const duration = p.action === 'bow_fire' ? 1.15 : p.action === 'bow_release' ? 0.32 : 0.65;
-    const release = p.action === 'bow_fire' ? 0.66 : p.action === 'bow_release' ? 0.06 : 0.08;
-    if (!p.fired && p.actionTime >= duration * release) {
+    const { duration, release } = actionTiming[p.action] || { duration: 0.4 };
+    if (release !== undefined && !p.fired && p.actionTime >= duration * release) {
       shoot(s, p.weapon === 'stormbow' ? 28 + s.charge * 42 : 45 + s.charge * 35, i.aim);
       p.fired = true;
     }
     if (p.actionTime >= duration) {
-      p.action = '';
+      if (p.action === 'weapon_stow' && s.swapQueued) {
+        p.weapon = s.swapQueued;
+        s.swapQueued = null;
+        p.action = 'weapon_equip';
+      } else p.action = '';
       p.actionTime = 0;
       s.charge = 0;
     }
@@ -291,6 +364,17 @@ export function stepTraining(s: TrainingState, i: TrainingInput, dt = 1 / 60) {
       k.moving = false;
       continue;
     }
+    if (k.action === 'recover') {
+      k.actionTime += dt;
+      k.moving = false;
+      if (k.actionTime >= actionTiming.recover.duration) {
+        k.action = '';
+        k.actionTime = 0;
+      }
+      continue;
+    }
+    if (!alive && index === s.company.findIndex((a) => a.hp > 0 && a.action !== 'recover'))
+      continue;
     const goal =
       s.order === 'follow'
         ? { x: p.x + (index ? 1.6 : -1.6), z: p.z + 1.7, y: p.y }
@@ -318,6 +402,70 @@ export function stepTraining(s: TrainingState, i: TrainingInput, dt = 1 / 60) {
       if (l > 0 && l < 0.64) moveActor(k, (x / l) * dt * 0.9, (z / l) * dt * 0.9);
     }
   }
+  // A nearby knight can pull the commander up. The commander can hold F to
+  // assist a downed companion. Each rescue consumes one shared field dressing.
+  let rescueBy = -1,
+    rescueTarget = -1;
+  if (s.rescueCharges > 0) {
+    if (!alive) {
+      rescueBy = all.findIndex((a, index) => index > 0 && a.hp > 0 && a.action !== 'recover');
+      if (rescueBy > 0) {
+        const rescuer = all[rescueBy];
+        const waypoint = nextWaypoint(rescuer, p);
+        const d = Math.hypot(waypoint.x - rescuer.x, waypoint.z - rescuer.z);
+        if (d > 1.15 || Math.abs(rescuer.y - p.y) > 0.3) {
+          moveActor(
+            rescuer,
+            ((waypoint.x - rescuer.x) / Math.max(0.01, d)) * dt * 3.5,
+            ((waypoint.z - rescuer.z) / Math.max(0.01, d)) * dt * 3.5,
+          );
+          rescuer.yaw = angleLerp(
+            rescuer.yaw,
+            Math.atan2(waypoint.x - rescuer.x, waypoint.z - rescuer.z),
+            dt * 10,
+          );
+          rescuer.moving = true;
+        }
+        if (Math.hypot(rescuer.x - p.x, rescuer.z - p.z) <= 1.5 && Math.abs(rescuer.y - p.y) < 0.3)
+          rescueTarget = 0;
+      }
+    } else if (i.rescue && !p.action && !isDodging) {
+      rescueTarget = all.findIndex(
+        (a, index) =>
+          index > 0 &&
+          a.hp <= 0 &&
+          Math.hypot(a.x - p.x, a.z - p.z) <= 1.6 &&
+          Math.abs(a.y - p.y) < 0.3,
+      );
+      rescueBy = 0;
+    }
+  }
+  if (rescueTarget < 0 || rescueBy < 0 || all[rescueBy].hurtTime > 0) {
+    s.rescueProgress = 0;
+    s.rescueBy = s.rescueTarget = -1;
+  } else {
+    if (s.rescueTarget !== rescueTarget || s.rescueBy !== rescueBy) s.rescueProgress = 0;
+    s.rescueTarget = rescueTarget;
+    s.rescueBy = rescueBy;
+    all[rescueBy].moving = false;
+    all[rescueBy].yaw = angleLerp(
+      all[rescueBy].yaw,
+      Math.atan2(all[rescueTarget].x - all[rescueBy].x, all[rescueTarget].z - all[rescueBy].z),
+      dt * 14,
+    );
+    s.rescueProgress += dt;
+    if (s.rescueProgress >= 1.8) {
+      const recovered = all[rescueTarget];
+      recovered.hp = 35;
+      recovered.protectedTime = 2.5;
+      recovered.action = 'recover';
+      recovered.actionTime = 0;
+      s.rescueCharges--;
+      s.rescues++;
+      s.rescueProgress = 0;
+      s.rescueTarget = s.rescueBy = -1;
+    }
+  }
   for (const target of s.targets) {
     target.flash = Math.max(0, target.flash - dt);
     if (target.hp <= 0 && target.flash <= 0) target.hp = 100;
@@ -343,25 +491,53 @@ export function stepTraining(s: TrainingState, i: TrainingInput, dt = 1 / 60) {
   if (s.trial) {
     s.nextHazard -= dt;
     if (s.nextHazard <= 0) {
-      s.hazards.push({ id: s.nextId++, x: p.x, y: p.y, z: p.z, radius: 2.15, age: 0, hit: [] });
+      const kind = (['impact', 'sweep', 'fire'] as const)[s.trialPattern++ % 3];
+      const origin = kind === 'sweep' ? { x: p.x, y: p.y, z: Math.max(-8, p.z - 4) } : p;
+      s.hazards.push(
+        makeDanger(s.nextId++, kind, origin, Math.atan2(p.x - origin.x, p.z - origin.z)),
+      );
       s.nextHazard = 4.4;
     }
   }
   for (const hazard of s.hazards) {
-    const prior = hazard.age;
-    hazard.age += dt;
-    if (prior < 1.5 && hazard.age >= 1.5) {
-      for (const [index, a] of [p, ...s.company].entries()) {
-        const inside =
-          Math.hypot(a.x - hazard.x, a.z - hazard.z) < hazard.radius + 0.3 &&
-          Math.abs(a.y - (hazard.y || 0)) < 0.5;
-        if (inside && !(index === 0 && isDodging)) {
-          a.hp = Math.max(0, a.hp - 22);
-          hazard.hit.push(index);
-          if (!index) s.damage += 22;
-        } else if (index === 0) s.dodged++;
+    for (const hit of resolveDanger(
+      hazard,
+      all.map((a, index) => ({
+        ...a,
+        id: String(index),
+        team: index ? 'company' : 'commander',
+        previous: previous[index],
+        immune: a.protectedTime > 0 || (index === 0 && isDodging),
+        alive: a.hp > 0,
+      })),
+      dt,
+    )) {
+      const index = Number(hit.target),
+        a = all[index];
+      const damage = Math.min(a.hp, hit.damage);
+      a.hp -= damage;
+      if (damage) {
+        a.hurtTime = 0.4;
+        if (index === s.rescueBy) s.rescueProgress = 0;
+        if (!index) s.damage += damage;
+      }
+      if (!index && hit.avoided) s.dodged++;
+      if (a.hp <= 0) {
+        a.moving = false;
+        a.action = '';
+        a.actionTime = 0;
+        if (!index) {
+          s.wasAlt = false;
+          s.charge = 0;
+          s.swapQueued = null;
+          s.dodgeTime = 0;
+        }
       }
     }
   }
-  s.hazards = s.hazards.filter((h) => h.age < 2.1);
+  s.hazards = s.hazards.filter((h) => h.age < h.warning + h.active + h.recovery);
+  if (p.hp <= 0 && (s.rescueCharges === 0 || s.company.every((a) => a.hp <= 0))) {
+    s.failed = true;
+    s.trial = false;
+  }
 }

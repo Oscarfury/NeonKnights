@@ -18,12 +18,12 @@ import {
   PCFShadowMap,
   CylinderGeometry,
   TorusGeometry,
-  SphereGeometry,
-  RingGeometry,
   BoxGeometry,
 } from 'three';
 import { Assets } from './presentation/Assets';
 import { Paladin } from './presentation/Paladin';
+import { DangerView } from './presentation/DangerView';
+import { dangerPhase, makeDanger } from './combat/Hazards';
 import {
   createTraining,
   groundHeight,
@@ -33,7 +33,7 @@ import {
 } from './world/Training';
 
 export function mountTraining(app: HTMLElement, assets: Assets, back: () => void) {
-  app.innerHTML = `<div class="training-root"><header><button class="quiet" id="back-armory">← The armory</button><span class="build-label">THE TRAINING COURTYARD</span><div class="header-actions"><button class="quiet" id="trial">Start ward trial</button><button class="quiet" id="restore">Restore company</button><button class="quiet" id="field-pause">Pause Ⅱ</button></div></header><div class="field-stage" aria-label="Playable training courtyard"></div><div class="field-heading"><span class="eyebrow">LEARN YOUR GROUND</span><h1>The first watch.</h1><p id="drill-message">Try both weapons. Lead your company. Take the high ground.</p></div><div class="company-panel"><span class="eyebrow">YOUR COMPANY</span><article><span class="company-number">I</span><div><b>Elin</b><small>ROYAL MARKSMAN · <span id="elin-order">FOLLOWING</span></small><meter id="elin-health" min="0" max="100" value="100"></meter></div></article><article><span class="company-number">II</span><div><b>Corvin</b><small>ROYAL MARKSMAN · <span id="corvin-order">FOLLOWING</span></small><meter id="corvin-health" min="0" max="100" value="100"></meter></div></article><button class="secondary" id="recall">Regroup at commander <kbd>E</kbd></button><p>Hold <kbd>Tab</kbd> and click to hold a formation.</p></div><details class="field-help" open><summary>Field guide</summary><p><kbd>W A S D</kbd> Move<br><kbd>Mouse</kbd> Aim · hold to fire<br><kbd>Right mouse</kbd> Charge & release<br><kbd>Space</kbd> Dodge<br><kbd>Q</kbd> Switch weapon<br><kbd>Shift</kbd> Slow time<br><kbd>Tab + click</kbd> Order company<br><kbd>E</kbd> Regroup · <kbd>Esc</kbd> Pause</p><p>The brass-edged ramp leads to the east balcony. Ward trials test movement and company orders.</p></details><div class="field-bottom"><div class="vitality"><span class="eyebrow">COMMANDER</span><strong><span id="hp">100</span> <small>/ 100</small></strong><meter id="hp-bar" min="0" max="100" value="100"></meter></div><div class="weapon-hud"><span class="eyebrow" id="field-weapon">STORMBOW</span><div class="charge-track"><i id="charge-fill"></i></div><span id="weapon-hint">Hold primary to draw and loose</span></div><div class="charges"><span class="eyebrow">DODGE</span><div id="dodge-pips">◆ ◆</div><small id="focus">FOCUS 100</small></div><div class="accuracy"><span class="eyebrow">RANGE RECORD</span><strong id="hits">0 <small>hits</small></strong><small id="evades">0 attacks evaded</small></div></div><div class="touch-controls"><div id="move-pad" aria-label="Move joystick"><i></i><span>MOVE</span></div><div class="touch-actions"><button id="touch-alt">Charge</button><button id="touch-slow">Slow</button><button id="touch-dodge">Dodge</button><button id="touch-swap">Swap</button><button id="touch-order">Order</button></div></div><div class="pause-screen" hidden><span class="eyebrow">THE COMPANY WAITS</span><h2 id="pause-title">Take a breath.</h2><button class="primary" id="resume">Return to the courtyard</button><button class="secondary" id="pause-restore">Restore company</button></div></div>`;
+  app.innerHTML = `<div class="training-root"><header><button class="quiet" id="back-armory">← The armory</button><span class="build-label">THE TRAINING COURTYARD</span><div class="header-actions"><button class="quiet" id="trial">Start ward trial</button><button class="quiet" id="restore">Restore company</button><button class="quiet" id="field-pause">Pause Ⅱ</button></div></header><div class="field-stage" aria-label="Playable training courtyard"></div><div class="field-heading"><span class="eyebrow">LEARN YOUR GROUND</span><h1>The first watch.</h1><p id="drill-message">Try both weapons. Lead your company. Take the high ground.</p></div><div class="company-panel"><span class="eyebrow">YOUR COMPANY</span><article><span class="company-number">I</span><div><b>Elin</b><small>ROYAL MARKSMAN · <span id="elin-order">FOLLOWING</span></small><meter id="elin-health" min="0" max="100" value="100"></meter></div></article><article><span class="company-number">II</span><div><b>Corvin</b><small>ROYAL MARKSMAN · <span id="corvin-order">FOLLOWING</span></small><meter id="corvin-health" min="0" max="100" value="100"></meter></div></article><button class="secondary" id="recall">Regroup at commander <kbd>E</kbd></button><p>Hold <kbd>Tab</kbd> and click to hold a formation.</p></div><details class="field-help" open><summary>Field guide</summary><p><kbd>W A S D</kbd> Move<br><kbd>Mouse</kbd> Aim · hold to fire<br><kbd>Right mouse</kbd> Charge & release<br><kbd>Space</kbd> Dodge<br><kbd>Q</kbd> Switch weapon<br><kbd>Shift</kbd> Slow time<br><kbd>Tab + click</kbd> Order company<br><kbd>F</kbd> Hold to rescue<br><kbd>E</kbd> Regroup · <kbd>Esc</kbd> Pause</p><p>The brass-edged ramp leads to the east balcony. Ward impacts, sweeping rays and lingering fire test your footwork. Hold F near a fallen knight to assist. Two field dressings are shared by the company.</p></details><div class="rescue-status" id="rescue-status" role="status"><span id="rescue-text">FIELD DRESSINGS 2</span><progress id="rescue-progress" max="1.8" value="0"></progress></div><div class="field-bottom"><div class="vitality"><span class="eyebrow">COMMANDER</span><strong><span id="hp">100</span> <small>/ 100</small></strong><meter id="hp-bar" min="0" max="100" value="100"></meter></div><div class="weapon-hud"><span class="eyebrow" id="field-weapon">STORMBOW</span><div class="charge-track"><i id="charge-fill"></i></div><span id="weapon-hint">Hold primary to draw and loose</span></div><div class="charges"><span class="eyebrow">DODGE</span><div id="dodge-pips">◆ ◆</div><small id="focus">FOCUS 100</small></div><div class="accuracy"><span class="eyebrow">RANGE RECORD</span><strong id="hits">0 <small>hits</small></strong><small id="evades">0 attacks evaded</small></div></div><div class="touch-controls"><div id="move-pad" aria-label="Move joystick"><i></i><span>MOVE</span></div><div class="touch-actions"><button id="touch-alt">Charge</button><button id="touch-slow">Slow</button><button id="touch-dodge">Dodge</button><button id="touch-swap">Swap</button><button id="touch-order">Order</button><button id="touch-rescue">Rescue</button></div></div><div class="pause-screen" hidden><span class="eyebrow">THE COMPANY WAITS</span><h2 id="pause-title">Take a breath.</h2><button class="primary" id="resume">Return to the courtyard</button><button class="secondary" id="pause-restore">Restore company</button></div></div>`;
   const stage = app.querySelector<HTMLElement>('.field-stage')!;
   const scene = new Scene();
   scene.background = new Color(0x111c27);
@@ -61,10 +61,26 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
   const rim = new DirectionalLight(0x5ca3c1, 1.3);
   rim.position.set(10, 8, -12);
   scene.add(rim);
-  scene.add(assets.get('courtyard').scene.clone(true));
+  const courtyard = assets.get('courtyard').scene.clone(true);
+  const occluders: Mesh[] = [];
+  courtyard.traverse((o) => {
+    if (o instanceof Mesh && o.name.startsWith('Gate')) {
+      const original = Array.isArray(o.material) ? o.material[0] : o.material;
+      o.material = original.clone();
+      o.material.transparent = true;
+      occluders.push(o);
+    }
+  });
+  scene.add(courtyard);
+  const occlusionRay = new Raycaster();
+  const sightline = new Vector3();
   let state = createTraining();
   const input = neutralInput();
-  const actors = [new Paladin(assets), new Paladin(assets), new Paladin(assets)];
+  const actors = [
+    new Paladin(assets),
+    new Paladin(assets, ['stormbow']),
+    new Paladin(assets, ['stormbow']),
+  ];
   actors.forEach((a) => scene.add(a.root));
   const priorPositions = [state.player, ...state.company].map((a) => ({
     x: a.x,
@@ -106,7 +122,7 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
     group.add(bull);
   }
   const boltMeshes = new Map<number, Mesh>();
-  const hazardMeshes = new Map<number, Group>();
+  const hazardMeshes = new Map<number, DangerView>();
   const boltGeo = new CylinderGeometry(0.014, 0.028, 0.7, 8);
   boltGeo.rotateX(Math.PI / 2);
   const arrowMat = new MeshStandardMaterial({
@@ -153,6 +169,7 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
     frame = 0,
     oldHits = 0,
     oldShots = 0;
+  let defeatElapsed = 0;
   const listeners: (() => void)[] = [];
   function on(
     target: EventTarget,
@@ -192,11 +209,12 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
     ordering = false;
     touchOrder = false;
     touchX = touchZ = 0;
-    touchSlow = touchAlt = false;
+    touchSlow = touchAlt = touchRescue = false;
     input.x = input.z = 0;
-    input.primary = input.alternate = input.slow = input.dodge = input.swap = false;
+    input.primary = input.alternate = input.slow = input.dodge = input.swap = input.rescue = false;
     state.wasAlt = false;
     state.charge = 0;
+    state.bufferedPrimary = 0;
   }
   function pause(value = !state.paused) {
     state.paused = value;
@@ -208,6 +226,7 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
     state = createTraining();
     pause(false);
     oldHits = oldShots = 0;
+    defeatElapsed = 0;
     app.querySelector('#trial')!.textContent = 'Start ward trial';
     app.querySelector('#pause-title')!.textContent = 'Take a breath.';
   }
@@ -264,6 +283,7 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
     if (e.code === 'Tab') {
       ordering = true;
       pointerFire = primaryTap = false;
+      state.bufferedPrimary = 0;
     }
   });
   on(window, 'keyup', (event) => {
@@ -303,6 +323,7 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
   let touchX = 0,
     touchZ = 0,
     touchSlow = false,
+    touchRescue = false,
     touchAlt = false;
   const pad = app.querySelector<HTMLElement>('#move-pad')!;
   const moveTouch = (event: Event) => {
@@ -331,6 +352,7 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
   for (const [id, set] of [
     ['touch-alt', (v: boolean) => (touchAlt = v)],
     ['touch-slow', (v: boolean) => (touchSlow = v)],
+    ['touch-rescue', (v: boolean) => (touchRescue = v)],
   ] as const) {
     const b = app.querySelector<HTMLElement>(`#${id}`)!;
     on(b, 'pointerdown', (e) => {
@@ -350,6 +372,7 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
   action('touch-order', () => {
     touchOrder = !touchOrder;
     pointerFire = primaryTap = false;
+    state.bufferedPrimary = 0;
   });
   const resize = new ResizeObserver(() => {
     const { width, height } = stage.getBoundingClientRect();
@@ -361,6 +384,17 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
   resize.observe(stage);
   function sync() {
     const all = [state.player, ...state.company];
+    const blocked = all.some((a) => {
+      sightline.set(a.x, a.y + (a.hp > 0 ? 1 : 0.3), a.z).sub(camera.position);
+      occlusionRay.far = sightline.length();
+      occlusionRay.set(camera.position, sightline.normalize());
+      return occlusionRay.intersectObjects(occluders, false).length > 0;
+    });
+    for (const mesh of occluders) {
+      const material = mesh.material as MeshStandardMaterial;
+      material.opacity += ((blocked ? 0.16 : 1) - material.opacity) * 0.2;
+      material.depthWrite = material.opacity > 0.95;
+    }
     for (const [index, a] of all.entries()) {
       const avatar = actors[index];
       const prior = priorPositions[index];
@@ -370,16 +404,25 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
       avatar.root.position.set(a.x, a.y, a.z);
       avatar.root.rotation.y = a.yaw;
       avatar.weapon = a.weapon;
-      const action =
+      let action =
         index === 0
           ? state.wasAlt
             ? a.weapon === 'stormbow'
               ? state.charge >= 1
                 ? 'bow_hold'
                 : 'bow_draw'
-              : 'lance_idle'
+              : 'lance_charge'
             : a.action
-          : '';
+          : a.action;
+      let actionTime = a.actionTime;
+      if (index === 0 && state.wasAlt) actionTime = state.charge * 0.8;
+      if (state.rescueBy === index) {
+        action = 'interact';
+        actionTime = state.rescueProgress;
+      } else if (a.hurtTime > 0 && a.hp > 0 && !a.action && !state.wasAlt) {
+        action = 'hit';
+        actionTime = 0.4 - a.hurtTime;
+      }
       avatar.setDowned(a.hp <= 0);
       avatar.animate(
         a.moving,
@@ -387,6 +430,8 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
         action,
         (dx * Math.sin(a.yaw) + dz * Math.cos(a.yaw)) / l,
         index === 0 && state.dodgeTime > 0,
+        actionTime,
+        state.dodgeDirection,
       );
       avatar.update(state.paused ? 0 : state.lastDelta);
     }
@@ -408,50 +453,17 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
         boltMeshes.delete(id);
       }
     for (const h of state.hazards) {
-      let group = hazardMeshes.get(h.id);
-      if (!group) {
-        group = new Group();
-        group.position.set(h.x, (h.y || 0) + 0.018, h.z);
-        const ring = new Mesh(
-          new RingGeometry(h.radius - 0.035, h.radius, 80),
-          new MeshStandardMaterial({
-            color: 0xe68476,
-            emissive: 0xaa3422,
-            transparent: true,
-            opacity: 0.75,
-            depthWrite: false,
-          }),
-        );
-        ring.rotation.x = -Math.PI / 2;
-        group.add(ring);
-        const fill = new Mesh(
-          new CylinderGeometry(h.radius, h.radius, 0.02, 80),
-          new MeshStandardMaterial({
-            color: 0xca6347,
-            emissive: 0xbb3718,
-            transparent: true,
-            opacity: 0.1,
-            depthWrite: false,
-          }),
-        );
-        group.add(fill);
-        const core = new Mesh(
-          new SphereGeometry(0.11, 16, 12),
-          new MeshStandardMaterial({ color: 0xffb37b, emissive: 0xdb5420, emissiveIntensity: 1.5 }),
-        );
-        core.position.y = 0.2;
-        group.add(core);
-        hazardMeshes.set(h.id, group);
-        scene.add(group);
+      let view = hazardMeshes.get(h.id);
+      if (!view) {
+        view = new DangerView(h);
+        hazardMeshes.set(h.id, view);
+        scene.add(view.root);
       }
-      const active = h.age >= 1.5;
-      const fill = group.children[1] as Mesh;
-      fill.scale.y = active ? Math.max(1, 30 * (1 - (h.age - 1.5) / 0.6)) : 1;
-      (fill.material as MeshStandardMaterial).opacity = active ? 0.35 : 0.06 + h.age * 0.08;
+      view.update(h);
     }
-    for (const [id, group] of hazardMeshes)
+    for (const [id, view] of hazardMeshes)
       if (!state.hazards.some((h) => h.id === id)) {
-        disposeGroup(group);
+        view.dispose();
         hazardMeshes.delete(id);
       }
     targetFaces.forEach((mesh, index) =>
@@ -464,7 +476,7 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
       const x = state.destination.x + (index ? 0.8 : -0.8);
       m.position.set(x, groundHeight(x, state.destination.z) + 0.025, state.destination.z);
     });
-    app.querySelector('#hp')!.textContent = String(state.player.hp);
+    app.querySelector('#hp')!.textContent = String(Math.ceil(state.player.hp));
     (app.querySelector('#hp-bar') as HTMLMeterElement).value = state.player.hp;
     app.querySelector('#field-weapon')!.textContent = state.player.weapon.toUpperCase();
     app.querySelector('#weapon-hint')!.textContent = state.wasAlt
@@ -481,17 +493,41 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
     app.querySelector('#evades')!.textContent = `${state.dodged} attacks evaded`;
     for (const [index, name] of ['elin', 'corvin'].entries()) {
       app.querySelector(`#${name}-order`)!.textContent =
-        state.order === 'follow' ? 'FOLLOWING' : 'HOLDING';
+        state.company[index].hp <= 0
+          ? 'DOWNED · ASSIST'
+          : state.company[index].action === 'recover'
+            ? 'RECOVERING'
+            : state.rescueBy === index + 1
+              ? 'ASSISTING'
+              : state.order === 'follow'
+                ? 'FOLLOWING'
+                : 'HOLDING';
       (app.querySelector(`#${name}-health`) as HTMLMeterElement).value = state.company[index].hp;
     }
+    app.querySelector('#rescue-text')!.textContent =
+      state.rescueTarget >= 0
+        ? `ASSISTING ${['COMMANDER', 'ELIN', 'CORVIN'][state.rescueTarget]} · ${Math.ceil((1.8 - state.rescueProgress) * 10) / 10}s`
+        : state.player.hp <= 0 && !state.failed
+          ? 'DOWNED · A KNIGHT IS COMING TO HELP'
+          : state.company.some((a) => a.hp <= 0)
+            ? `HOLD F NEAR A FALLEN KNIGHT · ${state.rescueCharges} DRESSINGS`
+            : `FIELD DRESSINGS ${state.rescueCharges} · ${state.rescues} RESCUED`;
+    (app.querySelector('#rescue-progress') as HTMLProgressElement).value = state.rescueProgress;
+    app
+      .querySelector<HTMLElement>('#rescue-status')!
+      .classList.toggle('rescuing', state.rescueTarget >= 0);
+    const warning = state.hazards.find((h) => dangerPhase(h) === 'warning');
+    const active = state.hazards.find((h) => dangerPhase(h) === 'active');
     app.querySelector('#drill-message')!.textContent =
       ordering || touchOrder
         ? 'Choose a position for your company.'
-        : state.hazards.some((h) => h.age < 1.5)
-          ? 'Ward incoming. Leave the marked ground or time your dodge.'
-          : state.trial
-            ? 'Keep moving. Your company needs orders, too.'
-            : 'Try both weapons. Lead your company. Take the high ground.';
+        : warning
+          ? `${warning.label} in ${(warning.warning - warning.age).toFixed(1)}s. ${warning.shape.kind === 'sweep' ? 'Move behind the source or dodge the moving ray.' : warning.cadence ? 'Leave the marked ground; fire will linger.' : 'Leave the circle or time your dodge.'}`
+          : active
+            ? `${active.label} active. ${active.cadence ? 'Fire deals damage every half second.' : 'Get your company clear.'}`
+            : state.trial
+              ? 'Keep moving. Your company needs orders, too.'
+              : 'Try both weapons. Lead your company. Take the high ground.';
   }
   function disposeGroup(group: Group) {
     group.traverse((o) => {
@@ -510,6 +546,7 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
     input.z = touchZ + (keys.has('KeyS') ? 1 : 0) - (keys.has('KeyW') ? 1 : 0);
     input.primary = (pointerFire || primaryTap) && !ordering && !touchOrder;
     input.alternate = pointerAlt || touchAlt || alternateTap;
+    input.rescue = keys.has('KeyF') || touchRescue;
     input.slow = keys.has('ShiftLeft') || keys.has('ShiftRight') || ordering || touchSlow;
     while (accumulator >= 1 / 60) {
       [state.player, ...state.company].forEach((a, index) =>
@@ -535,9 +572,12 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
       actors[index].root.rotation.y =
         prior.yaw + Math.atan2(Math.sin(a.yaw - prior.yaw), Math.cos(a.yaw - prior.yaw)) * alpha;
     });
-    if (state.player.hp <= 0 && !state.paused) {
-      app.querySelector('#pause-title')!.textContent = 'The ward caught you.';
-      pause(true);
+    if (state.failed && !state.paused) {
+      defeatElapsed += elapsed;
+      if (defeatElapsed >= 1.4) {
+        app.querySelector('#pause-title')!.textContent = 'The company needs rest.';
+        pause(true);
+      }
     }
     if (state.hits > oldHits) sound(520, 0.1, 'triangle', 0.035);
     else if (state.shots > oldShots)
@@ -563,6 +603,13 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
     paused: state.paused,
     dodgeCharges: state.dodgeCharges,
     focus: state.focus,
+    rescueCharges: state.rescueCharges,
+    rescueProgress: state.rescueProgress,
+    rescueTarget: state.rescueTarget,
+    rescues: state.rescues,
+    failed: state.failed,
+    gateOpacity: (occluders[0]?.material as MeshStandardMaterial | undefined)?.opacity,
+    poses: actors.map((a) => a.poseSnapshot()),
     drawCalls: renderer.info.render.calls,
     triangles: renderer.info.render.triangles,
   });
@@ -574,14 +621,31 @@ export function mountTraining(app: HTMLElement, assets: Assets, back: () => void
         for (let n = 0; n < Math.min(ticks, 600); n++) stepTraining(state, neutralInput());
       },
       aim: (x: number, z: number) => (input.aim = { x, y: groundHeight(x, z), z }),
+      review: (kind: 'impact' | 'sweep' | 'fire' | 'rescue' | 'commander') => {
+        reset();
+        if (kind === 'rescue') {
+          state.company[0].hp = 0;
+          state.player.x = state.company[0].x;
+          state.player.z = state.company[0].z - 1;
+        } else if (kind === 'commander') state.player.hp = 0;
+        else
+          state.hazards.push(
+            makeDanger(
+              state.nextId++,
+              kind,
+              kind === 'sweep' ? { x: 0, y: 0, z: 1 } : state.player,
+            ),
+          );
+      },
     });
   return () => {
     cancelAnimationFrame(frame);
     listeners.forEach((fn) => fn());
     resize.disconnect();
     actors.forEach((a) => a.dispose());
+    occluders.forEach((mesh) => (mesh.material as MeshStandardMaterial).dispose());
     disposeGroup(resources);
-    hazardMeshes.forEach(disposeGroup);
+    hazardMeshes.forEach((view) => view.dispose());
     boltGeo.dispose();
     arrowMat.dispose();
     lanceMat.dispose();

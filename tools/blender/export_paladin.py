@@ -7,6 +7,7 @@ The unmodified vendor source is never overwritten or included in Git.
 import json
 import hashlib
 import math
+import sys
 from pathlib import Path
 import bpy
 from mathutils import Matrix, Quaternion, Vector
@@ -16,6 +17,7 @@ OUT = ROOT / 'public/assets/v3'
 WORK = ROOT / 'art/work'
 OUT.mkdir(parents=True, exist_ok=True)
 WORK.mkdir(parents=True, exist_ok=True)
+ANIMATIONS_ONLY = '--animations-only' in sys.argv
 source = bpy.data.objects['rig']
 source.animation_data_clear()
 source.data.pose_position = 'REST'
@@ -74,7 +76,7 @@ nodes, links = mat.node_tree.nodes, mat.node_tree.links
 bsdf = nodes.get('Principled BSDF')
 bsdf.inputs['Roughness'].default_value = .63
 bsdf.inputs['Metallic'].default_value = .24
-for suffix, socket, colorspace in [('albedo','Base Color','sRGB'), ('roughness','Roughness','Non-Color'), ('normal_tngt','Normal','Non-Color')]:
+for suffix, socket, colorspace in ([] if ANIMATIONS_ONLY else [('albedo','Base Color','sRGB'), ('roughness','Roughness','Non-Color'), ('normal_tngt','Normal','Non-Color')]):
     img = bpy.data.images.load(str(textures/f't_paintpoly_paladin_knight_{suffix}.png'), check_existing=False)
     img.colorspace_settings.name = colorspace
     # Retain 4K painted color; a 2K normal is sufficient for this ~2m character.
@@ -126,7 +128,8 @@ def pose(t, mode):
     gait = mode in ('walk','run','strafe_left','strafe_right','backpedal')
     phase = 2*math.pi*t
     bob = (.014 if gait else .006)*math.sin(phase*2 if gait else phase)
-    crouch = .10*math.sin(math.pi*t) if mode == 'dodge' else 0
+    dodging = mode.startswith('dodge')
+    crouch = .22*math.sin(math.pi*t) if dodging else .23*math.sin(math.pi*t) if mode == 'interact' else 0
     hips = Vector((0,0,bob-crouch-(.09 if gait else 0)))
     for name in rest:
         if name.startswith('DEF-spine') or 'shoulder' in name or 'pelvis' in name or 'breast' in name:
@@ -139,6 +142,14 @@ def pose(t, mode):
         lift = (.13 if mode=='run' else .065)*max(0,math.sin(p)) if gait else 0
         if mode=='backpedal': stride *= -1
         ankle = Vector((.15*sign,.112+stride,.085+lift))
+        if dodging:
+            pulse = math.sin(math.pi*t)
+            if mode in ('dodge_left','dodge_right'):
+                ankle.x += (.16 if mode=='dodge_right' else -.16)*pulse
+                ankle.y += .11*sign*pulse
+            else:
+                ankle.y += (.24 if mode=='dodge_backward' else -.24)*sign*pulse
+            ankle.z += .035*max(0,math.sin(math.tau*t+(0 if side=='L' else math.pi)))
         if mode.startswith('strafe'):
             ankle.x += stride*(1 if mode=='strafe_right' else -1)
             ankle.y = .112
@@ -153,9 +164,10 @@ def pose(t, mode):
     if mode=='bow_hold': draw = 1
     if mode=='bow_release': draw = max(0,1-max(0,t-.1)*4)
     if mode=='bow_idle': draw = .12
+    if mode=='bow_cancel': draw = 1-t
     if mode=='bow_fire': draw = min(1,t/.62) if t < .66 else max(0,1-(t-.66)*12)
     gun = mode.startswith('lance')
-    recoil = .09*math.sin(min(1,t/.3)*math.pi) if mode=='lance_fire' else 0
+    recoil = .09*math.sin(min(1,t/.3)*math.pi) if mode=='lance_fire' else .15*math.sin(min(1,max(0,t-.24)/.35)*math.pi) if mode=='lance_release' else 0
     for side, sign in [('L',1),('R',-1)]:
         shoulder = rest[f'DEF-upper_arm.{side}'][0]+hips
         if gun:
@@ -165,6 +177,14 @@ def pose(t, mode):
         if gait:
             wrist.z -= .19
             wrist.y += .09
+        if mode in ('weapon_stow','weapon_equip'):
+            reach = t if mode=='weapon_stow' else 1-t
+            reach = reach*reach*(3-2*reach)
+            wrist = wrist.lerp(Vector((sign*.20,.17,1.83)), reach)
+        if mode=='interact':
+            wrist = Vector((sign*.2,-.45,1.05+.06*math.sin(math.tau*t)))
+        if dodging:
+            wrist.y += .12*math.sin(math.pi*t)
         wrist += hips
         elbow = solve_ik(shoulder,wrist,.315,.314,(sign*.68,.14,1.45 if side=='R' else 1.15))
         limb(side,'upper_arm','forearm',shoulder,elbow,wrist)
@@ -177,14 +197,19 @@ def pose(t, mode):
             bone.rotation_quaternion = Quaternion((1,0,0), math.radians(22))
     if mode=='hit':
         rig.pose.bones['DEF-spine.002'].rotation_quaternion = Quaternion((1,0,0),-.16*math.sin(math.pi*t))
-    if mode=='downed':
-        rig.pose.bones['root'].rotation_quaternion = Quaternion((1,0,0),-math.pi*.49*t)
-        rig.pose.bones['root'].location = (0,.2*t,.05*t)
+    if mode in ('downed','recover'):
+        collapse = t if mode=='downed' else 1-t
+        collapse = collapse*collapse*(3-2*collapse)
+        rig.pose.bones['root'].rotation_quaternion = Quaternion((1,0,0),-math.pi*.49*collapse)
+        rig.pose.bones['root'].location = (0,.2*collapse,.05*collapse)
     bpy.context.view_layer.update()
 
 clips = [('bow_idle',2.4),('bow_draw',.8),('bow_hold',1.4),('bow_release',.32),('bow_fire',1.15),
          ('lance_idle',2.4),('lance_fire',.65),('walk',1),('run',.7),('backpedal',1.1),
-         ('strafe_left',1),('strafe_right',1),('dodge',.5),('hit',.4),('downed',1.3)]
+         ('strafe_left',1),('strafe_right',1),('dodge',.5),('hit',.4),('downed',1.3),
+         ('dodge_forward',.5),('dodge_backward',.5),('dodge_left',.5),('dodge_right',.5),
+         ('weapon_stow',.6),('weapon_equip',.6),('bow_cancel',.45),
+         ('lance_charge',.8),('lance_release',.9),('interact',1.8),('recover',1.3)]
 rig.animation_data_create()
 bpy.context.scene.render.fps = 30
 for name, duration in clips:
@@ -245,7 +270,10 @@ def export_objects(filename,objects,animations=False):
 
 rig['asset_author']='Silver Delivery (mesh and textures); Neon Knights (runtime rig and clips)'
 rig['source']='User-provided blend.zip / Hand Painted Paladin Knight'
-export_objects('paladin.glb',[rig,*meshes],True)
+if ANIMATIONS_ONLY:
+    export_objects(str(WORK/'paladin-motion.glb'),[rig],True)
+else:
+    export_objects('paladin.glb',[rig,*meshes],True)
 
 bow=[]
 for sign in [-1,1]:
@@ -256,7 +284,7 @@ for sign in [-1,1]:
     for z in [.16,.21,.26]: bow.append(cylinder('Stormbow • ferrule',(0,-.05,sign*z),.031,.026,gold))
 bow.append(cylinder('Stormbow • grip',(0,0,0),.035,.17,dark))
 bow.append(uvball('Stormbow • focus',(.04,-.025,0),(.034,.035,.075),glow))
-export_objects('stormbow.glb',bow)
+if not ANIMATIONS_ONLY: export_objects('stormbow.glb',bow)
 for o in bow: bpy.data.objects.remove(o,do_unlink=True)
 
 lance=[]
@@ -266,15 +294,15 @@ for sign in [-1,1]:
     lance.append(rod('Sunlance • split conductor',[(sign*.06,-.4,0),(sign*.12,-.58,0),(sign*.075,-.84,0)],.018,gold))
     lance.append(uvball('Sunlance • lens',(sign*.06,-.56,0),(.027,.11,.027),glow))
 lance.append(rod('Sunlance • stock',[(0,.13,-.06),(0,.04,-.14),(0,-.09,-.14)],.043,wood))
-export_objects('sunlance.glb',lance)
+if not ANIMATIONS_ONLY: export_objects('sunlance.glb',lance)
 for o in lance: bpy.data.objects.remove(o,do_unlink=True)
 bpy.context.view_layer.objects.active=rig
-bpy.ops.wm.save_as_mainfile(filepath=str(WORK/'paladin-runtime.blend'))
+bpy.ops.wm.save_as_mainfile(filepath=str(WORK/('paladin-motion.blend' if ANIMATIONS_ONLY else 'paladin-runtime.blend')))
 manifest={'id':'paladin-v3-01','model':'paladin.glb','author':'Silver Delivery','source':'https://www.cgtrader.com/free-3d-models/character/fantasy-character/hand-painted-paladin-knight-rigged-and-game-ready',
-    'height':1.98,'forward':'+Z','sockets':{'leftHand':'DEF-hand.L','rightHand':'DEF-hand.R','chest':'DEF-spine.003'},
-    'clips':[{ 'name':name,'duration':duration,'loop':name not in ['bow_draw','bow_release','bow_fire','lance_fire','dodge','hit','downed']} for name,duration in clips],
-    'events':{'bow_fire':{'release':.66,'recover':.96},'bow_release':{'release':.06,'recover':.9},'lance_fire':{'release':.08,'recover':.9}},
+    'height':1.98,'forward':'+Z','sockets':{'leftHand':'DEF-hand.L','rightHand':'DEF-hand.R','chest':'DEF-spine.003','back':'DEF-spine.003'},
+    'clips':[{ 'name':name,'duration':duration,'loop':name in ['bow_idle','bow_hold','lance_idle','walk','run','backpedal','strafe_left','strafe_right']} for name,duration in clips],
+    'events':{'bow_fire':{'release':.66,'recover':.96},'bow_release':{'release':.06,'recover':.9},'lance_fire':{'release':.08,'recover':.9},'lance_release':{'release':.24,'recover':.9}},
     'status':'Animation review candidate; full art acceptance remains open'}
 manifest['revision']=hashlib.sha256(b''.join((OUT/name).read_bytes() for name in ['paladin.glb','stormbow.glb','sunlance.glb','courtyard.glb'] if (OUT/name).exists())).hexdigest()[:12]
-(OUT/'paladin.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf8')
+(WORK/'paladin-motion.json' if ANIMATIONS_ONLY else OUT/'paladin.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf8')
 print('EXPORTED',len(rest)+1,'bones',len(clips),'clips')

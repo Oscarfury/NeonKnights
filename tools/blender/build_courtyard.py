@@ -91,7 +91,7 @@ for x,z in [(-6,-3),(0,-3),(3,4)]:
 
 # Batch static geometry by material to keep a detailed court inexpensive.
 for mat in bpy.data.materials:
-    objects=[o for o in bpy.context.scene.objects if o.type=='MESH' and len(o.data.materials)==1 and o.data.materials[0]==mat]
+    objects=[o for o in bpy.context.scene.objects if o.type=='MESH' and not o.name.startswith('Gate') and len(o.data.materials)==1 and o.data.materials[0]==mat]
     if not objects:continue
     bpy.ops.object.select_all(action='DESELECT')
     for o in objects:o.select_set(True)

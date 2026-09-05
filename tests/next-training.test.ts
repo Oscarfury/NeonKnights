@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { makeDanger } from '../src/next/combat/Hazards';
 import {
   createTraining,
   groundHeight,
@@ -49,12 +50,12 @@ test('bow damage follows the release moment, then a travelling projectile', () =
 });
 test('a ward resolves once, hurts stationary actors, and can be dodged', () => {
   const s = createTraining();
-  s.hazards = [{ id: 1, x: 0, z: 5, radius: 2.15, age: 0, hit: [] }];
+  s.hazards = [makeDanger(1, 'impact', { x: 0, y: 0, z: 5 })];
   for (let n = 0; n < 130; n++) stepTraining(s, neutralInput());
   assert.equal(s.player.hp, 78);
   assert.equal(s.damage, 22);
   const d = createTraining();
-  d.hazards = [{ id: 1, x: 0, z: 5, radius: 2.15, age: 1.48, hit: [] }];
+  d.hazards = [{ ...makeDanger(1, 'impact', { x: 0, y: 0, z: 5 }), age: 1.48 }];
   const i = neutralInput();
   i.dodge = true;
   stepTraining(d, i);
@@ -110,10 +111,10 @@ test('ward damage is resolved on the marked elevation', () => {
   s.player.x = 8;
   s.player.z = 0;
   s.player.y = 1.8;
-  s.hazards = [{ id: 1, x: 8, y: 0, z: 0, radius: 2, age: 1.49, hit: [] }];
+  s.hazards = [{ ...makeDanger(1, 'impact', { x: 8, y: 0, z: 0 }), age: 1.49 }];
   stepTraining(s, neutralInput());
   assert.equal(s.player.hp, 100);
-  s.hazards = [{ id: 2, x: 8, y: 1.8, z: 0, radius: 2, age: 1.49, hit: [] }];
+  s.hazards = [{ ...makeDanger(2, 'impact', { x: 8, y: 1.8, z: 0 }), age: 1.49 }];
   stepTraining(s, neutralInput());
   assert.equal(s.player.hp, 78);
 });

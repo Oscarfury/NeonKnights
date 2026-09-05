@@ -1,0 +1,52 @@
+{
+  "candidate": "Foundry combat and recovery preview",
+  "assetRevision": "80309370b190",
+  "tests": {
+    "passed": 52,
+    "failed": 0
+  },
+  "desktop": {
+    "failures": [],
+    "patterns": ["Ward impact", "Sweeping ray", "Scorched ground"],
+    "pageErrors": []
+  },
+  "touch": {
+    "portrait": "412x915",
+    "landscape": "915x412",
+    "pageErrors": [],
+    "externalRequests": []
+  },
+  "controlledRescue": {
+    "scope": "Development-only controlled rescue setup, normal input and simulation thereafter",
+    "companionHealth": 35,
+    "commanderHealth": 35,
+    "dressingsRemaining": 1,
+    "gateOpacityWhileObscuring": 0.16,
+    "touchAssist": {
+      "scope": "Emulated touchscreen with a development-only downed setup",
+      "rescues": 1,
+      "companionHealth": 35
+    }
+  },
+  "performance": {
+    "scenario": "Three paladins and training court, 120 animation frames, desktop preview",
+    "viewport": [1600, 1000],
+    "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 2080 Ti (0x00001E07) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "medianFrameMs": 20.8,
+    "p95FrameMs": 28.6,
+    "drawCalls": 164,
+    "trianglesIncludingPasses": 372522,
+    "beforeEquipmentBatching": {
+      "drawCalls": 226,
+      "medianFrameMs": 19.5,
+      "p95FrameMs": 27.6
+    },
+    "interpretation": "Equipment batching reduces draw calls while retaining geometry. These samples do not establish a frame-rate gain. The desktop 60 fps target remains unmet in this session."
+  },
+  "productionHelpers": ["snapshot"],
+  "limitations": [
+    "Animation studies still need visual polish and acceptance.",
+    "Physical mobile hardware is untested.",
+    "This is not the planned siege, Dragon or campaign."
+  ]
+}

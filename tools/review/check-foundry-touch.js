@@ -10,7 +10,7 @@ async (page) => {
     await mobile.screenshot({path:'output/playwright/foundry-mobile.png',fullPage:true});
     await mobile.getByRole('button',{name:'Enter the courtyard ↗'}).tap();
     const read=()=>mobile.evaluate(()=>window.__NEON_NEXT__.snapshot());
-    await mobile.locator('#touch-swap').tap();await mobile.waitForTimeout(100);
+    await mobile.locator('#touch-swap').tap();await mobile.waitForTimeout(1300);
     if((await read()).player.weapon!=='sunlance')throw new Error('Touch swap failed');
     const pad=await mobile.locator('#move-pad').boundingBox();
     await mobile.mouse.move(pad.x+pad.width*.78,pad.y+pad.height*.5);await mobile.mouse.down();await mobile.waitForTimeout(350);await mobile.mouse.up();

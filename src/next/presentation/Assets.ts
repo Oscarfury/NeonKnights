@@ -1,5 +1,15 @@
-import { LoadingManager, Mesh, PropertyBinding, Texture, type Material } from 'three';
+import {
+  LoadingManager,
+  Mesh,
+  PropertyBinding,
+  Texture,
+  Group,
+  BufferAttribute,
+  type BufferGeometry,
+  type Material,
+} from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 export interface AssetManifest {
   id: string;
@@ -35,6 +45,10 @@ export class Assets {
     );
     const failure = results.find((r) => r.status === 'rejected');
     if (failure?.status === 'rejected') throw failure.reason;
+    // These two equipment models are rigid. Batch their decorative parts by
+    // material once, preserving the authored shape while reducing per-actor
+    // draw calls. Skinned characters and animated mechanisms never use this.
+    for (const name of ['stormbow', 'sunlance']) this.batchEquipment(this.get(name));
     const hero = this.get('paladin');
     for (const clip of this.manifest.clips) {
       if (!hero.animations.some((a) => a.name === clip.name))
@@ -57,6 +71,39 @@ export class Assets {
     const value = this.models.get(name);
     if (!value) throw new Error(`Model ${name} has not loaded.`);
     return value;
+  }
+  private batchEquipment(model: GLTF) {
+    const batches = new Map<Material, BufferGeometry[]>();
+    const originals = new Set<BufferGeometry>();
+    model.scene.updateMatrixWorld(true);
+    model.scene.traverse((object) => {
+      if (!(object instanceof Mesh) || Array.isArray(object.material)) return;
+      const geometry = object.geometry.index
+        ? object.geometry.toNonIndexed()
+        : object.geometry.clone();
+      geometry.applyMatrix4(object.matrixWorld);
+      if (!geometry.getAttribute('uv'))
+        geometry.setAttribute(
+          'uv',
+          new BufferAttribute(new Float32Array(geometry.getAttribute('position').count * 2), 2),
+        );
+      const group = batches.get(object.material) || [];
+      group.push(geometry);
+      batches.set(object.material, group);
+      originals.add(object.geometry);
+    });
+    const root = new Group();
+    for (const [material, geometries] of batches) {
+      const merged = mergeGeometries(geometries);
+      if (!merged) throw new Error('Equipment geometry could not be prepared.');
+      const mesh = new Mesh(merged, material);
+      mesh.name = material.name;
+      root.add(mesh);
+      geometries.forEach((geometry) => geometry.dispose());
+    }
+    originals.forEach((geometry) => geometry.dispose());
+    model.scene = root;
+    model.scenes = [root];
   }
   dispose() {
     const geometries = new Set<Mesh['geometry']>();

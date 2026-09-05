@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
+import { actionTiming } from '../src/next/combat/Actions';
 
 interface Accessor {
   bufferView: number;
@@ -28,6 +29,16 @@ interface Gltf {
 const root = 'public/assets/v3/';
 const manifest = JSON.parse(readFileSync(root + 'paladin.json', 'utf8'));
 const reports = [];
+for (const [name, timing] of Object.entries(actionTiming)) {
+  const clip = manifest.clips.find((clip: { name: string }) => clip.name === name);
+  assert.ok(clip, `Simulation action ${name} has no exported clip`);
+  assert.ok(
+    Math.abs(clip.duration - timing.duration) < 0.025,
+    `${name}: simulation and clip disagree`,
+  );
+  if (timing.release !== undefined)
+    assert.equal(manifest.events[name]?.release, timing.release, `${name}: release mismatch`);
+}
 const revision = createHash('sha256');
 for (const name of ['paladin', 'stormbow', 'sunlance', 'courtyard']) {
   const data = readFileSync(root + name + '.glb');
