@@ -11,6 +11,9 @@ import {
   type Telegraph,
 } from '../src/next/castle/Battle';
 import { encounters, wallSpec } from '../src/next/castle/Catalog';
+import { mounts } from '../src/next/castle/Catalog';
+import { platformAt } from '../src/next/castle/Placement';
+import { talentRemaining } from '../src/next/castle/Talents';
 import { stepDefenses, interceptSegment } from '../src/next/construction/DefenseSystem';
 const step = (b: Battle, seconds: number, input = { rotate: 0, charge: false, decree: false }) => {
   for (let n = 0; n < seconds * 60; n++) b.tick(1 / 60, input);
@@ -22,11 +25,179 @@ const quiet = () => {
   return b;
 };
 
-test('the King follows a continuous square battlement at each upgraded height', () => {
+test('four cardinal placement targets reject the courtyard and occupied moves are atomic', () => {
+  const s = C.createCampaign();
+  for (const m of mounts) assert.equal(platformAt(m.x, m.z), m.id);
+  assert.equal(platformAt(0, 0), null);
+  assert.equal(platformAt(6, 6), null);
+  C.build(s, 'spire', 'west-watch');
+  C.build(s, 'sanctuary', 'east-court');
+  const saved = structuredClone(s);
+  assert.ok(C.moveBuilding(s, s.buildings[0].id, 'east-court'));
+  assert.deepEqual(s, saved);
+  assert.equal(C.moveBuilding(s, s.buildings[0].id, 'east-watch'), null);
+  assert.equal(s.gold, saved.gold);
+  assert.equal(s.buildings[0].yaw, Math.PI / 2);
+});
+test('old checkpoints migrate to cardinal mounts without losing equipment, wounds or gold', () => {
+  const s = C.createCampaign();
+  C.build(s, 'ballista', 'west-watch');
+  s.kingHp = 81.6;
+  const raw = JSON.parse(JSON.stringify(s));
+  delete raw.layout;
+  for (const k of raw.knights) delete k.talents;
+  raw.buildings[0].yaw = -Math.PI * 0.75;
+  const migrated = C.decodeCampaign(JSON.stringify(raw))!;
+  assert.equal(migrated.kingHp, 81.6);
+  assert.equal(migrated.gold, s.gold);
+  assert.equal(migrated.buildings[0].yaw, Math.PI);
+  assert.deepEqual(migrated.knights[0].talents, []);
+});
+test('talent trees enforce class, prerequisite and point budgets; resets refund every point', () => {
+  const s = C.createCampaign(),
+    k = s.knights[0];
+  assert.ok(C.learnTalent(s, k.id, 'aftershock'));
+  assert.ok(C.learnTalent(s, k.id, 'mending'));
+  assert.equal(C.learnTalent(s, k.id, 'slam'), null);
+  assert.equal(talentRemaining(k), 0);
+  const before = structuredClone(s);
+  assert.ok(C.learnTalent(s, k.id, 'taunt'));
+  assert.deepEqual(s, before);
+  C.completeEncounter(s);
+  assert.equal(talentRemaining(k), 1);
+  assert.equal(C.learnTalent(s, k.id, 'aftershock'), null);
+  assert.ok(C.decodeCampaign(JSON.stringify(s)));
+  const invalid = structuredClone(s);
+  invalid.knights[0].talents = ['earthshaker'];
+  assert.equal(C.decodeCampaign(JSON.stringify(invalid)), null);
+  C.resetTalents(s, k.id);
+  assert.equal(talentRemaining(k), 2);
+  assert.equal(s.gold, before.gold + encounters[0].reward);
+});
+const invader = (b: Battle, p: Partial<Actor> = {}) => {
+  const actor: Actor = {
+    ...structuredClone(b.knights[0]),
+    id: 99901 + b.enemies.length,
+    role: 'raider',
+    name: 'Test raider',
+    hp: 300,
+    maxHp: 300,
+    x: 0,
+    y: 0,
+    z: 12,
+    deployed: true,
+    talents: [],
+    cooldown: 99,
+    action: '',
+    ...p,
+  };
+  b.enemies.push(actor);
+  return actor;
+};
+test('Thunder Slam damages nearby invaders, stuns normal enemies and respects its cooldown', () => {
+  const b = quiet(),
+    k = b.knights[0];
+  Object.assign(k, {
+    x: 0,
+    z: -10,
+    home: { x: 0, y: 0, z: -10 },
+    deployed: true,
+    talents: ['slam'],
+    ability: 0,
+  });
+  const enemy = invader(b, { x: 0, z: -12 });
+  b.king.cooldown = 99;
+  b.tick(0.02);
+  assert.equal(enemy.hp, 276);
+  assert.ok(enemy.stunned > 1);
+  assert.ok(b.effects.some((e) => e.kind === 'slam'));
+  const hp = enemy.hp;
+  step(b, 0.3);
+  assert.equal(enemy.hp, hp);
+  assert.ok(k.ability > 7);
+});
+test('Challenging Cry redirects a hex caster away from the King and does not taunt a Dragon', () => {
+  const b = quiet(),
+    k = b.knights[0];
+  Object.assign(k, {
+    x: 4,
+    z: 10,
+    home: { x: 4, y: 0, z: 10 },
+    deployed: true,
+    talents: ['taunt'],
+    cry: 0,
+  });
+  const e = invader(b, { role: 'hexcaster', x: 0, z: 12, cooldown: 0 });
+  const dragon = invader(b, { role: 'dragon', x: 4, z: 12, action: 'arrive' });
+  b.tick(0.02);
+  assert.equal(e.taunter, k.id);
+  assert.ok(e.taunted > 3.9);
+  assert.equal(dragon.taunted, 0);
+  step(b, 1);
+  const shot = b.bolts.find((p) => p.owner === e.id);
+  assert.ok(shot && shot.vx > 0, 'Caster shoots toward the taunting knight');
+});
+test('Mending Light heals living allies, grants bounded shields and never resurrects', () => {
+  const b = quiet(),
+    healer = b.knights[1],
+    target = b.knights[2];
+  Object.assign(healer, {
+    x: 0,
+    z: 10,
+    home: { x: 0, y: 0, z: 10 },
+    deployed: true,
+    talents: ['mending', 'shelter'],
+    healing: 0,
+  });
+  Object.assign(target, { x: 2, z: 10, home: { x: 2, y: 0, z: 10 }, deployed: true, hp: 50 });
+  b.knights[0].hp = 0;
+  b.tick(0.02);
+  assert.equal(target.hp, 58);
+  assert.equal(target.barrier, 10);
+  assert.equal(b.knights[0].hp, 0);
+  b.damage(target, 20, { x: 2, y: 0, z: 8 }, -1, true, true);
+  assert.equal(target.hp, 48);
+  assert.equal(target.barrier, 0);
+  step(b, 4.1);
+  assert.equal(target.hp, 56);
+  assert.equal(target.barrier, 10);
+});
+test('new buildings have distinct healing and chained-damage behavior', () => {
+  const s = C.createCampaign();
+  C.build(s, 'spire', 'west-watch');
+  C.build(s, 'sanctuary', 'east-court');
+  const b = new Battle(s);
+  b.start();
+  b.spawnTimer = 9999;
+  b.king.cooldown = 99;
+  const first = invader(b, { x: 0, z: -12 }),
+    second = invader(b, { x: 2, z: -13 }),
+    far = invader(b, { x: 15, z: 0 });
+  const k = b.knights[1];
+  Object.assign(k, {
+    x: 0,
+    z: 11,
+    home: { x: 0, y: 0, z: 11 },
+    deployed: true,
+    hp: 50,
+    cooldown: 99,
+  });
+  b.defenses.forEach((d) => (d.reload = 0));
+  b.tick(0.02);
+  assert.equal(first.hp, 280);
+  assert.equal(second.hp, 280);
+  assert.equal(far.hp, 300);
+  assert.equal(k.hp, 58);
+  assert.equal(b.stats.defenseDamage, 40);
+  assert.equal(b.bolts.filter((p) => b.defenses.some((d) => d.id === p.owner)).length, 0);
+  assert.ok(b.effects.some((e) => e.kind === 'lightning' && e.end));
+});
+
+test('the King follows a continuous circular battlement at each upgraded height', () => {
   for (const tier of [1, 2, 3] as const) {
     for (let i = 0; i < 628; i++) {
       const p = wallPosition(i / 100, wallSpec(tier).height);
-      assert.ok(Math.abs(Math.max(Math.abs(p.x), Math.abs(p.z)) - 4.2) < 1e-9);
+      assert.ok(Math.abs(Math.hypot(p.x, p.z) - 5.3) < 1e-9);
       assert.equal(p.y, wallSpec(tier).height);
       if (i) {
         const last = wallPosition((i - 1) / 100, p.y);

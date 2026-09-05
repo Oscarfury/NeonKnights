@@ -36,6 +36,16 @@ export interface Actor extends Position {
   rank: number;
   roster?: string;
   stance: 'guard' | 'hunt';
+  talents: string[];
+  ability: number;
+  cry: number;
+  healing: number;
+  attacks: number;
+  stunned: number;
+  taunted: number;
+  taunter: number;
+  barrier: number;
+  barrierTime: number;
 }
 export interface Bolt extends Position {
   id: number;
@@ -70,7 +80,8 @@ export interface Telegraph {
 export interface Effect extends Position {
   id: number;
   age: number;
-  kind: 'hit' | 'block' | 'heal' | 'decree' | 'death';
+  kind: 'hit' | 'block' | 'heal' | 'decree' | 'death' | 'slam' | 'taunt' | 'lightning' | 'charge';
+  end?: Position;
 }
 export interface Input {
   rotate: number;
@@ -85,7 +96,7 @@ export const distance = (a: Pick<Position, 'x' | 'z'>, b: Pick<Position, 'x' | '
 export function wallPosition(angle: number, height: number): Position {
   const s = Math.sin(angle),
     c = Math.cos(angle),
-    r = 4.2 / Math.max(Math.abs(s), Math.abs(c));
+    r = 5.3;
   return { x: s * r, y: height, z: c * r };
 }
 export const wallSide = (p: Pick<Position, 'x' | 'z'>) =>
@@ -181,6 +192,7 @@ export class Battle {
         roster: k.id,
         stance: k.stance,
         gear: s.inventory.find((item) => item.id === k.gear)?.kind || null,
+        talents: [...k.talents],
       });
       return a;
     });
@@ -232,6 +244,16 @@ export class Battle {
       deadTime: 0,
       rank: 1,
       stance: 'hunt',
+      talents: [],
+      ability: 1,
+      cry: 1,
+      healing: 2,
+      attacks: 0,
+      stunned: 0,
+      taunted: 0,
+      taunter: 0,
+      barrier: 0,
+      barrierTime: 0,
     };
   }
   start() {
@@ -250,15 +272,15 @@ export class Battle {
   private walk(a: Actor, target: Position, dt: number, speed: number, outside = true) {
     let tx = target.x,
       tz = target.z;
-    // Visibility around the square fortress: travel tangentially until the route clears its corners.
+    // Follow the circular curtain until the direct route clears the wall.
     if (outside) {
       for (let t = 0.15; t < 1; t += 0.15)
-        if (Math.abs(a.x + (tx - a.x) * t) < 6.7 && Math.abs(a.z + (tz - a.z) * t) < 6.7) {
+        if (Math.hypot(a.x + (tx - a.x) * t, a.z + (tz - a.z) * t) < 7) {
           const from = Math.atan2(a.x, a.z),
             to = Math.atan2(tx, tz),
             turn = Math.sign(deltaAngle(to, from));
-          tx = Math.sin(from + turn * 0.35) * 11.2;
-          tz = Math.cos(from + turn * 0.35) * 11.2;
+          tx = Math.sin(from + turn * 0.35) * 9.2;
+          tz = Math.cos(from + turn * 0.35) * 9.2;
           break;
         }
     }
@@ -323,6 +345,14 @@ export class Battle {
     relay = false,
   ) {
     if (target.hp <= 0) return;
+    if (target.talents.includes('bulwark') && target.cry > 5) amount *= 0.75;
+    if (target.barrierTime > 0 && target.barrier > 0) {
+      const absorbed = Math.min(amount, target.barrier);
+      amount -= absorbed;
+      target.barrier -= absorbed;
+      this.stats.shielded += absorbed;
+      this.effect(target, 'block');
+    }
     const enemy = this.enemies.includes(target);
     if (!ignoreShield && facingShield(target, source)) {
       amount *= target.role === 'bulwark' ? 0.3 : 0.6;
@@ -383,7 +413,7 @@ export class Battle {
         this.effect(target, 'death');
         if (target.role === 'dragon') {
           this.dangers = [];
-          this.announcement = 'The Prism Dragon has fallen.';
+          this.announcement = 'The Emberwing Dragon has fallen.';
         }
       }
     }
@@ -416,11 +446,109 @@ export class Battle {
       k.moving = false;
     }
   }
+  private heal(a: Actor, amount: number) {
+    if (a.hp <= 0 || a.hp >= a.maxHp) return;
+    a.hp = Math.min(a.maxHp, a.hp + amount);
+    this.effect(a, 'heal');
+  }
+  private knightTalents(k: Actor) {
+    const has = (id: string) => k.talents.includes(id);
+    if (has('slam') && k.ability === 0 && !k.action) {
+      const targets = this.enemies.filter(
+        (e) => e.hp > 0 && e.action !== 'arrive' && distance(e, k) < (has('aftershock') ? 4 : 3),
+      );
+      if (targets.length) {
+        this.attack(k, 'shield_bash');
+        k.fired = true;
+        k.ability = has('earthshaker') ? 5 : 8;
+        this.effect(k, 'slam');
+        for (const e of targets) {
+          this.damage(e, has('aftershock') ? 40 : 24, k, k.id, false, true);
+          if (e.role !== 'dragon') {
+            e.stunned = has('earthshaker') ? 2 : 1.2;
+            e.action = '';
+          }
+        }
+      }
+    }
+    if (has('taunt') && k.cry === 0) {
+      const targets = this.enemies.filter(
+        (e) => e.hp > 0 && e.role !== 'dragon' && distance(e, k) < 6,
+      );
+      if (targets.length) {
+        k.cry = 9;
+        this.effect(k, 'taunt');
+        for (const e of targets) {
+          e.taunted = 4;
+          e.taunter = k.id;
+          e.action = '';
+        }
+      }
+    }
+    if (k.healing === 0 && (has('renewal') || has('mending'))) {
+      k.healing = has('beacon') ? 3 : 4;
+      const nearby = this.knights.filter(
+        (a) => a.hp > 0 && distance(a, k) <= (has('renewal') ? 5 : has('beacon') ? 10 : 7),
+      );
+      if (has('renewal')) for (const a of nearby) this.heal(a, 6);
+      else {
+        const target = nearby.sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
+        if (target) {
+          this.heal(target, has('beacon') ? 14 : 8);
+          if (has('shelter')) {
+            target.barrier = 10;
+            target.barrierTime = 5;
+            this.effect(target, 'block');
+          }
+        }
+      }
+    }
+  }
+  private supportBuilding(b: Defense, dt: number) {
+    b.age += dt;
+    b.flash = Math.max(0, b.flash - dt);
+    b.reload = Math.max(0, b.reload - dt);
+    if (b.hp <= 0 || b.age < 1.2 || b.reload > 0) return;
+    const r = spec(b.kind, b.rank);
+    if (b.kind === 'sanctuary') {
+      const allies = this.knights.filter(
+        (k) => k.hp > 0 && k.hp < k.maxHp && distance(b, k) <= r.range,
+      );
+      if (!allies.length) return;
+      for (const k of allies) this.heal(k, r.damage);
+      this.effect(b, 'heal');
+    } else {
+      const targets = this.enemies
+        .filter((e) => e.hp > 0 && e.action !== 'arrive' && distance(b, e) <= r.range)
+        .sort((a, c) => distance(a, b) - distance(c, b));
+      if (!targets.length) return;
+      let from: Position = { ...b, y: b.y + 1.5 + b.rank * 0.5 };
+      const hit = new Set<number>();
+      for (let n = 0; n < b.rank + 1; n++) {
+        const target = targets.find((e) => !hit.has(e.id) && (n === 0 || distance(e, from) <= 5));
+        if (!target) break;
+        this.effects.push({
+          ...from,
+          id: this.id(),
+          age: 0,
+          kind: 'lightning',
+          end: { ...target, y: target.y + 1 },
+        });
+        this.damage(target, r.damage, from, b.id, false, true);
+        from = { ...target, y: target.y + 1 };
+        hit.add(target.id);
+      }
+    }
+    b.reload = r.interval;
+    b.flash = 0.6;
+    b.shots++;
+  }
   private tickKnight(k: Actor, dt: number) {
     if (!k.deployed) {
       this.deploy(k, dt);
       return;
     }
+    this.knightTalents(k);
     if (k.gear === 'field-kit' && !k.rescue) {
       const fallen = this.knights.find((a) => a !== k && a.hp <= 0 && a.deployed);
       if (fallen) {
@@ -468,15 +596,24 @@ export class Battle {
       const contact = k.role === 'warden' ? 0.66 : 0.66;
       if (!k.fired && k.actionTime >= contact) {
         k.fired = true;
-        let damage = data.damage + (k.rank - 1) * 7 + (k.gear === 'storm-seal' ? 6 : 0);
+        k.attacks++;
+        let damage =
+          (data.damage + (k.rank - 1) * 7 + (k.gear === 'storm-seal' ? 6 : 0)) *
+          (k.talents.includes('deadeye') ? 1.3 : 1);
         if (
           this.state.relic === 'black-standard' &&
           k.stance === 'guard' &&
           distance(k, k.home) <= 3
         )
           damage *= 1.35;
-        if (k.role === 'marksman') this.shoot(k, target, damage, true);
-        else if (d <= range + 0.4) this.damage(target, damage, k, k.id);
+        if (k.role === 'marksman') {
+          this.shoot(k, target, damage, true, false, false, k.talents.includes('piercing'));
+          if (k.talents.includes('piercing')) this.bolts[this.bolts.length - 1].pierce = 2;
+          if (k.talents.includes('volley') && k.attacks % 3 === 0) {
+            const second = targets.find((e) => e !== target && distance(k, e) <= range);
+            if (second) this.shoot(k, second, k.talents.includes('deadeye') ? 24 : 16, true);
+          }
+        } else if (d <= range + 0.4) this.damage(target, damage, k, k.id);
       }
       if (k.actionTime >= 1.2) {
         k.action = '';
@@ -485,6 +622,10 @@ export class Battle {
     }
   }
   private tickEnemy(e: Actor, dt: number) {
+    if (e.stunned > 0) {
+      e.moving = false;
+      return;
+    }
     if (e.role === 'dragon') {
       this.tickDragon(e, dt);
       return;
@@ -493,18 +634,18 @@ export class Battle {
     const company = this.knights
       .filter((k) => k.hp > 0 && k.deployed)
       .sort((a, b) => distance(a, e) - distance(b, e));
+    const forced = e.taunted > 0 ? company.find((k) => k.id === e.taunter) : undefined;
     const target =
-      company[0] && distance(company[0], e) < (e.role === 'hexcaster' ? 14 : 5) ? company[0] : null;
+      forced ||
+      (company[0] && distance(company[0], e) < (e.role === 'hexcaster' ? 14 : 5)
+        ? company[0]
+        : null);
     const side = wallSide(e),
-      wall: Position =
-        side === 0
-          ? { x: Math.max(-4, Math.min(4, e.x)), y: 0, z: -7 }
-          : side === 2
-            ? { x: Math.max(-4, Math.min(4, e.x)), y: 0, z: 7 }
-            : side === 1
-              ? { x: 7, y: 0, z: Math.max(-4, Math.min(4, e.z)) }
-              : { x: -7, y: 0, z: Math.max(-4, Math.min(4, e.z)) };
-    const aim = e.role === 'hexcaster' && distance(e, this.king) < 15 ? this.king : target || wall;
+      radius = Math.max(0.1, Math.hypot(e.x, e.z)),
+      wall: Position = { x: (e.x / radius) * 6.65, y: 0, z: (e.z / radius) * 6.65 };
+    const aim =
+      forced ||
+      (e.role === 'hexcaster' && distance(e, this.king) < 15 ? this.king : target || wall);
     const range = e.role === 'hexcaster' ? 11 : data.range,
       d = distance(e, aim);
     if (!e.action && d > range) {
@@ -607,16 +748,17 @@ export class Battle {
         ? this.knights.filter((k) => k.hp > 0).sort((a, b) => distance(a, e) - distance(b, e))[0] ||
           this.king
         : this.king;
-    e.yaw = Math.atan2(aim.x - e.x, aim.z - e.z);
+    const attackYaw = Math.atan2(aim.x - e.x, aim.z - e.z);
+    e.yaw = attackYaw + (type === 'tail' ? Math.PI : 0);
     this.dangers.push({
       id: this.id(),
       kind: type,
       x: e.x,
       z: e.z,
-      yaw: e.yaw,
+      yaw: attackYaw,
       radius: type === 'tail' ? 0 : 1.5,
       arc: type === 'breath' ? 0.6 : type === 'rake' ? 0.8 : 2.5,
-      length: type === 'tail' ? 8 : 19,
+      length: type === 'tail' ? 6 : 19,
       age: 0,
       windup: type === 'breath' ? 2.2 : 1.6,
       duration: type === 'breath' ? 1.1 : 0.45,
@@ -625,16 +767,16 @@ export class Battle {
     });
     this.announcement =
       type === 'breath'
-        ? 'PRISM BREATH — rotate the King out of the marked cone.'
+        ? 'DRAGONFIRE — rotate the King out of the marked cone.'
         : type === 'rake'
-          ? 'WALL RAKE — the Dragon strikes the targeted battlements.'
+          ? 'RENDING GALE — claw-winds strike the marked battlements.'
           : 'TAIL SWEEP — the company is within reach.';
   }
   private royal(dt: number, input: Input) {
     let rotation = input.rotate;
-    if (input.heading !== undefined)
-      rotation = Math.max(-1, Math.min(1, deltaAngle(input.heading, this.angle) * 5));
-    this.angle = (this.angle + rotation * dt * 0.95) % tau;
+    if (input.heading !== undefined && input.rotate === 0)
+      rotation = Math.max(-1, Math.min(1, deltaAngle(input.heading, this.angle) * 4));
+    this.angle = (this.angle + rotation * dt * 2.25) % tau;
     Object.assign(this.king, wallPosition(this.angle, wallSpec(this.state.wallTier).height));
     this.king.moving = Math.abs(rotation) > 0.05;
     const foes = this.enemies
@@ -682,12 +824,17 @@ export class Battle {
       return;
     }
     if (!input.charge && this.charge > 0) {
-      if (target && this.charge > 0.35) {
+      if (this.charge > 0.35) {
         this.attack(this.king, this.state.weapon === 'stormbow' ? 'bow_release' : 'lance_release');
         this.king.fired = true;
+        this.effect(this.king, 'charge');
         this.shoot(
           this.king,
-          target,
+          target || {
+            x: this.king.x + Math.sin(this.angle) * 17,
+            y: 0,
+            z: this.king.z + Math.cos(this.angle) * 17,
+          },
           (48 + this.state.ranks[this.state.weapon] * 13) * (0.5 + this.charge),
           true,
           true,
@@ -724,6 +871,12 @@ export class Battle {
       a.ward = Math.max(0, a.ward - dt);
       a.relay = Math.max(0, a.relay - dt);
       a.marked = Math.max(0, a.marked - dt);
+      a.ability = Math.max(0, a.ability - dt);
+      a.cry = Math.max(0, a.cry - dt);
+      a.healing = Math.max(0, a.healing - dt);
+      a.stunned = Math.max(0, a.stunned - dt);
+      a.taunted = Math.max(0, a.taunted - dt);
+      a.barrierTime = Math.max(0, a.barrierTime - dt);
       if (a.hp <= 0) a.deadTime += dt;
     }
     const encounter = encounters[this.state.encounter];
@@ -741,14 +894,14 @@ export class Battle {
       const a = this.random() * tau;
       const boss = this.actor(
         'dragon',
-        'The Prism Dragon',
+        'The Emberwing Dragon',
         { x: Math.sin(a) * 14, y: 6, z: Math.cos(a) * 14 },
         this.state.difficulty === 'veteran' ? 2100 : 1650,
       );
       boss.action = 'arrive';
       boss.yaw = a + Math.PI;
       this.enemies.push(boss);
-      this.announcement = 'The Prism Dragon descends. Watch its wings.';
+      this.announcement = 'The Emberwing Dragon descends. Watch its wings.';
     }
     this.royal(dt, input);
     for (const k of this.knights) if (k.hp > 0) this.tickKnight(k, dt);
@@ -773,6 +926,10 @@ export class Battle {
       }
     const heavy = this.state.relic === 'worldpiercer';
     for (const b of this.defenses) {
+      if (b.kind === 'spire' || b.kind === 'sanctuary') {
+        this.supportBuilding(b, dt);
+        continue;
+      }
       const targets = this.enemies.filter(
         (e) =>
           e.hp > 0 &&
@@ -833,7 +990,7 @@ export class Battle {
             }
         if (
           p.life > 0 &&
-          Math.max(Math.abs(p.x), Math.abs(p.z)) < 7 &&
+          Math.hypot(p.x, p.z) < 6.6 &&
           p.y < wallSpec(this.state.wallTier).height
         ) {
           const side = wallSide(p);

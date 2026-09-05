@@ -121,7 +121,8 @@ for (const name of assetIds) {
   }
   if (name === 'prism-dragon') {
     assert.equal(gltf.skins?.length, 1);
-    assert.ok(gltf.skins[0].joints.length >= 20);
+    assert.equal(gltf.skins[0].joints.length, 144, 'Retain the authored Emberwing skeleton');
+    assert.ok(gltf.images?.length, 'Emberwing must retain its painted texture');
     for (const action of ['idle', 'walk', 'arrive', 'breath', 'rake', 'tail', 'stagger', 'death']) {
       const clip = gltf.animations?.find((a) => a.name === action);
       assert.ok(clip, `Dragon missing ${action}`);
@@ -131,6 +132,12 @@ for (const name of assetIds) {
       );
     }
   }
+  if (name.startsWith('spire-') || name.startsWith('sanctuary-'))
+    for (const part of ['Foundation', 'Turret', 'Core'])
+      assert.ok(
+        gltf.nodes.some((n) => n.name === part),
+        `${name}: missing ${part}`,
+      );
   if (name.startsWith('castle-') && name !== 'castle-ground')
     for (const part of [
       'RoyalKeep',

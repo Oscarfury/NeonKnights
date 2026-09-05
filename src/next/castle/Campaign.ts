@@ -17,6 +17,7 @@ import {
   type Relic,
 } from './Catalog';
 import type { Weapon } from '../presentation/Paladin';
+import { talentError, validTalents } from './Talents';
 export interface Knight {
   id: string;
   active: boolean;
@@ -25,6 +26,7 @@ export interface Knight {
   xp: number;
   gear: number | null;
   stance: 'guard' | 'hunt';
+  talents: string[];
 }
 export interface OwnedItem {
   id: number;
@@ -32,6 +34,7 @@ export interface OwnedItem {
 }
 export interface Campaign {
   version: 1;
+  layout?: 'circle';
   gold: number;
   encounter: number;
   wallTier: Rank;
@@ -56,6 +59,7 @@ export const knightMax = (k: Knight) =>
 export function createCampaign(difficulty: Campaign['difficulty'] = 'normal'): Campaign {
   return {
     version: 1,
+    layout: 'circle',
     gold: 650,
     encounter: 0,
     wallTier: 1,
@@ -71,6 +75,7 @@ export function createCampaign(difficulty: Campaign['difficulty'] = 'normal'): C
       rank: 1,
       xp: 0,
       gear: null,
+      talents: [],
       stance: r.role === 'warden' ? 'guard' : 'hunt',
     })),
     inventory: [],
@@ -87,6 +92,12 @@ export function createCampaign(difficulty: Campaign['difficulty'] = 'normal'): C
 export const capacity = (s: Campaign) =>
   s.buildings.reduce((sum, b) => sum + defenses[b.kind].capacity, 0);
 export function build(s: Campaign, kind: DefenseKind, site: SiteId, rank: Rank = 1): string | null {
+  if (
+    !mounts.some((m) => m.id === site) ||
+    !Object.hasOwn(defenses, kind) ||
+    ![1, 2, 3].includes(rank)
+  )
+    return 'Choose a highlighted platform and a building.';
   if (s.buildings.some((b) => b.site === site)) return 'That bastion already has a defense.';
   if (capacity(s) + defenses[kind].capacity > wallSpec(s.wallTier).capacity)
     return 'Upgrade the walls or salvage a defense to free capacity.';
@@ -102,6 +113,30 @@ export function build(s: Campaign, kind: DefenseKind, site: SiteId, rank: Rank =
     yaw: mount.yaw,
     hp: spec(kind, rank).health,
   });
+  return null;
+}
+export function moveBuilding(s: Campaign, id: number, site: SiteId): string | null {
+  const b = s.buildings.find((b) => b.id === id),
+    mount = mounts.find((m) => m.id === site);
+  if (!b || !mount) return 'Choose a building and a highlighted platform.';
+  if (s.buildings.some((other) => other.id !== id && other.site === site))
+    return 'That platform is occupied.';
+  b.site = site;
+  b.yaw = mount.yaw;
+  return null;
+}
+export function learnTalent(s: Campaign, id: string, talent: string): string | null {
+  const k = s.knights.find((k) => k.id === id);
+  if (!k) return 'Choose a knight.';
+  const error = talentError(k, talent);
+  if (error) return error;
+  k.talents.push(talent);
+  return null;
+}
+export function resetTalents(s: Campaign, id: string): string | null {
+  const k = s.knights.find((k) => k.id === id);
+  if (!k) return 'Choose a knight.';
+  k.talents = [];
   return null;
 }
 export function upgradeBuilding(s: Campaign, id: number): string | null {
@@ -212,7 +247,16 @@ export function recruit(s: Campaign, id: string): string | null {
     return 'This knight has already joined.';
   if (s.gold < 180) return 'Recruitment costs 180 crowns.';
   s.gold -= 180;
-  const k: Knight = { id, active: false, hp: 95, rank: 1, xp: 0, gear: null, stance: 'hunt' };
+  const k: Knight = {
+    id,
+    active: false,
+    hp: 95,
+    rank: 1,
+    xp: 0,
+    gear: null,
+    stance: 'hunt',
+    talents: [],
+  };
   k.hp = knightMax(k);
   s.knights.push(k);
   return null;
@@ -358,6 +402,7 @@ export function decodeCampaign(raw: string): Campaign | null {
       return null;
     const knights = new Set<string>();
     for (const k of s.knights) {
+      if (k && k.talents === undefined) k.talents = [];
       if (
         !k ||
         !recruits.some((r) => r.id === k.id) ||
@@ -368,7 +413,8 @@ export function decodeCampaign(raw: string): Campaign | null {
         !Number.isFinite(k.hp) ||
         k.hp < 0 ||
         k.hp > knightMax(k) ||
-        !['guard', 'hunt'].includes(k.stance)
+        !['guard', 'hunt'].includes(k.stance) ||
+        !validTalents(k)
       )
         return null;
       knights.add(k.id);
@@ -407,6 +453,7 @@ export function decodeCampaign(raw: string): Campaign | null {
         return null;
       used.add(b.site);
       ids.add(b.id);
+      if (s.layout !== 'circle') b.yaw = mounts.find((m) => m.id === b.site)!.yaw;
     }
     if (
       capacity(s) > wallSpec(s.wallTier).capacity ||
@@ -414,6 +461,7 @@ export function decodeCampaign(raw: string): Campaign | null {
       (s.relic && s.encounter < 2)
     )
       return null;
+    s.layout = 'circle';
     return structuredClone(s);
   } catch {
     return null;

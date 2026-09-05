@@ -4,6 +4,8 @@ The preview at `/NeonKnights/next/` now opens **The King's Battlements**, a conn
 
 The earlier [combat courtyard](COMBAT_PREVIEW.md), [Royal Workshop](CONSTRUCTION_PREVIEW.md) and Foundry inspection remain available under Art & training. Their free-movement and sandbox rules are separate from the castle campaign.
 
+The circular playability pass adds mouse-follow movement, four cardinal drag targets, four building families at three ranks each, branching knight talents, a CC0 painted Dragon with eight authored clips, and a river-valley environment. Current verification is recorded in [the castle preview](CASTLE_PREVIEW.md); the Foundry/construction figures below are historical.
+
 The full campaign and final art/balance acceptance remain outstanding. This delivery connects the foundations; it does not close every work package below.
 
 ## Implemented
@@ -28,11 +30,11 @@ The full campaign and final art/balance acceptance remain outstanding. This deli
 | R02 hero art and animation | In progress                                      | Refine gait, grips, torso/aim blending, weapon transitions, reactions and directional dodges; add the missing production clips and review at the reference bar |
 | R03 commander/world        | Partial                                          | Courtyard, ramp, gate fading and training rescue work; operable gates, breaches, outer objectives and campaign recovery remain                                 |
 | R04 ability/hazard rules   | Partial                                          | Projectiles, impacts, swept rays, fire, actor/structure masks and directional shields work; terrain line of sight and boss interrupt/resolve remain            |
-| R05?R06 | Connected castle implementation | Three enemy roles, radial staging, persistent automatic company, recruitment, equipment and wounds work; final art acceptance and richer outer objectives remain |
-| R07 construction | Mounted castle integration | Three wall tiers and six defenses work with enemies, damage, repairs and the Worldpiercer conversion; richer destruction and final art acceptance remain |
-| R08?R10 progression and boss | First integrated implementation | Separate council systems, six stable offers, free rune equipment, three relics and an animated Dragon with real attacks work; expanded content and acceptance remain |
+| R05-R06 | Connected castle implementation | Three enemy roles, radial staging, persistent automatic company, recruitment, equipment and wounds work; final art acceptance and richer outer objectives remain |
+| R07 construction | Mounted castle integration | Three circular wall tiers and twelve defense rank models work with enemies, damage, repairs and the Worldpiercer conversion; richer destruction and final art acceptance remain |
+| R08-R10 progression and boss | First integrated implementation | Separate council systems, six stable offers, free rune equipment, three relics and an animated Dragon with real attacks work; expanded content and acceptance remain |
 | R11 connected siege | Implemented; review in progress | Three encounters connect the King, company, defenses, boss, rewards and saved council choices |
-| R12?R15 | Outstanding | Full campaign expansion, additional boss/weapon families, final balance, accessibility and promotion remain |
+| R12-R15 | Outstanding | Full campaign expansion, additional boss/weapon families, final balance, accessibility and promotion remain |
 
 
 The main game continues to serve the existing campaign. The preview's source art and generated Blender working scenes are local, ignored files; they are not included as a downloadable source-asset pack.
@@ -65,4 +67,4 @@ The exported paladin has 26,055 triangles; that is a measured triangulated expor
 - The original Foundry's 120-frame desktop courtyard sample at 1600 × 1000 with three paladins measured 16.7 ms median and 16.8 ms p95 frame intervals on an RTX 2080 Ti. This historical sample does not establish full-battle or mobile performance. Production exposes only the read-only snapshot helper.
 - Screenshots and browser output are review evidence, not proof that the full animation-quality milestone is complete. Review captures live in ignored `output/playwright/`.
 
-The next delivery should refine the hero's motion, produce the accepted enemy assets and connect the company and defenses to the planned siege. The old primitive enemies and sprite atlas must not be used to fill those gaps.
+The next delivery should refine hero motion and expand the now-connected castle siege with additional encounters and accepted enemy assets. The old primitive enemies and sprite atlas must not be used to fill those gaps.

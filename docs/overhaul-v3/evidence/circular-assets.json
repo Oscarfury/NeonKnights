@@ -1,0 +1,212 @@
+{
+  "revision": "028b14469a5e",
+  "assets": [
+    {
+      "name": "paladin",
+      "bytes": 3862088,
+      "vertices": 15852,
+      "triangles": 26055,
+      "skins": 1,
+      "clips": 33,
+      "sha256": "04fab913abcb5d0a9332e1302bd151f29d95ecf8129ebb60daff26eeb887ec5b"
+    },
+    {
+      "name": "stormbow",
+      "bytes": 183652,
+      "vertices": 4972,
+      "triangles": 6212,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "e56e4cec8776a4be82c79646609d3d640a07e80d700d3720bd15a8c3618ff84a"
+    },
+    {
+      "name": "sunlance",
+      "bytes": 93504,
+      "vertices": 2433,
+      "triangles": 2608,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "17082dc0bde96f3a282ee86cdee904e95ce085b28bd5354a054e686adf713c4f"
+    },
+    {
+      "name": "courtyard",
+      "bytes": 5788236,
+      "vertices": 164946,
+      "triangles": 83108,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "ecdd36479fe0919944f660529fe12d03da5f36983d228f548ec9cde70a5f9720"
+    },
+    {
+      "name": "ballista-1",
+      "bytes": 781608,
+      "vertices": 21432,
+      "triangles": 13862,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "3f3792458dcf7f423acbebee2de2d89c06c9164d3d2edb94d3f1f608e70dfade"
+    },
+    {
+      "name": "ballista-2",
+      "bytes": 1311712,
+      "vertices": 36434,
+      "triangles": 21182,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "86f696f46c150bba05e2b71f88302d2d62cd475a3f16d14586c119306b6cd78f"
+    },
+    {
+      "name": "ballista-3",
+      "bytes": 1626696,
+      "vertices": 45412,
+      "triangles": 25736,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "53c3bb29936a4dcf56303f20674a47974ef4756aae483dda0c412c6e1b9bb9a9"
+    },
+    {
+      "name": "aegis-1",
+      "bytes": 322796,
+      "vertices": 8964,
+      "triangles": 4516,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "58c62ff9b1a0e457701b8a20b8c7cc508189a46e0543063d205a9e899a952ad5"
+    },
+    {
+      "name": "aegis-2",
+      "bytes": 640260,
+      "vertices": 17830,
+      "triangles": 8910,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "c8193c7f705f6ed7a322e9716e83c8303921f2833b6c2cb5238ccb8b62b0f02f"
+    },
+    {
+      "name": "aegis-3",
+      "bytes": 896632,
+      "vertices": 25033,
+      "triangles": 12899,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "e3443aebbdce54f26ff9acdd4d8e78be0bb330c760da27ae70030ac5f6567158"
+    },
+    {
+      "name": "spire-1",
+      "bytes": 47228,
+      "vertices": 1015,
+      "triangles": 1324,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "f117638de34342609a6b13fa2c29e0c58754084812711b217c9aec3b4f2963ce"
+    },
+    {
+      "name": "spire-2",
+      "bytes": 67540,
+      "vertices": 1499,
+      "triangles": 2120,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "58391b8c9429cd9fb24602c0bff245ddc9ca329facdd81266548313815460867"
+    },
+    {
+      "name": "spire-3",
+      "bytes": 87800,
+      "vertices": 1983,
+      "triangles": 2916,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "74e70bf524ed6d1d0d6a2f9dd49df6fa49dafaec80d3887f1fe362e48fa98ef4"
+    },
+    {
+      "name": "sanctuary-1",
+      "bytes": 77492,
+      "vertices": 1759,
+      "triangles": 2704,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "d26ca419c0226cd138eedb3b40f2982e23b916aa9be9b804bd1a120f30b33939"
+    },
+    {
+      "name": "sanctuary-2",
+      "bytes": 95652,
+      "vertices": 2271,
+      "triangles": 2952,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "42dc122113c15332ec94a8e3874cd244c24e7064f5992b3c927363cf15c93550"
+    },
+    {
+      "name": "sanctuary-3",
+      "bytes": 123160,
+      "vertices": 2968,
+      "triangles": 3816,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "1a66ab1f1ec35625495d87d7ed8a99de5c026e1cb1235abe00da2c7aa72a54ab"
+    },
+    {
+      "name": "company-kit",
+      "bytes": 1588876,
+      "vertices": 38569,
+      "triangles": 61296,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "d358b4ab5fe8a438655f66b4b504f97a5193702b03a05cfc737528616ebc6eb0"
+    },
+    {
+      "name": "castle-1",
+      "bytes": 5881212,
+      "vertices": 151162,
+      "triangles": 77880,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "6cc40d42aadf98e0c1add279f58aac3b19a239b5641089117850b677c337fd41"
+    },
+    {
+      "name": "castle-2",
+      "bytes": 7096232,
+      "vertices": 186178,
+      "triangles": 96896,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "3473251f754233cfad07ea8bb9ffbff1a2f1b682115111dd9217769514674790"
+    },
+    {
+      "name": "castle-3",
+      "bytes": 8297196,
+      "vertices": 220738,
+      "triangles": 114176,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "f5d3cd0ce08d409bb79ddfc72578dc43c46fa67034c57d3fd7ceacc795f27bad"
+    },
+    {
+      "name": "castle-ground",
+      "bytes": 3503452,
+      "vertices": 46727,
+      "triangles": 36232,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "c6c011a8ae25f53cfd958b5a527c3383d46c1d282cba0caabb49d5067a5b7f4b"
+    },
+    {
+      "name": "highland-foliage",
+      "bytes": 1071156,
+      "vertices": 3881,
+      "triangles": 3188,
+      "skins": 0,
+      "clips": 0,
+      "sha256": "2335cc9add6fe3e5ffc59764fc6cdea609a5bbab79bdb708ba77d68fe709b038"
+    },
+    {
+      "name": "prism-dragon",
+      "bytes": 4946652,
+      "vertices": 9042,
+      "triangles": 14828,
+      "skins": 1,
+      "clips": 8,
+      "sha256": "742d624c1b9fc629e265e3002f212363df842a44932bbb0e22286c87004a3727"
+    }
+  ]
+}

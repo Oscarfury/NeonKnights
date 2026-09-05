@@ -1,0 +1,39 @@
+{
+  "productionHasNoDebugControls": true,
+  "touchDragCost": 140,
+  "kingMoved": true,
+  "charge": "100%",
+  "portrait": "412x915",
+  "landscape": "915x412",
+  "controls": [
+    {
+      "name": "\u21b6",
+      "x": 196,
+      "y": 342,
+      "w": 43,
+      "h": 50
+    },
+    {
+      "name": "\u21b7",
+      "x": 247,
+      "y": 342,
+      "w": 43,
+      "h": 50
+    },
+    {
+      "name": "Charged shot HOLD TO CHARGE",
+      "x": 378,
+      "y": 342,
+      "w": 90,
+      "h": 50
+    },
+    {
+      "name": "Royal Decree 76 / 100 \u00b7 TAP",
+      "x": 475,
+      "y": 342,
+      "w": 90,
+      "h": 50
+    }
+  ],
+  "errors": []
+}

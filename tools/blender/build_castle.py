@@ -12,7 +12,7 @@ def weathered(mat,seed,terrain=False):
     # Packed painted surface variation, exported with the mesh UVs. No runtime noise shader.
     size=1024 if terrain else 256;rng=np.random.default_rng(seed)
     yy,xx=np.mgrid[0:size,0:size]/size
-    grain=rng.random((size,size))*.14
+    grain=rng.random((size,size))*.065
     cloud=(np.sin(xx*19+np.sin(yy*17)*2)+np.sin(yy*41+xx*7)+np.sin(xx*113+yy*97)*.25)/5
     pigment=np.clip(.83+cloud*.35+grain,.55,1.12)
     base=np.array(mat.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value[:3])**(1/2.2)
@@ -42,9 +42,10 @@ for tier in ([] if '--ground-only' in sys.argv else [1,2,3]):
     bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False);make_materials()
     height=[2.2,3.2,4.2][tier-1]
     base=group('CastleBase')
-    box('Castle plinth',(0,-.22,0),(13.9,.5,13.9),dark,base,.20)
+    rod('Circular foundation',(0,-.45,0),(0,-.04,0),6.8,dark,base,96)
     for x in range(-6,7):
-        for z in range(-6,7):box('Courtyard flagstone',(x,-.015,z),(.97,.08,.97),random.choice(stone),base,.018)
+        for z in range(-6,7):
+            if math.hypot(x,z)<6.2:box('Courtyard flagstone',(x,-.015,z),(.97,.08,.97),random.choice(stone),base,.018)
     keep=group('RoyalKeep')
     keepH=3.6+tier*.65
     box('Keep foundation',(0,.4,0),(4.6,.8,4.6),dark,keep,.12)
@@ -66,49 +67,43 @@ for tier in ([] if '--ground-only' in sys.argv else [1,2,3]):
             rod('Keep corner turret',(sign*1.68,0,-1.55),(sign*1.68,keepH+.65,-1.55),.65,stone[1],keep,16)
             for n in range(6):
                 a=n*math.tau/6;box('Keep merlon',(sign*1.68+math.sin(a)*.53,keepH+.78,-1.55+math.cos(a)*.53),(.29,.4,.29),edge,keep)
-    # Four independently named walls permit damage and destruction feedback.
+    # Quarter sectors share a continuous 5.3 m patrol radius; cardinal platforms sit outside it.
     for side,name in enumerate(['NorthWall','EastWall','SouthWall','WestWall']):
-        wall=group(name);yaw=side*math.pi/2
-        def P(x,y,z):return (x*math.cos(yaw)+z*math.sin(yaw),y,-x*math.sin(yaw)+z*math.cos(yaw))
-        for x in range(-5,6):
+        wall=group(name);middle=math.pi-side*math.pi/2
+        for segment in range(16):
+            a=middle-math.pi/4+(segment+.5)*math.pi/32
+            def P(r,y):return (math.sin(a)*r,y,math.cos(a)*r)
+            gate=side in [0,2] and abs(segment-7.5)<1.6
             for row in range(round(height/.4)):
-                # Door openings at north and south connect the courtyard to the field.
-                if side in [0,2] and abs(x)<=1 and row<5:continue
-                b=box('Dressed wall block',P(x,.2+row*.4,-5.2),(.98,.39,1.75),random.choice(stone),wall,.024);b.rotation_euler.z=-yaw
-        for x in range(-5,6):
-            b=box('Battlement paving',P(x,height,-5.05),(.98,.15,2.3),edge,wall,.02);b.rotation_euler.z=-yaw
-            if x%2==0:
-                b=box('Outer merlon',P(x,height+.52,-6.13),(.68,.92,.34),stone[2],wall,.055);b.rotation_euler.z=-yaw
-            else:
-                b=box('Crenel sill',P(x,height+.20,-6.13),(1,.27,.34),edge,wall,.025);b.rotation_euler.z=-yaw
-        if side in [0,2]:
-            door=group('NorthGate' if side==0 else 'SouthGate',parent=wall)
-            for x in [-.75,0,.75]:
-                b=box('Oak gate leaf',P(x,.82,-5.55),(.71,1.6,.16),wood,door,.025);b.rotation_euler.z=-yaw
-            for y in [.4,1.16]:
-                b=box('Gate crossband',P(0,y,-5.67),(2.32,.12,.13),gold,door,.014);b.rotation_euler.z=-yaw
-        if tier>=2:
-            for x in [-4,-2,2,4]:
-                b=box('Wall buttress',P(x,height*.45,-6.05),(.52,height*.9,.62),edge,wall,.05);b.rotation_euler.z=-yaw
+                if gate and row<5:continue
+                o=box('Radial dressed masonry',P(5.8,.2+row*.4),(.59,.39,1.5),random.choice(stone),wall,.02);o.rotation_euler.z=a
+            o=box('Continuous wall walk',P(5.45,height),(.58,.15,2.30),edge,wall,.02);o.rotation_euler.z=a
+            o=box('Crenel sill',P(6.55,height+.12),(.66,.23,.22),edge,wall,.02);o.rotation_euler.z=a
+            if segment%2==0:
+                o=box('Carved merlon',P(6.55,height+.52),(.39,.85,.34),stone[2],wall,.045);o.rotation_euler.z=a
+            if tier>=2 and segment%4==1:
+                o=box('Radial buttress',P(6.6,height*.43),(.38,height*.86,.68),edge,wall,.04);o.rotation_euler.z=a
                 if tier==3:
-                    b=box('Buttress crown',P(x,height-.23,-6.23),(.82,.40,1.04),gold,wall,.05);b.rotation_euler.z=-yaw
-        if tier==3:
-            for x in [-3.5,3.5]:
-                b=box('Royal hanging banner',P(x,height*.48,-6.5),(1.05,1.6,.035),roof,wall,.01);b.rotation_euler.z=-yaw
-                rod('Wall banner charge',P(x,height*.35,-6.54),P(x,height*.67,-6.54),.045,gold,wall)
-    for i,(x,z) in enumerate([(-5.8,-5.8),(5.8,-5.8),(-5.8,5.8),(5.8,5.8)]):
-        bastion=group('Bastion_'+str(i));r=1.9 if tier==1 else 2.05 if tier==2 else 2.2
-        rod('Bastion foundation',(x,.05,z),(x,height-.13,z),r,stone[1],bastion,16)
-        for y in [.25,height-.25]:ring('Bastion dressed course',(x,y,z),r,.13,edge,bastion)
-        rod('Weapon platform',(x,height-.05,z),(x,height+.08,z),r+.10,edge,bastion,32)
-        # Open platforms keep the actual purchased mechanism visible above the wall.
-        for n in range(8):
-            a=n*math.tau/8
-            if math.sin(a)*x+math.cos(a)*z<0:continue
-            box('Bastion teeth',(x+math.sin(a)*r,height+.3,z+math.cos(a)*r),(.35,.47,.35),stone[2],bastion)
+                    o=box('Brass buttress crown',P(6.65,height-.3),(.53,.3,.8),gold,wall,.03);o.rotation_euler.z=a
+                    o=box('Royal banner',P(6.99,height*.52),(.64,1.25,.025),roof,wall,.01);o.rotation_euler.z=a
+        if side in [0,2]:
+            sign=-1 if side==0 else 1;door=group('NorthGate' if side==0 else 'SouthGate',parent=wall)
+            for x in [-.55,0,.55]:box('Oak gate',(x,.82,sign*6.05),(.52,1.6,.16),wood,door,.025)
+            for y in [.35,1.2]:box('Gate ironwork',(0,y,sign*6.17),(1.7,.12,.08),gold,door,.01)
+    for i,(x,z) in enumerate([(0,-7.6),(7.6,0),(0,7.6),(-7.6,0)]):
+        bastion=group('Bastion_'+str(i));r=1.65+(tier-1)*.12
+        if x==0:
+            # An open gate arch keeps the company's route underneath the mounted building clear.
+            for dx in [-1.35,1.35]:rod('Gatehouse pier',(x+dx,.05,z),(x+dx,height-.12,z),.4,stone[1],bastion,12)
+        else:rod('Round bastion',(x,.05,z),(x,height-.12,z),r,stone[1],bastion,32)
+        rod('Weapon platform',(x,height-.1,z),(x,height+.08,z),r+.1,edge,bastion,48)
+        ring('Platform brass inlay',(x,height+.085,z),1.44,.035,gold,bastion)
         if tier>=2:
-            for n in range(8):
-                a=n*math.tau/8;rod('Bastion buttress',(x+math.sin(a)*(r+.16),.1,z+math.cos(a)*(r+.16)),(x+math.sin(a)*r,height-.45,z+math.cos(a)*r),.13,gold if tier==3 else edge,bastion)
+            ring('Fortified crown',(x,height-.3,z),r,.10,gold if tier==3 else edge,bastion)
+        for n in range(12):
+            a=n*math.tau/12
+            if math.sin(a)*x+math.cos(a)*z<0:continue
+            box('Bastion crenellation',(x+math.sin(a)*r,height+.29,z+math.cos(a)*r),(.25,.43,.25),stone[2],bastion)
     batch();bpy.ops.object.select_all(action='SELECT')
     bpy.ops.export_scene.gltf(filepath=str(OUT/f'castle-{tier}.glb'),export_format='GLB',use_selection=True,export_animations=False,export_cameras=False,export_lights=False)
     bpy.ops.wm.save_as_mainfile(filepath=str(WORK/f'castle-{tier}.blend'))
@@ -125,6 +120,44 @@ for n in range(180):
         for s in [-1,1]:sheet('Heather blades',[(x-.08,-.27,z),(x+s*.05,random.uniform(.05,.25),z+.02),(x+.08,-.27,z)],[(0,1,2)],grass,None,.003)
 for n in range(80):
     a=n*math.tau/80;rod('Outer waystone',(math.sin(a)*23,-.29,math.cos(a)*23),(math.sin(a)*23,.12,math.cos(a)*23),.10,edge,vertices=6)
+# A misty highland valley surrounds the readable combat circle.
+weathered(rock,93)
+water=material('River blue',(.045,.17,.20),.3,.24)
+pine=material('Pine canopy',(.025,.11,.085),0,.92)
+bark=material('Pine bark',(.09,.055,.035),0,.95)
+rod('Valley floor',(0,-1.7,0),(0,-1.2,0),41,earth,vertices=96)
+rod('River basin',(0,-1.05,0),(0,-.94,0),35,water,vertices=96)
+for n in range(40):
+    a=n*math.tau/40;r=random.uniform(27,32);x,z=math.sin(a)*r,math.cos(a)*r
+    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1,radius=1,location=xyz((x,-1.0,z)))
+    o=bpy.context.object
+    for v in o.data.vertices:v.co*=random.uniform(.75,1.15)
+    o.scale=(random.uniform(2,3),random.uniform(2,3),random.uniform(.6,1.3));finish(o,'Broken riverbank',rock)
+
+for n in range(68):
+    a=random.random()*math.tau;r=random.uniform(36,39);x,z=math.sin(a)*r,math.cos(a)*r
+    if n<18:
+        # Irregular broken ridgelines, rather than isolated spherical hills.
+        r=random.uniform(36,43);x,z=math.sin(a)*r,math.cos(a)*r
+        bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2,radius=1,location=xyz((x,-4,z)))
+        o=bpy.context.object
+        for v in o.data.vertices:v.co*=random.uniform(.8,1.16)
+        o.scale=(random.uniform(6,9),random.uniform(6,9),random.uniform(4,8));finish(o,'Highland ridge',rock)
+
+    else:
+        h=random.uniform(2,4.7)
+        rod('Pine trunk',(x,-1.2,z),(x,h*.65,z),.13,bark,vertices=7)
+        for layer in range(3):
+            bpy.ops.mesh.primitive_cone_add(vertices=9,radius1=h*(.31-layer*.055),radius2=.08,depth=h*.6,location=xyz((x,h*(.32+layer*.19)-.8,z)))
+            finish(bpy.context.object,'Highland pine',pine)
+for sign in [-1,1]:
+    for n in range(15):box('Old causeway',(0,-.1,sign*(24+n*.72)),(2.8,.28,.70),edge,bevel=.025)
+    for n in range(6):
+        z=sign*(25+n*1.8)
+        for x in [-1.45,1.45]:box('Bridge coping',(x,.22,z),(.22,.4,1.65),stone[2],bevel=.03)
+for x,z in [(-19,-22),(22,17),(-25,8)]:
+    for n in range(5):
+        rod('Ruined watch column',(x+n*.62,-.8,z),(x+n*.62,1.1+(n%3)*.43,z),.27,stone[n%4],vertices=8)
 batch();bpy.ops.object.select_all(action='SELECT')
 bpy.ops.export_scene.gltf(filepath=str(OUT/'castle-ground.glb'),export_format='GLB',use_selection=True,export_animations=False,export_cameras=False,export_lights=False)
 bpy.ops.wm.save_as_mainfile(filepath=str(WORK/'ground.blend'))

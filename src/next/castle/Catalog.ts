@@ -9,10 +9,10 @@ export const wallTiers = [
 ] as const;
 export const wallSpec = (rank: Rank) => wallTiers[rank - 1];
 export const mounts: { id: SiteId; name: string; x: number; z: number; yaw: number }[] = [
-  { id: 'west-watch', name: 'Northwest bastion', x: -5.8, z: -5.8, yaw: -Math.PI * 0.75 },
-  { id: 'east-watch', name: 'Northeast bastion', x: 5.8, z: -5.8, yaw: Math.PI * 0.75 },
-  { id: 'west-court', name: 'Southwest bastion', x: -5.8, z: 5.8, yaw: -Math.PI * 0.25 },
-  { id: 'east-court', name: 'Southeast bastion', x: 5.8, z: 5.8, yaw: Math.PI * 0.25 },
+  { id: 'west-watch', name: 'North', x: 0, z: -7.6, yaw: Math.PI },
+  { id: 'east-watch', name: 'East', x: 7.6, z: 0, yaw: Math.PI / 2 },
+  { id: 'east-court', name: 'South', x: 0, z: 7.6, yaw: 0 },
+  { id: 'west-court', name: 'West', x: -7.6, z: 0, yaw: -Math.PI / 2 },
 ];
 export const roles = {
   warden: { name: 'Warden', hp: 135, damage: 23, range: 1.9, speed: 3.2 },
@@ -148,7 +148,7 @@ export const encounters = [
     boss: false,
   },
   {
-    name: 'The Prism Descends',
+    name: 'Emberwing Descends',
     subtitle: 'A Dragon approaches. Keep your King clear of its breath.',
     budget: 16,
     interval: 4.4,

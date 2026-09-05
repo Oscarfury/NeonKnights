@@ -1,0 +1,97 @@
+{
+  "placement": "drag, tap, relocation, cancellation passed",
+  "talents": "learn, reject, reset, persistence passed",
+  "mouse": "hover east/west and charge passed",
+  "state": {
+    "version": 1,
+    "layout": "circle",
+    "gold": 400,
+    "encounter": 0,
+    "wallTier": 1,
+    "walls": [
+      230,
+      230,
+      230,
+      230
+    ],
+    "kingHp": 160,
+    "weapon": "stormbow",
+    "ranks": {
+      "stormbow": 1,
+      "sunlance": 1
+    },
+    "sockets": {
+      "stormbow": [],
+      "sunlance": []
+    },
+    "knights": [
+      {
+        "id": "aldren",
+        "active": true,
+        "hp": 135,
+        "rank": 1,
+        "xp": 0,
+        "gear": null,
+        "talents": [
+          "taunt"
+        ],
+        "stance": "guard"
+      },
+      {
+        "id": "elin",
+        "active": true,
+        "hp": 95,
+        "rank": 1,
+        "xp": 0,
+        "gear": null,
+        "talents": [
+          "mending"
+        ],
+        "stance": "hunt"
+      },
+      {
+        "id": "corvin",
+        "active": true,
+        "hp": 135,
+        "rank": 1,
+        "xp": 0,
+        "gear": null,
+        "talents": [],
+        "stance": "guard"
+      }
+    ],
+    "inventory": [],
+    "offers": [
+      "ward-seal",
+      "storm-seal",
+      "field-kit",
+      "quickdraw",
+      "sundering",
+      "vital-spark"
+    ],
+    "bought": [],
+    "rerolls": 0,
+    "nextId": 3,
+    "buildings": [
+      {
+        "id": 1,
+        "kind": "spire",
+        "site": "east-watch",
+        "rank": 1,
+        "yaw": 1.5707963267948966,
+        "hp": 135
+      },
+      {
+        "id": 2,
+        "kind": "sanctuary",
+        "site": "east-court",
+        "rank": 1,
+        "yaw": 0,
+        "hp": 160
+      }
+    ],
+    "relic": null,
+    "difficulty": "normal",
+    "wins": 0
+  }
+}

@@ -1,0 +1,40 @@
+async (page) => {
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.evaluate(()=>localStorage.removeItem('neon-knights:v3:castle:1'));await page.reload();
+  await page.getByRole('button',{name:'Place Storm Spire for 140 crowns',exact:true}).waitFor();
+  const client=await page.context().newCDPSession(page);
+  const point=async selector=>{await page.locator(selector).waitFor({state:'visible'});const r=await page.locator(selector).boundingBox();return {x:r.x+r.width/2,y:r.y+r.height/2,id:1};};
+  const touch=async(type,p)=>client.send('Input.dispatchTouchEvent',{type,touchPoints:p?[p]:[]});
+  const overflow=()=>page.evaluate(()=>document.documentElement.scrollWidth>innerWidth||document.documentElement.scrollHeight>innerHeight+1);
+  if(await overflow())throw new Error('Portrait council overflow');
+  const debugAbsent=await page.evaluate(()=>typeof window.__castle==='undefined');
+  await page.locator('[data-pick="spire"]').scrollIntoViewIfNeeded();
+  await page.locator('[data-pick="spire"]').tap();await page.getByRole('button',{name:'Cancel',exact:true}).tap();
+  if(!await page.locator('#castle-gold').textContent().then(t=>t.includes('650')))throw new Error('Cancel spent crowns');
+  const from=await point('[data-pick="spire"]');await touch('touchStart',from);
+  const to=await point('[aria-label="Place on North platform"]');
+  for(let i=1;i<=14;i++)await touch('touchMove',{x:from.x+(to.x-from.x)*i/14,y:from.y+(to.y-from.y)*i/14,id:1});
+  await page.screenshot({path:'output/playwright/circular-touch-placement.png'});
+  await touch('touchEnd');
+  if(!await page.locator('#castle-gold').textContent().then(t=>t.includes('510')))throw new Error('Touch drag did not buy exactly once');
+  await page.getByRole('button',{name:/^Begin watch/}).click();
+  const canvas=await page.locator('.castle-canvas canvas').boundingBox();
+  const before=await page.locator('.unit-label.legendary').getAttribute('style');
+  await touch('touchStart',{x:canvas.x+canvas.width*.86,y:canvas.y+canvas.height*.5,id:1});await page.waitForTimeout(1200);await touch('touchEnd');
+  const after=await page.locator('.unit-label.legendary').getAttribute('style');if(before===after)throw new Error('Touch heading does not move King');
+  await page.waitForTimeout(800);const stopped=await page.locator('.unit-label.legendary').getAttribute('style');await page.waitForTimeout(500);
+  // Position converges to the chosen heading after release; angular movement must settle.
+  const charge=await point('#king-charge');await touch('touchStart',charge);await page.waitForTimeout(1100);
+  const width=await page.locator('#royal-charge').evaluate(e=>e.style.width);await touch('touchEnd');
+  if(parseFloat(width)<70)throw new Error('Touch charge did not fill');
+  await page.waitForTimeout(250);if(parseFloat(await page.locator('#royal-charge').evaluate(e=>e.style.width))!==0)throw new Error('Charge remained held after release');
+  await page.screenshot({path:'output/playwright/circular-touch-battle.png'});
+  await page.getByRole('button',{name:'Pause',exact:true}).click();await page.getByRole('button',{name:'Resume the watch',exact:true}).waitFor();
+  if(await overflow())throw new Error('Portrait battle overflow');
+  await page.setViewportSize({width:915,height:412});await page.waitForTimeout(200);
+  await page.screenshot({path:'output/playwright/circular-touch-landscape.png'});
+  if(await overflow())throw new Error('Landscape overflow');
+  const controls=await page.locator('.castle-hud button').evaluateAll(list=>list.filter(e=>e.getBoundingClientRect().width>0).map(e=>{const r=e.getBoundingClientRect();return {name:e.textContent.trim(),x:r.x,y:r.y,w:r.width,h:r.height};}));
+  if(controls.some(c=>c.x<0||c.y<0||c.x+c.w>915||c.y+c.h>412))throw new Error('Clipped controls');
+  await client.detach();return {productionHasNoDebugControls:debugAbsent,touchDragCost:140,kingMoved:before!==after,charge:width,portrait:'412x915',landscape:'915x412',controls,errors};
+}

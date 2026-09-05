@@ -11,10 +11,22 @@ rights are retained. This artwork is incorporated in Neon Knights; it is not
 an independently redistributable asset pack or part of a source-code license.
 The original archive, source textures and Blender vendor scene are kept local.
 
+Emberwing Dragon geometry, UVs, painted texture and original 144-bone skeleton:
+Styloo (Styl0o_), The Company Characters Asset Pack.
+Painted meadow foliage and its texture atlas: the same artist and pack.
+Source: https://styloo.itch.io/company
+License: CC0 1.0 Universal, https://creativecommons.org/publicdomain/zero/1.0/
+Original archive SHA-256:
+7653c573431ae2463c8caf869f28e6588012c007237f5c7e5fdadd264d7ea9ca
+Neon Knights adaptations: normalized scale/origin, eight authored skeletal
+combat animations, material roughness, foliage placement and alpha clipping.
+The original vendor files are retained locally without modification.
+
 Neon Knights additions: runtime deform-rig conversion, animation studies,
 Stormbow, Sunlance, training courtyard, Royal Ballista and Aegis Projector
-(three Blender-authored ranks each), three castle wall tiers, company and royal
-equipment, packed stone and terrain textures, the rigged Prism Dragon, and game code. Defense mechanisms use
+(three Blender-authored ranks each), Storm Spire and Dawn Sanctuary (three
+ranks each), three circular castle wall tiers, company and royal equipment,
+packed stone and terrain textures, valley scenery, sky and game code. Defense mechanisms use
 separate mechanical pivots driven by the simulation. Character animation and
 final art acceptance are still in progress.
 

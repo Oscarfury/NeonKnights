@@ -87,6 +87,8 @@ export function stepDefenses(
       if (!b.lastBlocked) b.charge = Math.min(r.capacity, b.charge + r.recharge * rechargeTime);
       continue;
     }
+    // Castle support buildings use their own ability system, never the ballista firing path.
+    if (b.kind !== 'ballista') continue;
     const candidates = targets.filter(
       (target) =>
         target.hp > 0 &&

@@ -2,7 +2,7 @@
 
 [Play the overhaul](https://oscarfury.github.io/NeonKnights/) · [Classic draft](https://oscarfury.github.io/NeonKnights/classic/)
 
-**Next overhaul:** [The King's Battlements](https://oscarfury.github.io/NeonKnights/next/) is the connected castle preview: a legendary King on the walls, an automatic equippable company, three visual wall tiers, mounted defenses, separate council progression and a three-encounter siege with the Prism Dragon. The Foundry, courtyard and workshop remain available under Art & training. See [castle controls and scope](docs/overhaul-v3/CASTLE_PREVIEW.md) and [implementation progress](docs/overhaul-v3/PROGRESS.md). The root game described below remains the v2 prototype; full campaign expansion is still in progress.
+**Next overhaul:** [The King's Battlements](https://oscarfury.github.io/NeonKnights/next/) is the circular castle preview: guide the legendary King with your mouse, drag four building families onto N/E/S/W platforms, and develop an automatic, equippable company through branching talent trees. Three visual wall tiers, a river-valley environment and the painted, rigged Emberwing Dragon connect across three encounters. The Foundry, courtyard and workshop remain under Art & training. See [controls and scope](docs/overhaul-v3/CASTLE_PREVIEW.md) and [implementation progress](docs/overhaul-v3/PROGRESS.md). The root game described below remains the v2 prototype; full campaign expansion is still in progress.
 
 A static browser siege roguelite built with TypeScript, Vite, Phaser 3, and an original Blender character atlas. The playable campaign has fifteen authored waves, three bosses, and an optional endless continuation.
 

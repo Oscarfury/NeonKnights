@@ -1,0 +1,825 @@
+{
+  "results": [
+    {
+      "checkpoint": {
+        "version": 1,
+        "layout": "circle",
+        "gold": 40,
+        "encounter": 0,
+        "wallTier": 2,
+        "walls": [
+          360,
+          360,
+          360,
+          360
+        ],
+        "kingHp": 160,
+        "weapon": "stormbow",
+        "ranks": {
+          "stormbow": 1,
+          "sunlance": 1
+        },
+        "sockets": {
+          "stormbow": [],
+          "sunlance": []
+        },
+        "knights": [
+          {
+            "id": "aldren",
+            "active": true,
+            "hp": 135,
+            "rank": 1,
+            "xp": 0,
+            "gear": null,
+            "talents": [
+              "taunt"
+            ],
+            "stance": "guard"
+          },
+          {
+            "id": "elin",
+            "active": true,
+            "hp": 95,
+            "rank": 1,
+            "xp": 0,
+            "gear": null,
+            "talents": [
+              "mending"
+            ],
+            "stance": "hunt"
+          },
+          {
+            "id": "corvin",
+            "active": true,
+            "hp": 135,
+            "rank": 1,
+            "xp": 0,
+            "gear": null,
+            "talents": [
+              "slam"
+            ],
+            "stance": "guard"
+          }
+        ],
+        "inventory": [],
+        "offers": [
+          "ward-seal",
+          "storm-seal",
+          "field-kit",
+          "quickdraw",
+          "sundering",
+          "vital-spark"
+        ],
+        "bought": [],
+        "rerolls": 0,
+        "nextId": 4,
+        "buildings": [
+          {
+            "id": 1,
+            "kind": "ballista",
+            "site": "west-watch",
+            "rank": 1,
+            "yaw": 3.141592653589793,
+            "hp": 140
+          },
+          {
+            "id": 2,
+            "kind": "spire",
+            "site": "east-watch",
+            "rank": 1,
+            "yaw": 1.5707963267948966,
+            "hp": 135
+          },
+          {
+            "id": 3,
+            "kind": "sanctuary",
+            "site": "east-court",
+            "rank": 1,
+            "yaw": 0,
+            "hp": 160
+          }
+        ],
+        "relic": null,
+        "difficulty": "normal",
+        "wins": 0
+      },
+      "phase": "won",
+      "time": 52.483333333331636,
+      "kingHp": 160,
+      "stats": {
+        "royalDamage": 879.9,
+        "companyDamage": 390.5000000000001,
+        "defenseDamage": 280.59999999999997,
+        "wallDamage": 38,
+        "bossDamage": 0,
+        "shielded": 0,
+        "rescues": 0
+      },
+      "state": {
+        "version": 1,
+        "layout": "circle",
+        "gold": 470,
+        "encounter": 1,
+        "wallTier": 2,
+        "walls": [
+          360,
+          322,
+          360,
+          360
+        ],
+        "kingHp": 160,
+        "weapon": "stormbow",
+        "ranks": {
+          "stormbow": 1,
+          "sunlance": 1
+        },
+        "sockets": {
+          "stormbow": [],
+          "sunlance": []
+        },
+        "knights": [
+          {
+            "id": "aldren",
+            "active": true,
+            "hp": 108.60000000000001,
+            "rank": 1,
+            "xp": 2,
+            "gear": null,
+            "talents": [
+              "taunt"
+            ],
+            "stance": "guard"
+          },
+          {
+            "id": "elin",
+            "active": true,
+            "hp": 59,
+            "rank": 1,
+            "xp": 2,
+            "gear": null,
+            "talents": [
+              "mending"
+            ],
+            "stance": "hunt"
+          },
+          {
+            "id": "corvin",
+            "active": true,
+            "hp": 135,
+            "rank": 1,
+            "xp": 2,
+            "gear": null,
+            "talents": [
+              "slam"
+            ],
+            "stance": "guard"
+          }
+        ],
+        "inventory": [],
+        "offers": [
+          "storm-seal",
+          "field-kit",
+          "quickdraw",
+          "sundering",
+          "vital-spark",
+          "forked-light"
+        ],
+        "bought": [],
+        "rerolls": 0,
+        "nextId": 4,
+        "buildings": [
+          {
+            "id": 1,
+            "kind": "ballista",
+            "site": "west-watch",
+            "rank": 1,
+            "yaw": 3.141592653589793,
+            "hp": 140
+          },
+          {
+            "id": 2,
+            "kind": "spire",
+            "site": "east-watch",
+            "rank": 1,
+            "yaw": 1.5707963267948966,
+            "hp": 135
+          },
+          {
+            "id": 3,
+            "kind": "sanctuary",
+            "site": "east-court",
+            "rank": 1,
+            "yaw": 0,
+            "hp": 160
+          }
+        ],
+        "relic": null,
+        "difficulty": "normal",
+        "wins": 1
+      }
+    },
+    {
+      "checkpoint": {
+        "version": 1,
+        "layout": "circle",
+        "gold": 12,
+        "encounter": 1,
+        "wallTier": 2,
+        "walls": [
+          360,
+          360,
+          360,
+          360
+        ],
+        "kingHp": 160,
+        "weapon": "stormbow",
+        "ranks": {
+          "stormbow": 2,
+          "sunlance": 1
+        },
+        "sockets": {
+          "stormbow": [],
+          "sunlance": []
+        },
+        "knights": [
+          {
+            "id": "aldren",
+            "active": true,
+            "hp": 135,
+            "rank": 1,
+            "xp": 2,
+            "gear": null,
+            "talents": [
+              "taunt",
+              "bulwark"
+            ],
+            "stance": "guard"
+          },
+          {
+            "id": "elin",
+            "active": true,
+            "hp": 95,
+            "rank": 1,
+            "xp": 2,
+            "gear": null,
+            "talents": [
+              "mending",
+              "shelter"
+            ],
+            "stance": "hunt"
+          },
+          {
+            "id": "corvin",
+            "active": true,
+            "hp": 135,
+            "rank": 1,
+            "xp": 2,
+            "gear": null,
+            "talents": [
+              "slam",
+              "aftershock"
+            ],
+            "stance": "guard"
+          }
+        ],
+        "inventory": [],
+        "offers": [
+          "storm-seal",
+          "field-kit",
+          "quickdraw",
+          "sundering",
+          "vital-spark",
+          "forked-light"
+        ],
+        "bought": [],
+        "rerolls": 0,
+        "nextId": 5,
+        "buildings": [
+          {
+            "id": 1,
+            "kind": "ballista",
+            "site": "west-watch",
+            "rank": 2,
+            "yaw": 3.141592653589793,
+            "hp": 220
+          },
+          {
+            "id": 2,
+            "kind": "spire",
+            "site": "east-watch",
+            "rank": 1,
+            "yaw": 1.5707963267948966,
+            "hp": 135
+          },
+          {
+            "id": 3,
+            "kind": "sanctuary",
+            "site": "east-court",
+            "rank": 1,
+            "yaw": 0,
+            "hp": 160
+          },
+          {
+            "id": 4,
+            "kind": "aegis",
+            "site": "west-court",
+            "rank": 1,
+            "yaw": -1.5707963267948966,
+            "hp": 180
+          }
+        ],
+        "relic": null,
+        "difficulty": "normal",
+        "wins": 1
+      },
+      "phase": "won",
+      "time": 51.69999999999835,
+      "kingHp": 92,
+      "stats": {
+        "royalDamage": 1654,
+        "companyDamage": 609,
+        "defenseDamage": 426,
+        "wallDamage": 165,
+        "bossDamage": 1650,
+        "shielded": 30,
+        "rescues": 0
+      },
+      "state": {
+        "version": 1,
+        "layout": "circle",
+        "gold": 752,
+        "encounter": 2,
+        "wallTier": 2,
+        "walls": [
+          292,
+          331,
+          321,
+          331
+        ],
+        "kingHp": 137,
+        "weapon": "stormbow",
+        "ranks": {
+          "stormbow": 2,
+          "sunlance": 1
+        },
+        "sockets": {
+          "stormbow": [],
+          "sunlance": []
+        },
+        "knights": [
+          {
+            "id": "aldren",
+            "active": true,
+            "hp": 135,
+            "rank": 1,
+            "xp": 4,
+            "gear": null,
+            "talents": [
+              "taunt",
+              "bulwark"
+            ],
+            "stance": "guard"
+          },
+          {
+            "id": "elin",
+            "active": true,
+            "hp": 95,
+            "rank": 1,
+            "xp": 4,
+            "gear": null,
+            "talents": [
+              "mending",
+              "shelter"
+            ],
+            "stance": "hunt"
+          },
+          {
+            "id": "corvin",
+            "active": true,
+            "hp": 25,
+            "rank": 1,
+            "xp": 4,
+            "gear": null,
+            "talents": [
+              "slam",
+              "aftershock"
+            ],
+            "stance": "guard"
+          }
+        ],
+        "inventory": [],
+        "offers": [
+          "field-kit",
+          "quickdraw",
+          "sundering",
+          "vital-spark",
+          "forked-light",
+          "ward-seal"
+        ],
+        "bought": [],
+        "rerolls": 0,
+        "nextId": 5,
+        "buildings": [
+          {
+            "id": 1,
+            "kind": "ballista",
+            "site": "west-watch",
+            "rank": 2,
+            "yaw": 3.141592653589793,
+            "hp": 191
+          },
+          {
+            "id": 2,
+            "kind": "spire",
+            "site": "east-watch",
+            "rank": 1,
+            "yaw": 1.5707963267948966,
+            "hp": 135
+          },
+          {
+            "id": 3,
+            "kind": "sanctuary",
+            "site": "east-court",
+            "rank": 1,
+            "yaw": 0,
+            "hp": 160
+          },
+          {
+            "id": 4,
+            "kind": "aegis",
+            "site": "west-court",
+            "rank": 1,
+            "yaw": -1.5707963267948966,
+            "hp": 180
+          }
+        ],
+        "relic": null,
+        "difficulty": "normal",
+        "wins": 2
+      }
+    },
+    {
+      "checkpoint": {
+        "version": 1,
+        "layout": "circle",
+        "gold": 207,
+        "encounter": 2,
+        "wallTier": 3,
+        "walls": [
+          520,
+          520,
+          520,
+          520
+        ],
+        "kingHp": 160,
+        "weapon": "stormbow",
+        "ranks": {
+          "stormbow": 2,
+          "sunlance": 1
+        },
+        "sockets": {
+          "stormbow": [],
+          "sunlance": []
+        },
+        "knights": [
+          {
+            "id": "aldren",
+            "active": true,
+            "hp": 135,
+            "rank": 1,
+            "xp": 4,
+            "gear": null,
+            "talents": [
+              "taunt",
+              "bulwark",
+              "renewal"
+            ],
+            "stance": "guard"
+          },
+          {
+            "id": "elin",
+            "active": true,
+            "hp": 95,
+            "rank": 1,
+            "xp": 4,
+            "gear": null,
+            "talents": [
+              "mending",
+              "shelter",
+              "beacon"
+            ],
+            "stance": "hunt"
+          },
+          {
+            "id": "corvin",
+            "active": true,
+            "hp": 135,
+            "rank": 1,
+            "xp": 4,
+            "gear": null,
+            "talents": [
+              "slam",
+              "aftershock",
+              "earthshaker"
+            ],
+            "stance": "guard"
+          }
+        ],
+        "inventory": [],
+        "offers": [
+          "field-kit",
+          "quickdraw",
+          "sundering",
+          "vital-spark",
+          "forked-light",
+          "ward-seal"
+        ],
+        "bought": [],
+        "rerolls": 0,
+        "nextId": 5,
+        "buildings": [
+          {
+            "id": 1,
+            "kind": "ballista",
+            "site": "west-watch",
+            "rank": 2,
+            "yaw": 3.141592653589793,
+            "hp": 220
+          },
+          {
+            "id": 2,
+            "kind": "spire",
+            "site": "east-watch",
+            "rank": 1,
+            "yaw": 1.5707963267948966,
+            "hp": 135
+          },
+          {
+            "id": 3,
+            "kind": "sanctuary",
+            "site": "east-court",
+            "rank": 1,
+            "yaw": 0,
+            "hp": 160
+          },
+          {
+            "id": 4,
+            "kind": "aegis",
+            "site": "west-court",
+            "rank": 1,
+            "yaw": -1.5707963267948966,
+            "hp": 180
+          }
+        ],
+        "relic": "storm-oath",
+        "difficulty": "normal",
+        "wins": 2
+      },
+      "phase": "won",
+      "time": 96.26666666666249,
+      "kingHp": 141,
+      "stats": {
+        "royalDamage": 2374.1,
+        "companyDamage": 770.9,
+        "defenseDamage": 411,
+        "wallDamage": 19,
+        "bossDamage": 0,
+        "shielded": 89.5,
+        "rescues": 0
+      },
+      "state": {
+        "version": 1,
+        "layout": "circle",
+        "gold": 1057,
+        "encounter": 3,
+        "wallTier": 3,
+        "walls": [
+          520,
+          520,
+          501,
+          520
+        ],
+        "kingHp": 160,
+        "weapon": "stormbow",
+        "ranks": {
+          "stormbow": 2,
+          "sunlance": 1
+        },
+        "sockets": {
+          "stormbow": [],
+          "sunlance": []
+        },
+        "knights": [
+          {
+            "id": "aldren",
+            "active": true,
+            "hp": 135,
+            "rank": 1,
+            "xp": 6,
+            "gear": null,
+            "talents": [
+              "taunt",
+              "bulwark",
+              "renewal"
+            ],
+            "stance": "guard"
+          },
+          {
+            "id": "elin",
+            "active": true,
+            "hp": 95,
+            "rank": 1,
+            "xp": 6,
+            "gear": null,
+            "talents": [
+              "mending",
+              "shelter",
+              "beacon"
+            ],
+            "stance": "hunt"
+          },
+          {
+            "id": "corvin",
+            "active": true,
+            "hp": 135,
+            "rank": 1,
+            "xp": 6,
+            "gear": null,
+            "talents": [
+              "slam",
+              "aftershock",
+              "earthshaker"
+            ],
+            "stance": "guard"
+          }
+        ],
+        "inventory": [],
+        "offers": [
+          "quickdraw",
+          "sundering",
+          "vital-spark",
+          "forked-light",
+          "ward-seal",
+          "storm-seal"
+        ],
+        "bought": [],
+        "rerolls": 0,
+        "nextId": 5,
+        "buildings": [
+          {
+            "id": 1,
+            "kind": "ballista",
+            "site": "west-watch",
+            "rank": 2,
+            "yaw": 3.141592653589793,
+            "hp": 220
+          },
+          {
+            "id": 2,
+            "kind": "spire",
+            "site": "east-watch",
+            "rank": 1,
+            "yaw": 1.5707963267948966,
+            "hp": 135
+          },
+          {
+            "id": 3,
+            "kind": "sanctuary",
+            "site": "east-court",
+            "rank": 1,
+            "yaw": 0,
+            "hp": 160
+          },
+          {
+            "id": 4,
+            "kind": "aegis",
+            "site": "west-court",
+            "rank": 1,
+            "yaw": -1.5707963267948966,
+            "hp": 180
+          }
+        ],
+        "relic": "storm-oath",
+        "difficulty": "normal",
+        "wins": 3
+      }
+    }
+  ],
+  "errors": [],
+  "final": {
+    "version": 1,
+    "layout": "circle",
+    "gold": 1057,
+    "encounter": 3,
+    "wallTier": 3,
+    "walls": [
+      520,
+      520,
+      501,
+      520
+    ],
+    "kingHp": 160,
+    "weapon": "stormbow",
+    "ranks": {
+      "stormbow": 2,
+      "sunlance": 1
+    },
+    "sockets": {
+      "stormbow": [],
+      "sunlance": []
+    },
+    "knights": [
+      {
+        "id": "aldren",
+        "active": true,
+        "hp": 135,
+        "rank": 1,
+        "xp": 6,
+        "gear": null,
+        "talents": [
+          "taunt",
+          "bulwark",
+          "renewal"
+        ],
+        "stance": "guard"
+      },
+      {
+        "id": "elin",
+        "active": true,
+        "hp": 95,
+        "rank": 1,
+        "xp": 6,
+        "gear": null,
+        "talents": [
+          "mending",
+          "shelter",
+          "beacon"
+        ],
+        "stance": "hunt"
+      },
+      {
+        "id": "corvin",
+        "active": true,
+        "hp": 135,
+        "rank": 1,
+        "xp": 6,
+        "gear": null,
+        "talents": [
+          "slam",
+          "aftershock",
+          "earthshaker"
+        ],
+        "stance": "guard"
+      }
+    ],
+    "inventory": [],
+    "offers": [
+      "quickdraw",
+      "sundering",
+      "vital-spark",
+      "forked-light",
+      "ward-seal",
+      "storm-seal"
+    ],
+    "bought": [],
+    "rerolls": 0,
+    "nextId": 5,
+    "buildings": [
+      {
+        "id": 1,
+        "kind": "ballista",
+        "site": "west-watch",
+        "rank": 2,
+        "yaw": 3.141592653589793,
+        "hp": 220
+      },
+      {
+        "id": 2,
+        "kind": "spire",
+        "site": "east-watch",
+        "rank": 1,
+        "yaw": 1.5707963267948966,
+        "hp": 135
+      },
+      {
+        "id": 3,
+        "kind": "sanctuary",
+        "site": "east-court",
+        "rank": 1,
+        "yaw": 0,
+        "hp": 160
+      },
+      {
+        "id": 4,
+        "kind": "aegis",
+        "site": "west-court",
+        "rank": 1,
+        "yaw": -1.5707963267948966,
+        "hp": 180
+      }
+    ],
+    "relic": "storm-oath",
+    "difficulty": "normal",
+    "wins": 3
+  }
+}

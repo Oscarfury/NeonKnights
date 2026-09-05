@@ -1,4 +1,4 @@
-export type DefenseKind = 'ballista' | 'aegis';
+export type DefenseKind = 'ballista' | 'aegis' | 'spire' | 'sanctuary';
 export type Rank = 1 | 2 | 3;
 export interface DefenseSpec {
   name: string;
@@ -25,6 +25,96 @@ export const defenses: Record<
   DefenseKind,
   { name: string; subtitle: string; capacity: number; description: string; ranks: DefenseSpec[] }
 > = {
+  spire: {
+    name: 'Storm Spire',
+    subtitle: 'CHAIN LIGHTNING',
+    capacity: 1,
+    description:
+      'Strikes the nearest invader, then chains to nearby enemies. Covers every direction.',
+    ranks: [
+      {
+        name: 'Storm obelisk',
+        title: 'I',
+        cost: 140,
+        health: 135,
+        range: 10,
+        arc: 360,
+        damage: 20,
+        interval: 3.8,
+        capacity: 0,
+        recharge: 0,
+      },
+      {
+        name: 'Conductive array',
+        title: 'II',
+        cost: 180,
+        health: 210,
+        range: 12,
+        arc: 360,
+        damage: 30,
+        interval: 3.4,
+        capacity: 0,
+        recharge: 0,
+      },
+      {
+        name: 'Tempest cathedral',
+        title: 'III',
+        cost: 260,
+        health: 290,
+        range: 14,
+        arc: 360,
+        damage: 42,
+        interval: 3,
+        capacity: 0,
+        recharge: 0,
+      },
+    ],
+  },
+  sanctuary: {
+    name: 'Dawn Sanctuary',
+    subtitle: 'COMPANY HEALING',
+    capacity: 1,
+    description:
+      'Every 5 seconds restores health to all living knights in its circle. Cannot revive fallen units.',
+    ranks: [
+      {
+        name: 'Wayside shrine',
+        title: 'I',
+        cost: 110,
+        health: 160,
+        range: 8,
+        arc: 360,
+        damage: 8,
+        interval: 5,
+        capacity: 0,
+        recharge: 0,
+      },
+      {
+        name: 'Dawn chapel',
+        title: 'II',
+        cost: 170,
+        health: 240,
+        range: 10,
+        arc: 360,
+        damage: 12,
+        interval: 5,
+        capacity: 0,
+        recharge: 0,
+      },
+      {
+        name: 'Radiant sanctum',
+        title: 'III',
+        cost: 250,
+        health: 340,
+        range: 12,
+        arc: 360,
+        damage: 18,
+        interval: 5,
+        capacity: 0,
+        recharge: 0,
+      },
+    ],
+  },
   ballista: {
     name: 'Royal Ballista',
     subtitle: 'TENSION · PRECISION · REACH',
@@ -119,7 +209,7 @@ export const defenses: Record<
 export const spec = (kind: DefenseKind, rank: Rank) => defenses[kind].ranks[rank - 1];
 export const investment = (kind: DefenseKind, rank: Rank) =>
   defenses[kind].ranks.slice(0, rank).reduce((sum, r) => sum + r.cost, 0);
-export const modelIds = (['ballista', 'aegis'] as const).flatMap((kind) =>
+export const modelIds = (['ballista', 'aegis', 'spire', 'sanctuary'] as const).flatMap((kind) =>
   [1, 2, 3].map((rank) => `${kind}-${rank}`),
 );
 export const assetIds = [
@@ -133,6 +223,7 @@ export const assetIds = [
   'castle-2',
   'castle-3',
   'castle-ground',
+  'highland-foliage',
   'prism-dragon',
 ];
 export const defaultYaw = (site: (typeof sites)[number]) => Math.atan2(-site.x, -7 - site.z);

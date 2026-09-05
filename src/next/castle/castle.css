@@ -5,6 +5,398 @@
   flex-direction: column;
   background: #111c22;
 }
+
+/* The council is a compact command board with contextual choices. */
+.build-intro p {
+  margin: 8px 0 18px;
+  color: #b0c2c5;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.wall-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #ccb07344;
+  border-radius: 10px;
+  background: linear-gradient(130deg, #374240, #172630);
+}
+.wall-summary > div {
+  display: grid;
+  gap: 6px;
+  flex: 1;
+}
+.wall-summary strong {
+  font:
+    18px Georgia,
+    serif;
+  color: #f1dfb7;
+}
+.wall-summary small {
+  color: #acbfbd;
+  font-size: 10px;
+}
+.wall-summary .council-button {
+  width: auto;
+  padding: 10px;
+  margin: 0;
+  font-size: 11px;
+}
+.platform-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin: 18px 0;
+}
+.platform-tabs button {
+  padding: 8px;
+  background: #14232b;
+  color: #c2cfc8;
+  border: 1px solid #58716c66;
+  border-radius: 7px;
+  font:
+    20px Georgia,
+    serif;
+}
+.platform-tabs small {
+  display: block;
+  margin-top: 5px;
+  font:
+    9px Manrope,
+    sans-serif;
+  color: #90a9ac;
+}
+.platform-tabs button.selected {
+  border-color: #e2c587;
+  color: #ffdc93;
+  background: #53493255;
+}
+.building-catalog {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.building-card {
+  --accent: #f2cf82;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 14px 12px;
+  text-align: left;
+  border: 1px solid #b4b89942;
+  border-radius: 10px;
+  color: #e2e9e0;
+  background: radial-gradient(ellipse at 30% 0%, #b69e6130, transparent 80%), #182830;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  transition:
+    border-color 0.15s,
+    transform 0.15s;
+}
+.building-card.aegis {
+  --accent: #8de5d4;
+  background: radial-gradient(ellipse at 30% 0%, #57b0a934, transparent 80%), #182830;
+}
+.building-card.spire {
+  --accent: #c2a8ff;
+  background: radial-gradient(ellipse at 30% 0%, #8e64d540, transparent 80%), #182830;
+}
+.building-card.sanctuary {
+  --accent: #b6e7a5;
+  background: radial-gradient(ellipse at 30% 0%, #75b77233, transparent 80%), #182830;
+}
+.building-card:hover,
+.building-card.armed {
+  border-color: var(--accent);
+  box-shadow:
+    inset 0 0 24px #ffffff08,
+    0 0 18px #c7d5b911;
+  transform: translateY(-2px);
+}
+.building-card:disabled {
+  opacity: 0.45;
+  cursor: default;
+  transform: none;
+}
+.building-emblem {
+  display: grid;
+  place-items: center;
+  height: 52px;
+  width: 52px;
+  font:
+    38px Georgia,
+    serif;
+  color: var(--accent);
+  text-shadow: 0 0 18px var(--accent);
+  border: 1px solid #c2d0bf40;
+  border-radius: 12px 2px;
+  background: #101c2666;
+}
+.building-card strong {
+  font:
+    18px/1.1 Georgia,
+    serif;
+  color: var(--accent);
+}
+.building-card > span:not(.building-emblem) {
+  font-size: 10px;
+  color: #b3c4c5;
+  line-height: 1.5;
+  min-height: 30px;
+}
+.building-card small {
+  width: 100%;
+  padding-top: 8px;
+  border-top: 1px solid #dbe2b920;
+  color: #9fb4b4;
+  font-size: 10px;
+}
+.building-card b {
+  color: #f1dca4;
+  font-weight: 600;
+}
+.mounted-card,
+.knight-profile,
+.recruit-card {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid #a8b5a733;
+  border-radius: 10px;
+  background: #14242bcc;
+}
+.building-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 12px 0;
+  margin-bottom: 10px;
+  border-block: 1px solid #cad4ac22;
+}
+.building-stats > span {
+  display: grid;
+  gap: 5px;
+  text-align: center;
+  color: #eddaad;
+  font:
+    19px Georgia,
+    serif;
+}
+.building-stats small {
+  color: #9bb3b3;
+  font:
+    10px Manrope,
+    sans-serif;
+}
+.placement-hint {
+  position: absolute;
+  z-index: 8;
+  bottom: 125px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 85%;
+  padding: 12px 18px;
+  border: 1px solid #97e7ce77;
+  border-radius: 30px;
+  color: #d9f6e9;
+  background: #112f32ed;
+  box-shadow: 0 8px 28px #0005;
+  font-size: 12px;
+  pointer-events: none;
+  text-align: center;
+}
+.platform-target {
+  position: absolute;
+  z-index: 7;
+  transform: translate(-50%, -50%);
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 2px dashed #b5ffe0;
+  color: #e0fff2;
+  background: #29665cb9;
+  box-shadow: 0 0 26px #7af3c45c;
+  display: grid;
+  place-content: center;
+  gap: 4px;
+  transition: background 0.1s;
+}
+.platform-target strong {
+  font:
+    25px Georgia,
+    serif;
+}
+.platform-target small {
+  font:
+    8px Manrope,
+    sans-serif;
+  letter-spacing: 0.12em;
+}
+.platform-target.occupied {
+  border-color: #df928a;
+  color: #ffd3c7;
+  background: #6b3537b9;
+  box-shadow: none;
+}
+.platform-target.hovered {
+  background: #459d83ed;
+  transform: translate(-50%, -50%) scale(1.12);
+}
+.platform-target[hidden],
+.placement-hint[hidden] {
+  display: none;
+}
+.company-selector {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.company-selector button {
+  display: grid;
+  gap: 5px;
+  justify-items: center;
+  padding: 12px 6px;
+  border: 1px solid #98b4ac33;
+  border-radius: 8px;
+  background: #14242c;
+  color: #b5c7c5;
+}
+.company-selector button.selected {
+  color: #ffe0a0;
+  border-color: #dbc184;
+  background: #65523438;
+}
+.company-selector button > span {
+  font:
+    24px Georgia,
+    serif;
+}
+.company-selector strong {
+  font:
+    17px Georgia,
+    serif;
+}
+.company-selector small {
+  font-size: 8px;
+}
+.talent-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+.talent-heading > div {
+  flex: 1;
+}
+.talent-heading .council-button {
+  width: auto;
+  font-size: 10px;
+}
+.talent-tree {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.talent-branch h4 {
+  text-align: center;
+  margin: 14px 0;
+  color: #d8c59b;
+  font:
+    18px Georgia,
+    serif;
+}
+.talent-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  margin: 0 0 22px;
+  width: 100%;
+  min-height: 210px;
+  padding: 12px 9px;
+  border: 1px solid #8c9ca348;
+  border-radius: 8px;
+  background: linear-gradient(155deg, #30404a, #172630);
+  color: #bccdcb;
+  text-align: center;
+}
+.talent-node:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 23px;
+  top: 100%;
+  background: #8a9878;
+  left: 50%;
+}
+.talent-node.learned {
+  border-color: #e7c87b;
+  background: linear-gradient(155deg, #53503a, #1c3032);
+}
+.talent-node.learned::after {
+  background: #e5bf6b;
+}
+.talent-node.available {
+  border-color: #7ce7bf99;
+  box-shadow: 0 0 14px #6bdcba17;
+  cursor: pointer;
+}
+.talent-node.locked {
+  opacity: 0.55;
+}
+.talent-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid #e6d08a77;
+  border-radius: 6px;
+  font:
+    28px Georgia,
+    serif;
+  color: #ffe2a0;
+  background: radial-gradient(ellipse at center, #92974c55, #16212c);
+  box-shadow: inset 0 0 10px #ead89522;
+}
+.talent-branch:nth-child(2) .talent-icon {
+  color: #a2f3cf;
+  background: radial-gradient(ellipse at center, #419c7e66, #16212c);
+  border-color: #8cd9bc77;
+}
+.talent-node strong {
+  font:
+    15px/1.2 Georgia,
+    serif;
+  color: #eadcbc;
+}
+.talent-node > span:not(.talent-icon) {
+  font-size: 10px;
+  line-height: 1.55;
+}
+.talent-node small {
+  font-size: 9px;
+  color: #e4d4a8;
+  margin-top: auto;
+}
+.enemy-inspection {
+  margin-top: 18px;
+  color: #a6bcba;
+  font-size: 11px;
+}
+.enemy-inspection summary {
+  cursor: pointer;
+  padding: 12px 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .building-card,
+  .platform-target {
+    transition: none;
+  }
+}
 .castle-header {
   height: 72px;
   min-height: 72px;
@@ -947,4 +1339,120 @@
 
 .in-battle .council-tabs {
   display: none;
+}
+
+/* Keep all four starter buildings visible on a normal desktop viewport. */
+@media (min-width: 1100px) {
+  .castle-layout {
+    grid-template-columns: minmax(0, 1fr) 400px;
+  }
+  .council-heading {
+    padding: 18px 20px 8px;
+  }
+  .council-heading h2 {
+    margin: 8px 0;
+    font-size: 26px;
+  }
+  .council-tabs button {
+    padding: 13px 3px;
+  }
+  .council-content {
+    padding: 15px 18px;
+  }
+  .council-bottom {
+    padding: 12px 18px;
+  }
+  .council-bottom #council-notice {
+    min-height: 0;
+    margin: 0 0 10px;
+    font-size: 10px;
+    line-height: 1.5;
+  }
+  .checkpoint-note {
+    margin: 8px 0 0;
+    font-size: 8px;
+  }
+  .build-intro h3 {
+    font-size: 24px;
+    margin: 6px 0;
+  }
+  .build-intro p {
+    font-size: 11px;
+    margin: 6px 0 12px;
+  }
+  .wall-summary {
+    padding: 10px 12px;
+  }
+  .platform-tabs {
+    margin: 12px 0;
+  }
+  .platform-tabs button {
+    padding: 6px;
+  }
+  .building-card {
+    padding: 11px;
+    gap: 6px;
+  }
+  .building-emblem {
+    width: 38px;
+    height: 38px;
+    font-size: 29px;
+  }
+  .building-card > span:not(.building-emblem) {
+    min-height: 28px;
+  }
+  .talent-node > span:not(.talent-icon) {
+    font-size: 11px;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .castle-rotation button {
+    display: none;
+  }
+}
+
+.castle-app:not(.in-battle) .castle-hud .royal-skill {
+  display: none;
+}
+.castle-app:not(.in-battle) .castle-rotation {
+  display: none;
+}
+.castle-app:not(.in-battle) .castle-hud {
+  width: auto;
+  right: auto;
+  background: #11232cda;
+}
+.castle-app:not(.in-battle) .castle-hud::after {
+  content: 'Prepare the hold. Begin a watch to command the King.';
+  color: #b4c9c6;
+  font-size: 11px;
+  margin-left: 25px;
+}
+@media (max-width: 600px) {
+  .castle-app:not(.in-battle) .castle-hud::after {
+    content: 'Prepare your defenses';
+    font-size: 9px;
+    margin-left: 10px;
+  }
+}
+
+.placement-hint {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  pointer-events: auto;
+}
+.placement-hint button {
+  border: 1px solid #b4e6d177;
+  border-radius: 20px;
+  padding: 6px 10px;
+  background: #183f3d;
+  color: #d0f2e6;
+  font-size: 10px;
+}
+.placement-hint {
+  bottom: 18px;
+}
+.castle-stage.placing .castle-hud {
+  visibility: hidden;
 }
