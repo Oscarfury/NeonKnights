@@ -1,4 +1,4 @@
-export type DefenseKind = 'ballista' | 'aegis' | 'spire' | 'sanctuary';
+export type DefenseKind = 'ballista' | 'aegis' | 'spire' | 'sanctuary' | 'tavern';
 export type Rank = 1 | 2 | 3;
 export interface DefenseSpec {
   name: string;
@@ -20,11 +20,34 @@ export const sites = [
   { id: 'west-court', name: 'West courtyard', x: -7, y: 0, z: 3.5 },
   { id: 'east-court', name: 'East courtyard', x: 7, y: 0, z: 5.4 },
 ] as const;
-export type SiteId = (typeof sites)[number]['id'];
+export type SiteId =
+  | (typeof sites)[number]['id']
+  | 'inner-nw'
+  | 'inner-ne'
+  | 'inner-se'
+  | 'inner-sw';
 export const defenses: Record<
   DefenseKind,
   { name: string; subtitle: string; capacity: number; description: string; ranks: DefenseSpec[] }
 > = {
+  tavern: {
+    name: 'The Crown & Ember',
+    subtitle: 'TAVERN · RECRUITMENT',
+    capacity: 0,
+    description: 'Recruit knights here. Each rank grants 10 starting ward to your company.',
+    ranks: [1, 2, 3].map((rank) => ({
+      name: ['Hearthside tavern', 'Company inn', 'Royal guildhall'][rank - 1],
+      title: ['I', 'II', 'III'][rank - 1],
+      cost: [120, 140, 200][rank - 1],
+      health: [180, 260, 360][rank - 1],
+      range: 0,
+      arc: 0,
+      damage: rank * 10,
+      interval: 0,
+      capacity: 0,
+      recharge: 0,
+    })),
+  },
   spire: {
     name: 'Storm Spire',
     subtitle: 'CHAIN LIGHTNING',
@@ -73,7 +96,7 @@ export const defenses: Record<
   sanctuary: {
     name: 'Dawn Sanctuary',
     subtitle: 'COMPANY HEALING',
-    capacity: 1,
+    capacity: 0,
     description:
       'Every 5 seconds restores health to all living knights in its circle. Cannot revive fallen units.',
     ranks: [
@@ -82,7 +105,7 @@ export const defenses: Record<
         title: 'I',
         cost: 110,
         health: 160,
-        range: 8,
+        range: 12,
         arc: 360,
         damage: 8,
         interval: 5,
@@ -94,7 +117,7 @@ export const defenses: Record<
         title: 'II',
         cost: 170,
         health: 240,
-        range: 10,
+        range: 14,
         arc: 360,
         damage: 12,
         interval: 5,
@@ -106,7 +129,7 @@ export const defenses: Record<
         title: 'III',
         cost: 250,
         health: 340,
-        range: 12,
+        range: 16,
         arc: 360,
         damage: 18,
         interval: 5,

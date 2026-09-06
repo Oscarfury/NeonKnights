@@ -7,17 +7,19 @@ import {
   type Rank,
   type SiteId,
 } from '../construction/Catalog';
-import { mounts, wallSpec, recruits, items } from './Catalog';
+import { mounts, wallSpec, recruits, items, isSupport } from './Catalog';
 import { talents, talentRemaining, talentError } from './Talents';
 
 const roman = ['I', 'II', 'III'];
 const symbols: Record<DefenseKind, string> = {
+  tavern: '&#9820;',
   ballista: '➶',
   aegis: '⬡',
   spire: 'ϟ',
   sanctuary: '✚',
 };
 const purposes: Record<DefenseKind, string> = {
+  tavern: 'Recruit knights &middot; starting ward',
   ballista: 'Piercing siege bolts',
   aegis: 'Intercepts enemy projectiles',
   spire: 'Lightning chains through crowds',
@@ -27,29 +29,52 @@ const button = (text: string, action: string, disabled = false) =>
   `<button class="council-button" data-action="${action}" ${disabled ? 'disabled' : ''}>${text}</button>`;
 export function buildingCouncil(s: C.Campaign, site: SiteId, picked: string | null) {
   const tier = wallSpec(s.wallTier),
-    b = s.buildings.find((b) => b.site === site);
-  return `<div class="build-intro"><span class="eyebrow">FORTIFY THE CIRCLE</span><h3>Four fronts. Your strategy.</h3><p>Drag a building onto a glowing platform. Or select a card, then select North, East, South or West.</p></div>
-  <div class="wall-summary"><div><span class="eyebrow">WALLS ${roman[s.wallTier - 1]}</span><strong>${tier.name}</strong><small>${C.capacity(s)} / ${tier.capacity} power used</small></div>${button(s.wallTier < 3 ? `Upgrade · ${wallSpec((s.wallTier + 1) as Rank).cost} ♜` : 'Maximum tier', 'walls-up', s.wallTier === 3 || s.gold < wallSpec(Math.min(3, s.wallTier + 1) as Rank).cost)}</div>
-  ${C.wallRepairCost(s) ? button(`Repair all walls · ${C.wallRepairCost(s)} ♜`, 'walls-repair', s.gold < C.wallRepairCost(s)) : ''}
-  <div class="platform-tabs" aria-label="Wall platforms">${mounts.map((m) => `<button data-action="slot:${m.id}" class="${site === m.id ? 'selected' : ''}" aria-label="${m.name} platform">${m.name[0]}<small>${s.buildings.some((b) => b.site === m.id) ? 'Built' : 'Open'}</small></button>`).join('')}</div>
-  <div class="building-catalog">${(Object.keys(defenses) as DefenseKind[])
-    .map((kind) => {
-      const d = defenses[kind],
-        r = spec(kind, 1),
-        disabled = s.gold < r.cost || C.capacity(s) + d.capacity > tier.capacity;
-      return `<button class="building-card ${kind} ${picked === kind ? 'armed' : ''}" data-pick="${kind}" ${disabled ? 'disabled' : ''} aria-label="Place ${d.name} for ${r.cost} crowns"><span class="building-emblem">${symbols[kind]}</span><strong>${d.name}</strong><span>${purposes[kind]}</span><small><b>${r.cost} ♜</b> · ${d.capacity} power</small></button>`;
-    })
-    .join('')}</div>
-  ${b ? `<article class="mounted-card ${b.kind}"><span class="eyebrow">${mounts.find((m) => m.id === site)!.name.toUpperCase()} PLATFORM</span><h3>${symbols[b.kind]} ${defenses[b.kind].name} <small>${roman[b.rank - 1]}</small></h3><p>${spec(b.kind, b.rank).name} · ${Math.ceil(b.hp)} / ${spec(b.kind, b.rank).health} health</p><p>${defenses[b.kind].description}</p><div class="building-stats"><span>${spec(b.kind, b.rank).range}m<small>Range</small></span><span>${b.kind === 'aegis' ? spec(b.kind, b.rank).capacity : spec(b.kind, b.rank).damage}<small>${b.kind === 'sanctuary' ? 'Healing' : b.kind === 'aegis' ? 'Shield' : 'Damage'}</small></span><span>${b.kind === 'aegis' ? `${spec(b.kind, b.rank).recharge}/s` : `${spec(b.kind, b.rank).interval}s`}<small>${b.kind === 'aegis' ? 'Recharge' : 'Interval'}</small></span></div>${b.rank < 3 ? button(`Upgrade to ${roman[b.rank]} · ${spec(b.kind, (b.rank + 1) as Rank).cost} ♜`, 'building-up', s.gold < spec(b.kind, (b.rank + 1) as Rank).cost || b.hp <= 0) : '<p class="fine">Rank III complete.</p>'}<div class="knight-actions"><button class="council-button" data-pick="move:${b.id}">Move for free</button>${button(`Salvage · +${Math.floor(investment(b.kind, b.rank) * 0.7)} ♜`, 'building-salvage')}</div>${b.hp < spec(b.kind, b.rank).health ? button(`Repair · ${Math.ceil((spec(b.kind, b.rank).health - b.hp) / 4)} ♜`, 'building-repair') : ''}</article>` : '<p class="fine">Each platform holds one building. Upgrading walls unlocks more power and another royal rune socket.</p>'}`;
+    b = s.buildings.find((b) => b.site === site),
+    inner = !!mounts.find((m) => m.id === site)?.inner;
+  const slots = (inner: boolean) =>
+    `<div class="platform-tabs" aria-label="${inner ? 'Courtyard slots' : 'Wall platforms'}">${mounts
+      .filter((m) => !!m.inner === inner)
+      .map(
+        (m) =>
+          `<button data-action="slot:${m.id}" class="${site === m.id ? 'selected' : ''}" aria-label="${m.name} platform">${inner ? m.name.split(' ')[1] : m.name[0]}<small>${s.buildings.some((b) => b.site === m.id) ? 'Built' : 'Open'}</small></button>`,
+      )
+      .join('')}</div>`;
+  const cards = (inner: boolean) =>
+    `<div class="building-catalog">${(Object.keys(defenses) as DefenseKind[])
+      .filter((kind) => isSupport(kind) === inner)
+      .map((kind) => {
+        const d = defenses[kind],
+          r = spec(kind, 1),
+          built = kind === 'tavern' && s.buildings.some((b) => b.kind === kind);
+        return `<button class="building-card ${kind} ${picked === kind ? 'armed' : ''}" data-pick="${kind}" ${built || s.gold < r.cost || C.capacity(s) + d.capacity > tier.capacity ? 'disabled' : ''} aria-label="Place ${kind === 'tavern' ? 'Tavern' : d.name} for ${r.cost} crowns"><span class="building-emblem">${symbols[kind]}</span><strong>${kind === 'tavern' ? 'Tavern' : d.name}</strong><span>${purposes[kind]}</span><small><b>${built ? 'Built' : `${r.cost} &#9820;`}</b>${d.capacity ? ` &middot; ${d.capacity} power` : ''}</small></button>`;
+      })
+      .join('')}</div>`;
+  return `<div class="build-intro"><h3>Build the Crownspire.</h3><p>${!C.hasTavern(s) ? 'Start the tower with a tavern wing.' : 'Attach wings. Add floors. Raise one castle.'}</p></div>
+  <div class="build-zones"><button data-action="zone:inner" class="${inner ? 'selected' : ''}">Castle wings <small>4 attached sections</small></button><button data-action="zone:wall" class="${!inner ? 'selected' : ''}">Defenses <small>4 wall mounts</small></button></div>
+  <div class="build-section">${slots(inner)}${cards(inner)}</div>
+  <div class="castle-tier-track" aria-label="Castle tiers">${['Outpost', 'Stonehold', 'Crownspire'].map((name, i) => `<span class="${s.wallTier >= i + 1 ? 'reached' : ''}"><b>${roman[i]}</b>${name}</span>`).join('')}</div>
+  <div class="wall-summary"><div><strong>${tier.name} ${roman[s.wallTier - 1]}</strong><small>${C.capacity(s)} / ${tier.capacity} power</small></div>${button(s.wallTier < 3 ? `Fortify ${roman[s.wallTier]} &middot; ${wallSpec((s.wallTier + 1) as Rank).cost} &#9820;` : 'Max tier', 'walls-up', s.wallTier === 3 || s.gold < wallSpec(Math.min(3, s.wallTier + 1) as Rank).cost)}</div>
+  ${C.wallRepairCost(s) ? button(`Repair walls &middot; ${C.wallRepairCost(s)} &#9820;`, 'walls-repair', s.gold < C.wallRepairCost(s)) : ''}
+  ${b ? `<article class="mounted-card ${b.kind}"><span class="eyebrow">${mounts.find((m) => m.id === site)!.name}</span><h3>${defenses[b.kind].name} ${roman[b.rank - 1]}</h3><p>${b.kind === 'tavern' ? `Recruit in Knights. Company starts with ${b.rank * 10} ward.` : purposes[b.kind]} &middot; ${Math.ceil(b.hp)} HP</p>${b.rank < 3 ? button(`Upgrade &middot; ${spec(b.kind, (b.rank + 1) as Rank).cost} &#9820;`, 'building-up', s.gold < spec(b.kind, (b.rank + 1) as Rank).cost || b.hp <= 0) : ''}<div class="knight-actions"><button class="council-button" data-pick="move:${b.id}">Move</button>${button(`Salvage &middot; +${Math.floor(investment(b.kind, b.rank) * 0.7)} &#9820;`, 'building-salvage')}</div>${b.hp < spec(b.kind, b.rank).health ? button(`Repair &middot; ${Math.ceil((spec(b.kind, b.rank).health - b.hp) / 4)} &#9820;`, 'building-repair') : ''}</article>` : ''}`;
 }
 export function companyCouncil(s: C.Campaign, selected: string) {
   const k = s.knights.find((k) => k.id === selected) || s.knights[0],
     r = recruits.find((r) => r.id === k.id)!;
   const tree = talents.filter((t) => t.role === r.role),
     branches = [...new Set(tree.map((t) => t.branch))];
-  return `<div class="company-selector" aria-label="Choose a knight">${s.knights.map((other) => `<button data-action="knight:${other.id}" class="${k.id === other.id ? 'selected' : ''}"><span>${recruits.find((r) => r.id === other.id)!.role === 'warden' ? '⬟' : '➶'}</span><strong>${recruits.find((r) => r.id === other.id)!.name}</strong><small>${talentRemaining(other)} points · ${other.active ? 'Active' : 'Reserve'}</small></button>`).join('')}</div>
+  return `${
+    !C.hasTavern(s)
+      ? '<div class="recruit-card"><h3>One knight. A new company.</h3><p>Build a tavern to recruit. All knights recover fully between watches.</p></div>'
+      : `<div class="recruit-list">${recruits
+          .filter((r) => !s.knights.some((k) => k.id === r.id))
+          .map(
+            (r) =>
+              `<article class="recruit-card"><div><strong>${r.name}</strong><small>${r.role === 'warden' ? 'Warden &middot; holds the line' : 'Marksman &middot; ranged support'}</small></div>${button(`Recruit &middot; ${C.recruitCost} &#9820;`, `recruit:${r.id}`, s.gold < C.recruitCost)}</article>`,
+          )
+          .join('')}</div>`
+  }<div class="company-selector" aria-label="Choose a knight">${s.knights.map((other) => `<button data-action="knight:${other.id}" class="${k.id === other.id ? 'selected' : ''}"><span>${recruits.find((r) => r.id === other.id)!.role === 'warden' ? '⬟' : '➶'}</span><strong>${recruits.find((r) => r.id === other.id)!.name}</strong><small>${talentRemaining(other)} points · ${other.active ? 'Active' : 'Reserve'}</small></button>`).join('')}</div>
   <article class="knight-profile"><span class="eyebrow">${r.role.toUpperCase()} · RANK ${roman[k.rank - 1]}</span><h3>${r.name} <small>${r.trait}</small></h3><p>${Math.ceil(k.hp)} / ${C.knightMax(k)} health · ${k.xp} service XP</p><div class="knight-actions">${button('Inspect', `inspect:${k.id}`)}${button(k.active ? 'Reserve' : 'Deploy', `assign:${k.id}`)}${button(`Treat · ${Math.ceil((C.knightMax(k) - k.hp) / 3)} ♜`, `treat:${k.id}`, k.hp === C.knightMax(k))}${button(k.rank < 3 ? `Promote · ${k.rank === 1 ? 100 : 180} ♜` : 'Veteran', `promote:${k.id}`, k.rank === 3 || k.xp < k.rank * 3)}</div>
-  <label class="council-label" for="stance-${k.id}">BEHAVIOUR</label><select id="stance-${k.id}" data-stance="${k.id}"><option value="guard" ${k.stance === 'guard' ? 'selected' : ''}>Guard the gate</option><option value="hunt" ${k.stance === 'hunt' ? 'selected' : ''}>Hunt invaders</option></select>
+  <details class="knight-settings"><summary>Orders & equipment</summary><label class="council-label" for="stance-${k.id}">BEHAVIOUR</label><select id="stance-${k.id}" data-stance="${k.id}"><option value="guard" ${k.stance === 'guard' ? 'selected' : ''}>Guard the gate</option><option value="hunt" ${k.stance === 'hunt' ? 'selected' : ''}>Hunt invaders</option></select>
   <label class="council-label" for="gear-${k.id}">EQUIPPED ITEM</label><select id="gear-${k.id}" data-gear="${k.id}"><option value="0">No item equipped</option>${s.inventory
     .filter((i) => items[i.kind].kind === 'gear')
     .map(
@@ -58,8 +83,8 @@ export function companyCouncil(s: C.Campaign, selected: string) {
     )
     .join(
       '',
-    )}</select>${k.gear ? `<p class="fine">${items[s.inventory.find((i) => i.id === k.gear)!.kind].description}</p>` : '<p class="fine">Buy equipment in King & gear. Transfers are free.</p>'}</article>
-  <div class="talent-heading"><div><span class="eyebrow">CLASS TALENTS</span><h3>${talentRemaining(k)} point${talentRemaining(k) === 1 ? '' : 's'} available</h3></div>${button('Reset free', `talent-reset:${k.id}`, !k.talents.length)}</div><p class="fine">Start at the top of either path. Earn 1 point per watch and 1 per promotion. Abilities trigger automatically.</p>
+    )}</select>${k.gear ? `<p class="fine">${items[s.inventory.find((i) => i.id === k.gear)!.kind].description}</p>` : '<p class="fine">Buy equipment in King & gear. Transfers are free.</p>'}</details></article>
+  <details class="knight-talents"><summary>Talents &middot; ${talentRemaining(k)} points available</summary><div class="talent-heading"><div><span class="eyebrow">CLASS TALENTS</span><h3>${talentRemaining(k)} point${talentRemaining(k) === 1 ? '' : 's'} available</h3></div>${button('Reset free', `talent-reset:${k.id}`, !k.talents.length)}</div><p class="fine">Start at the top of either path. Earn 1 point per watch and 1 per promotion. Abilities trigger automatically.</p>
   <div class="talent-tree">${branches
     .map(
       (branch) =>
@@ -73,5 +98,5 @@ export function companyCouncil(s: C.Campaign, selected: string) {
           .join('')}</section>`,
     )
     .join('')}</div>
-  ${!s.knights.some((k) => k.id === 'lysa') ? `<div class="recruit-card"><span class="eyebrow">RESERVE MARKSMAN</span><h3>Lysa awaits your banner.</h3>${button('Recruit · 180 ♜', 'recruit', s.gold < 180)}</div>` : ''}<details class="enemy-inspection"><summary>Inspect the enemy</summary><div class="knight-actions">${button('Raider', 'inspect:raider')}${button('Bulwark', 'inspect:bulwark')}${button('Hexcaster', 'inspect:hexcaster')}${button('Dragon', 'inspect:dragon')}</div></details>`;
+  </details><details class="enemy-inspection"><summary>Inspect the enemy</summary><div class="knight-actions">${button('Raider', 'inspect:raider')}${button('Bulwark', 'inspect:bulwark')}${button('Hexcaster', 'inspect:hexcaster')}${button('Dragon', 'inspect:dragon')}</div></details>`;
 }

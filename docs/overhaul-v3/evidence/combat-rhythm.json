@@ -1,0 +1,1371 @@
+{
+  "date": "2026-09-06",
+  "scope": "Castle preview combat rhythm and performance",
+  "validation": {
+    "tests": 115,
+    "productionBuild": "passed",
+    "assets": "23 unchanged GLBs validated",
+    "assetRevision": "028b14469a5e"
+  },
+  "performance": {
+    "gpu": "NVIDIA GeForce RTX 2080 Ti / ANGLE D3D11",
+    "before": {
+      "viewport": "1600x1000",
+      "samples": 300,
+      "medianMs": 28.099999999998545,
+      "p95Ms": 40.30000000000109,
+      "over33ms": 62,
+      "render": {
+        "frame": 560,
+        "calls": 579,
+        "triangles": 948624,
+        "points": 0,
+        "lines": 4
+      },
+      "actors": 8,
+      "phase": "battle",
+      "time": 14.816666666666983,
+      "self": [
+        {
+          "fn": "(idle)",
+          "url": "",
+          "ms": 5704
+        },
+        {
+          "fn": "(program)",
+          "url": "",
+          "ms": 575
+        },
+        {
+          "fn": "multiplyMatrices",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 158
+        },
+        {
+          "fn": "getParameters",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 86
+        },
+        {
+          "fn": "texSubImage2D",
+          "url": "",
+          "ms": 85
+        },
+        {
+          "fn": "WebGLRenderer.renderBufferDirect",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 69
+        },
+        {
+          "fn": "update",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 60
+        },
+        {
+          "fn": "WebGLRenderer.renderBufferDirect",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 56
+        },
+        {
+          "fn": "get clientWidth",
+          "url": "",
+          "ms": 55
+        },
+        {
+          "fn": "needsUpdate",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 53
+        },
+        {
+          "fn": "getParameters",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 50
+        },
+        {
+          "fn": "getProgram",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 50
+        },
+        {
+          "fn": "getBindingState",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 49
+        },
+        {
+          "fn": "multiplyMatrices",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 44
+        },
+        {
+          "fn": "uniformMatrix4fv",
+          "url": "",
+          "ms": 43
+        },
+        {
+          "fn": "get clientWidth",
+          "url": "",
+          "ms": 43
+        },
+        {
+          "fn": "sort",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 42
+        },
+        {
+          "fn": "bindVertexArray",
+          "url": "",
+          "ms": 42
+        }
+      ],
+      "inclusive": [
+        {
+          "fn": "(root)",
+          "url": "",
+          "ms": 8954
+        },
+        {
+          "fn": "(idle)",
+          "url": "",
+          "ms": 5704
+        },
+        {
+          "fn": "animate",
+          "url": "castle/CastleView.ts",
+          "ms": 2661
+        },
+        {
+          "fn": "WebGLRenderer.render",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 2338
+        },
+        {
+          "fn": "WebGLShadowMap.render",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 1058
+        },
+        {
+          "fn": "renderObject",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 1032
+        },
+        {
+          "fn": "renderObject",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 1032
+        },
+        {
+          "fn": "renderObject",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 1032
+        },
+        {
+          "fn": "renderObject",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 976
+        },
+        {
+          "fn": "renderScene",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 960
+        },
+        {
+          "fn": "renderObjects",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 931
+        },
+        {
+          "fn": "renderObject",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 904
+        },
+        {
+          "fn": "WebGLRenderer.renderBufferDirect",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 835
+        },
+        {
+          "fn": "renderObject",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 707
+        },
+        {
+          "fn": "setProgram",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 578
+        },
+        {
+          "fn": "(program)",
+          "url": "",
+          "ms": 575
+        },
+        {
+          "fn": "WebGLRenderer.renderBufferDirect",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 373
+        },
+        {
+          "fn": "setProgram",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 286
+        }
+      ],
+      "errors": []
+    },
+    "geometryOnlyIntermediate": {
+      "viewport": "1600x1000",
+      "samples": 300,
+      "medianMs": 32.600000000000364,
+      "p95Ms": 45.19999999999891,
+      "over33ms": 124,
+      "render": {
+        "frame": 479,
+        "calls": 243,
+        "triangles": 476824,
+        "points": 0,
+        "lines": 4
+      },
+      "actors": 8,
+      "phase": "battle",
+      "time": 16.216666666667027,
+      "self": [
+        {
+          "fn": "(idle)",
+          "url": "",
+          "ms": 8123
+        },
+        {
+          "fn": "(program)",
+          "url": "",
+          "ms": 637
+        },
+        {
+          "fn": "getParameters",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 123
+        },
+        {
+          "fn": "WebGLRenderer.renderBufferDirect",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 82
+        },
+        {
+          "fn": "multiplyMatrices",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 75
+        },
+        {
+          "fn": "getProgram",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 54
+        },
+        {
+          "fn": "setValueM4",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 49
+        },
+        {
+          "fn": "setValue",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 46
+        },
+        {
+          "fn": "getBindingState",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 42
+        },
+        {
+          "fn": "bindVertexArray",
+          "url": "",
+          "ms": 40
+        },
+        {
+          "fn": "renderObject",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 39
+        },
+        {
+          "fn": "projectObject",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 37
+        },
+        {
+          "fn": "animate",
+          "url": "castle/CastleView.ts",
+          "ms": 35
+        },
+        {
+          "fn": "multiplyMatrices",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 32
+        },
+        {
+          "fn": "getProgramCacheKey",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 31
+        },
+        {
+          "fn": "upload",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 30
+        },
+        {
+          "fn": "projectObject",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 26
+        },
+        {
+          "fn": "sort",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 24
+        }
+      ],
+      "inclusive": [
+        {
+          "fn": "(root)",
+          "url": "",
+          "ms": 10338
+        },
+        {
+          "fn": "(idle)",
+          "url": "",
+          "ms": 8123
+        },
+        {
+          "fn": "animate",
+          "url": "castle/CastleView.ts",
+          "ms": 1560
+        },
+        {
+          "fn": "WebGLRenderer.render",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 1339
+        },
+        {
+          "fn": "renderScene",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 915
+        },
+        {
+          "fn": "renderObjects",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 908
+        },
+        {
+          "fn": "renderObject",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 895
+        },
+        {
+          "fn": "WebGLRenderer.renderBufferDirect",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 823
+        },
+        {
+          "fn": "(program)",
+          "url": "",
+          "ms": 637
+        },
+        {
+          "fn": "setProgram",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 582
+        },
+        {
+          "fn": "projectObject",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 291
+        },
+        {
+          "fn": "projectObject",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 285
+        },
+        {
+          "fn": "projectObject",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 285
+        },
+        {
+          "fn": "projectObject",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 242
+        },
+        {
+          "fn": "getProgram",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 210
+        },
+        {
+          "fn": "projectObject",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 196
+        },
+        {
+          "fn": "setValue",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 166
+        },
+        {
+          "fn": "present",
+          "url": "castle/CastleView.ts",
+          "ms": 138
+        }
+      ],
+      "errors": []
+    },
+    "final": {
+      "viewport": "1600x1000",
+      "samples": 300,
+      "medianMs": 16.69999999999891,
+      "p95Ms": 16.799999999999272,
+      "over33ms": 0,
+      "pixelRatio": 0.9710241660404146,
+      "bodies": [
+        {
+          "role": "king",
+          "count": 2
+        },
+        {
+          "role": "warden",
+          "count": 2
+        },
+        {
+          "role": "marksman",
+          "count": 2
+        },
+        {
+          "role": "warden",
+          "count": 2
+        },
+        {
+          "role": "bulwark",
+          "count": 2
+        },
+        {
+          "role": "bulwark",
+          "count": 2
+        },
+        {
+          "role": "raider",
+          "count": 2
+        }
+      ],
+      "render": {
+        "frame": 672,
+        "calls": 230,
+        "triangles": 440029,
+        "points": 0,
+        "lines": 4
+      },
+      "actors": 7,
+      "phase": "battle",
+      "time": 11.133333333333466,
+      "self": [
+        {
+          "fn": "(idle)",
+          "url": "",
+          "ms": 3602
+        },
+        {
+          "fn": "(program)",
+          "url": "",
+          "ms": 539
+        },
+        {
+          "fn": "getParameters",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 69
+        },
+        {
+          "fn": "WebGLRenderer.renderBufferDirect",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 56
+        },
+        {
+          "fn": "setProgram",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 37
+        },
+        {
+          "fn": "update",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 28
+        },
+        {
+          "fn": "multiplyMatrices",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 28
+        },
+        {
+          "fn": "animate",
+          "url": "castle/CastleView.ts",
+          "ms": 25
+        },
+        {
+          "fn": "evaluate",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 24
+        },
+        {
+          "fn": "projectObject",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 23
+        },
+        {
+          "fn": "apply",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 20
+        },
+        {
+          "fn": "getProgramCacheKey",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 18
+        },
+        {
+          "fn": "setValueM4",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 18
+        },
+        {
+          "fn": "getProgram",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 17
+        },
+        {
+          "fn": "flatten",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 16
+        },
+        {
+          "fn": "uniformMatrix4fv",
+          "url": "",
+          "ms": 15
+        },
+        {
+          "fn": "present",
+          "url": "castle/CastleView.ts",
+          "ms": 15
+        },
+        {
+          "fn": "markUniformsLightsNeedsUpdate",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 14
+        }
+      ],
+      "inclusive": [
+        {
+          "fn": "(root)",
+          "url": "",
+          "ms": 5287
+        },
+        {
+          "fn": "(idle)",
+          "url": "",
+          "ms": 3602
+        },
+        {
+          "fn": "animate",
+          "url": "castle/CastleView.ts",
+          "ms": 1138
+        },
+        {
+          "fn": "WebGLRenderer.render",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 767
+        },
+        {
+          "fn": "(program)",
+          "url": "",
+          "ms": 539
+        },
+        {
+          "fn": "renderScene",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 515
+        },
+        {
+          "fn": "renderObjects",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 512
+        },
+        {
+          "fn": "renderObject",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 501
+        },
+        {
+          "fn": "WebGLRenderer.renderBufferDirect",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 474
+        },
+        {
+          "fn": "setProgram",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 367
+        },
+        {
+          "fn": "present",
+          "url": "castle/CastleView.ts",
+          "ms": 247
+        },
+        {
+          "fn": "update",
+          "url": "castle/Character.ts",
+          "ms": 221
+        },
+        {
+          "fn": "projectObject",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 138
+        },
+        {
+          "fn": "projectObject",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 136
+        },
+        {
+          "fn": "projectObject",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 128
+        },
+        {
+          "fn": "getProgram",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 117
+        },
+        {
+          "fn": "projectObject",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 113
+        },
+        {
+          "fn": "updateMatrixWorld",
+          "url": "deps/chunk-LILSE42S.js",
+          "ms": 93
+        }
+      ],
+      "errors": []
+    },
+    "limits": [
+      "One desktop sample per revision; not a cross-device frame-rate guarantee.",
+      "Same funded loadout and initial scene, sampled for 300 animation frames after six seconds. Simulation evolves during capture; final actor counts differ (8 before, 7 after).",
+      "The intermediate render-only run reduced draw calls but had uneven frame pacing; the final capture also includes updated combat, cached attachment transforms, and adaptive resolution."
+    ]
+  },
+  "campaign": {
+    "results": [
+      {
+        "checkpoint": {
+          "version": 1,
+          "layout": "circle",
+          "playability": 1,
+          "gold": 0,
+          "encounter": 0,
+          "wallTier": 1,
+          "walls": [
+            230,
+            230,
+            230,
+            230
+          ],
+          "kingHp": 160,
+          "weapon": "stormbow",
+          "ranks": {
+            "stormbow": 1,
+            "sunlance": 1
+          },
+          "sockets": {
+            "stormbow": [],
+            "sunlance": []
+          },
+          "knights": [
+            {
+              "id": "aldren",
+              "active": true,
+              "hp": 135,
+              "rank": 1,
+              "xp": 0,
+              "gear": null,
+              "talents": [
+                "slam"
+              ],
+              "stance": "hunt"
+            },
+            {
+              "id": "elin",
+              "active": true,
+              "hp": 95,
+              "rank": 1,
+              "xp": 0,
+              "gear": null,
+              "stance": "hunt",
+              "talents": [
+                "mending"
+              ]
+            }
+          ],
+          "inventory": [],
+          "offers": [
+            "ward-seal",
+            "storm-seal",
+            "field-kit",
+            "quickdraw",
+            "sundering",
+            "vital-spark"
+          ],
+          "bought": [],
+          "rerolls": 0,
+          "nextId": 3,
+          "buildings": [
+            {
+              "id": 1,
+              "kind": "tavern",
+              "site": "inner-sw",
+              "rank": 1,
+              "yaw": 0,
+              "hp": 180
+            },
+            {
+              "id": 2,
+              "kind": "ballista",
+              "site": "west-watch",
+              "rank": 1,
+              "yaw": 3.141592653589793,
+              "hp": 140
+            }
+          ],
+          "relic": null,
+          "difficulty": "normal",
+          "wins": 0
+        },
+        "phase": "won",
+        "time": 28.449999999999665,
+        "guardTime": 0,
+        "stats": {
+          "royalDamage": 960.8,
+          "companyDamage": 171.8,
+          "defenseDamage": 54.400000000000006,
+          "wallDamage": 19,
+          "bossDamage": 0,
+          "shielded": 10,
+          "rescues": 0,
+          "guardPrevented": 0,
+          "perfectGuards": 0,
+          "royalShots": 65
+        },
+        "loot": 24,
+        "state": {
+          "version": 1,
+          "layout": "circle",
+          "playability": 1,
+          "gold": 454,
+          "encounter": 1,
+          "wallTier": 1,
+          "walls": [
+            211,
+            230,
+            230,
+            230
+          ],
+          "kingHp": 160,
+          "weapon": "stormbow",
+          "ranks": {
+            "stormbow": 1,
+            "sunlance": 1
+          },
+          "sockets": {
+            "stormbow": [],
+            "sunlance": []
+          },
+          "knights": [
+            {
+              "id": "aldren",
+              "active": true,
+              "hp": 135,
+              "rank": 1,
+              "xp": 2,
+              "gear": null,
+              "talents": [
+                "slam"
+              ],
+              "stance": "hunt"
+            },
+            {
+              "id": "elin",
+              "active": true,
+              "hp": 95,
+              "rank": 1,
+              "xp": 2,
+              "gear": null,
+              "stance": "hunt",
+              "talents": [
+                "mending"
+              ]
+            }
+          ],
+          "inventory": [],
+          "offers": [
+            "storm-seal",
+            "field-kit",
+            "quickdraw",
+            "sundering",
+            "vital-spark",
+            "forked-light"
+          ],
+          "bought": [],
+          "rerolls": 0,
+          "nextId": 3,
+          "buildings": [
+            {
+              "id": 1,
+              "kind": "tavern",
+              "site": "inner-sw",
+              "rank": 1,
+              "yaw": 0,
+              "hp": 180
+            },
+            {
+              "id": 2,
+              "kind": "ballista",
+              "site": "west-watch",
+              "rank": 1,
+              "yaw": 3.141592653589793,
+              "hp": 140
+            }
+          ],
+          "relic": null,
+          "difficulty": "normal",
+          "wins": 1
+        }
+      },
+      {
+        "checkpoint": {
+          "version": 1,
+          "layout": "circle",
+          "playability": 1,
+          "gold": 60,
+          "encounter": 1,
+          "wallTier": 1,
+          "walls": [
+            230,
+            230,
+            230,
+            230
+          ],
+          "kingHp": 160,
+          "weapon": "stormbow",
+          "ranks": {
+            "stormbow": 1,
+            "sunlance": 1
+          },
+          "sockets": {
+            "stormbow": [],
+            "sunlance": []
+          },
+          "knights": [
+            {
+              "id": "aldren",
+              "active": true,
+              "hp": 135,
+              "rank": 1,
+              "xp": 2,
+              "gear": null,
+              "talents": [
+                "slam",
+                "aftershock"
+              ],
+              "stance": "hunt"
+            },
+            {
+              "id": "elin",
+              "active": true,
+              "hp": 95,
+              "rank": 1,
+              "xp": 2,
+              "gear": null,
+              "stance": "hunt",
+              "talents": [
+                "mending",
+                "shelter"
+              ]
+            },
+            {
+              "id": "corvin",
+              "active": true,
+              "hp": 135,
+              "rank": 1,
+              "xp": 0,
+              "gear": null,
+              "stance": "hunt",
+              "talents": [
+                "slam"
+              ]
+            }
+          ],
+          "inventory": [],
+          "offers": [
+            "storm-seal",
+            "field-kit",
+            "quickdraw",
+            "sundering",
+            "vital-spark",
+            "forked-light"
+          ],
+          "bought": [],
+          "rerolls": 0,
+          "nextId": 5,
+          "buildings": [
+            {
+              "id": 1,
+              "kind": "tavern",
+              "site": "inner-sw",
+              "rank": 1,
+              "yaw": 0,
+              "hp": 180
+            },
+            {
+              "id": 2,
+              "kind": "ballista",
+              "site": "west-watch",
+              "rank": 1,
+              "yaw": 3.141592653589793,
+              "hp": 140
+            },
+            {
+              "id": 3,
+              "kind": "sanctuary",
+              "site": "inner-se",
+              "rank": 1,
+              "yaw": 0,
+              "hp": 160
+            },
+            {
+              "id": 4,
+              "kind": "spire",
+              "site": "east-watch",
+              "rank": 1,
+              "yaw": 1.5707963267948966,
+              "hp": 135
+            }
+          ],
+          "relic": null,
+          "difficulty": "normal",
+          "wins": 1
+        },
+        "phase": "won",
+        "time": 39.26666666666572,
+        "guardTime": 0,
+        "stats": {
+          "royalDamage": 1670.6000000000001,
+          "companyDamage": 449.40000000000003,
+          "defenseDamage": 34,
+          "wallDamage": 0,
+          "bossDamage": 0,
+          "shielded": 20,
+          "rescues": 0,
+          "guardPrevented": 0,
+          "perfectGuards": 0,
+          "royalShots": 82
+        },
+        "loot": 106,
+        "state": {
+          "version": 1,
+          "layout": "circle",
+          "playability": 1,
+          "gold": 906,
+          "encounter": 2,
+          "wallTier": 1,
+          "walls": [
+            230,
+            230,
+            230,
+            230
+          ],
+          "kingHp": 160,
+          "weapon": "stormbow",
+          "ranks": {
+            "stormbow": 1,
+            "sunlance": 1
+          },
+          "sockets": {
+            "stormbow": [],
+            "sunlance": []
+          },
+          "knights": [
+            {
+              "id": "aldren",
+              "active": true,
+              "hp": 135,
+              "rank": 1,
+              "xp": 4,
+              "gear": null,
+              "talents": [
+                "slam",
+                "aftershock"
+              ],
+              "stance": "hunt"
+            },
+            {
+              "id": "elin",
+              "active": true,
+              "hp": 95,
+              "rank": 1,
+              "xp": 4,
+              "gear": null,
+              "stance": "hunt",
+              "talents": [
+                "mending",
+                "shelter"
+              ]
+            },
+            {
+              "id": "corvin",
+              "active": true,
+              "hp": 135,
+              "rank": 1,
+              "xp": 2,
+              "gear": null,
+              "stance": "hunt",
+              "talents": [
+                "slam"
+              ]
+            }
+          ],
+          "inventory": [],
+          "offers": [
+            "field-kit",
+            "quickdraw",
+            "sundering",
+            "vital-spark",
+            "forked-light",
+            "ward-seal"
+          ],
+          "bought": [],
+          "rerolls": 0,
+          "nextId": 5,
+          "buildings": [
+            {
+              "id": 1,
+              "kind": "tavern",
+              "site": "inner-sw",
+              "rank": 1,
+              "yaw": 0,
+              "hp": 180
+            },
+            {
+              "id": 2,
+              "kind": "ballista",
+              "site": "west-watch",
+              "rank": 1,
+              "yaw": 3.141592653589793,
+              "hp": 140
+            },
+            {
+              "id": 3,
+              "kind": "sanctuary",
+              "site": "inner-se",
+              "rank": 1,
+              "yaw": 0,
+              "hp": 160
+            },
+            {
+              "id": 4,
+              "kind": "spire",
+              "site": "east-watch",
+              "rank": 1,
+              "yaw": 1.5707963267948966,
+              "hp": 135
+            }
+          ],
+          "relic": null,
+          "difficulty": "normal",
+          "wins": 2
+        }
+      },
+      {
+        "checkpoint": {
+          "version": 1,
+          "layout": "circle",
+          "playability": 1,
+          "gold": 336,
+          "encounter": 2,
+          "wallTier": 2,
+          "walls": [
+            360,
+            360,
+            360,
+            360
+          ],
+          "kingHp": 160,
+          "weapon": "stormbow",
+          "ranks": {
+            "stormbow": 2,
+            "sunlance": 1
+          },
+          "sockets": {
+            "stormbow": [],
+            "sunlance": []
+          },
+          "knights": [
+            {
+              "id": "aldren",
+              "active": true,
+              "hp": 135,
+              "rank": 1,
+              "xp": 4,
+              "gear": null,
+              "talents": [
+                "slam",
+                "aftershock",
+                "earthshaker"
+              ],
+              "stance": "hunt"
+            },
+            {
+              "id": "elin",
+              "active": true,
+              "hp": 95,
+              "rank": 1,
+              "xp": 4,
+              "gear": null,
+              "stance": "hunt",
+              "talents": [
+                "mending",
+                "shelter",
+                "beacon"
+              ]
+            },
+            {
+              "id": "corvin",
+              "active": true,
+              "hp": 135,
+              "rank": 1,
+              "xp": 2,
+              "gear": null,
+              "stance": "hunt",
+              "talents": [
+                "slam",
+                "aftershock"
+              ]
+            }
+          ],
+          "inventory": [],
+          "offers": [
+            "field-kit",
+            "quickdraw",
+            "sundering",
+            "vital-spark",
+            "forked-light",
+            "ward-seal"
+          ],
+          "bought": [],
+          "rerolls": 0,
+          "nextId": 5,
+          "buildings": [
+            {
+              "id": 1,
+              "kind": "tavern",
+              "site": "inner-sw",
+              "rank": 1,
+              "yaw": 0,
+              "hp": 180
+            },
+            {
+              "id": 2,
+              "kind": "ballista",
+              "site": "west-watch",
+              "rank": 2,
+              "yaw": 3.141592653589793,
+              "hp": 220
+            },
+            {
+              "id": 3,
+              "kind": "sanctuary",
+              "site": "inner-se",
+              "rank": 1,
+              "yaw": 0,
+              "hp": 160
+            },
+            {
+              "id": 4,
+              "kind": "spire",
+              "site": "east-watch",
+              "rank": 1,
+              "yaw": 1.5707963267948966,
+              "hp": 135
+            }
+          ],
+          "relic": "storm-oath",
+          "difficulty": "normal",
+          "wins": 2
+        },
+        "phase": "won",
+        "time": 36.016666666665905,
+        "guardTime": 0,
+        "stats": {
+          "royalDamage": 2427.999999999999,
+          "companyDamage": 1736.9999999999998,
+          "defenseDamage": 62,
+          "wallDamage": 19,
+          "bossDamage": 3000.0000000000005,
+          "shielded": 40,
+          "rescues": 0,
+          "guardPrevented": 76,
+          "perfectGuards": 1,
+          "royalShots": 72
+        },
+        "loot": 75,
+        "state": {
+          "version": 1,
+          "layout": "circle",
+          "playability": 1,
+          "gold": 1261,
+          "encounter": 3,
+          "wallTier": 2,
+          "walls": [
+            360,
+            341,
+            360,
+            360
+          ],
+          "kingHp": 160,
+          "weapon": "stormbow",
+          "ranks": {
+            "stormbow": 2,
+            "sunlance": 1
+          },
+          "sockets": {
+            "stormbow": [],
+            "sunlance": []
+          },
+          "knights": [
+            {
+              "id": "aldren",
+              "active": true,
+              "hp": 135,
+              "rank": 1,
+              "xp": 6,
+              "gear": null,
+              "talents": [
+                "slam",
+                "aftershock",
+                "earthshaker"
+              ],
+              "stance": "hunt"
+            },
+            {
+              "id": "elin",
+              "active": true,
+              "hp": 95,
+              "rank": 1,
+              "xp": 6,
+              "gear": null,
+              "stance": "hunt",
+              "talents": [
+                "mending",
+                "shelter",
+                "beacon"
+              ]
+            },
+            {
+              "id": "corvin",
+              "active": true,
+              "hp": 135,
+              "rank": 1,
+              "xp": 4,
+              "gear": null,
+              "stance": "hunt",
+              "talents": [
+                "slam",
+                "aftershock"
+              ]
+            }
+          ],
+          "inventory": [],
+          "offers": [
+            "quickdraw",
+            "sundering",
+            "vital-spark",
+            "forked-light",
+            "ward-seal",
+            "storm-seal"
+          ],
+          "bought": [],
+          "rerolls": 0,
+          "nextId": 5,
+          "buildings": [
+            {
+              "id": 1,
+              "kind": "tavern",
+              "site": "inner-sw",
+              "rank": 1,
+              "yaw": 0,
+              "hp": 180
+            },
+            {
+              "id": 2,
+              "kind": "ballista",
+              "site": "west-watch",
+              "rank": 2,
+              "yaw": 3.141592653589793,
+              "hp": 220
+            },
+            {
+              "id": 3,
+              "kind": "sanctuary",
+              "site": "inner-se",
+              "rank": 1,
+              "yaw": 0,
+              "hp": 160
+            },
+            {
+              "id": 4,
+              "kind": "spire",
+              "site": "east-watch",
+              "rank": 1,
+              "yaw": 1.5707963267948966,
+              "hp": 135
+            }
+          ],
+          "relic": "storm-oath",
+          "difficulty": "normal",
+          "wins": 3
+        }
+      }
+    ],
+    "attacks": [
+      "rake-warning",
+      "rake-impact",
+      "breath-warning",
+      "tail-warning",
+      "tail-impact"
+    ],
+    "errors": []
+  },
+  "productionTouch": {
+    "innerAndWallTouchDrag": true,
+    "canceledWithoutSpending": true,
+    "recruitmentPersisted": true,
+    "guard": true,
+    "weaponSwap": true,
+    "movement": true,
+    "pause": true,
+    "portrait": "412x915",
+    "landscape": "915x412",
+    "productionHasNoDebugControls": true,
+    "errors": []
+  },
+  "behavior": [
+    "No King damage or health UI; a failed wall loses the watch.",
+    "Auto attacks stay active while moving and guarding. Fast projectiles lead targets and apply physical pushback.",
+    "E protects the current wall; a timed block exposes the dragon.",
+    "The Dragon appears in the final watch and alternates company attacks with a named wall commitment.",
+    "Every recruited knight, downed or reserved, heals fully after victory.",
+    "Completed touch taps activate immediately after captured placement drags and suppress duplicate native clicks."
+  ],
+  "limits": [
+    "Campaign automation uses legal purchases and real mouse/keyboard input, observed with read-only development snapshots.",
+    "Touch checks use Chromium emulation at 412x915 and 915x412, not physical mobile hardware.",
+    "Human difficulty and retention remain matters for playtesting."
+  ]
+}

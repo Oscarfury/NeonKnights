@@ -11,6 +11,7 @@ import {
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { assetIds } from '../construction/Catalog';
+import { batchCharacter } from './BatchCharacter';
 
 export interface AssetManifest {
   id: string;
@@ -51,6 +52,7 @@ export class Assets {
     // draw calls. Skinned characters and animated mechanisms never use this.
     for (const name of ['stormbow', 'sunlance']) this.batchEquipment(this.get(name));
     const hero = this.get('paladin');
+    batchCharacter(hero.scene);
     for (const clip of this.manifest.clips) {
       if (!hero.animations.some((a) => a.name === clip.name))
         throw new Error(`Missing animation: ${clip.name}`);

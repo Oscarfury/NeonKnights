@@ -1,5 +1,7 @@
 # Implementation plan for the next overhaul
 
+**Campaign expansion specification:** [CAMPAIGN_15.md](CAMPAIGN_15.md) defines the fifteen authored levels, enemy/boss roles, director rules and staged acceptance. [UPGRADE_PATHS.md](UPGRADE_PATHS.md) defines the full launch catalogue. These replace the older content/control counts below. The current castle assault AI is implemented; the fifteen-level expansion is designed and still needs implementation.
+
 Status: **implementation in progress**. The [castle direction](CASTLE_DIRECTION.md) supersedes the ground-roaming commander controls below. The [connected castle preview](CASTLE_PREVIEW.md) now implements the first three-encounter siege. The [progress ledger](PROGRESS.md) records the Foundry runtime and courtyard delivery, partial packages, and remaining work. This plan follows the [game design](DESIGN.md) and the user's reference-based [art standard](ART_STANDARD.md). The main campaign remains the v2 prototype at baseline `2259a28`.
 
 The next milestone is a polished three-encounter slice that demonstrates the new foundations. The full campaign comes after that milestone. There is no reliable completion date until the asset sourcing/creation pass establishes how many usable models and animations already exist.

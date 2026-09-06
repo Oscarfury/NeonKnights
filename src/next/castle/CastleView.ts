@@ -1,15 +1,11 @@
 import {
   ACESFilmicToneMapping,
-  BufferGeometry,
+  Box3,
   Color,
   DirectionalLight,
-  DoubleSide,
-  Float32BufferAttribute,
   Fog,
   Group,
   HemisphereLight,
-  Line,
-  LineBasicMaterial,
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
@@ -25,21 +21,11 @@ import {
   CylinderGeometry,
   SphereGeometry,
   TorusGeometry,
-  InstancedMesh,
-  Matrix4,
-  AdditiveBlending,
 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Assets } from '../presentation/Assets';
 import { DefenseView } from '../presentation/DefenseView';
-import {
-  spec,
-  defenses,
-  investment,
-  type DefenseKind,
-  type Rank,
-  type SiteId,
-} from '../construction/Catalog';
+import { spec, defenses, type DefenseKind, type Rank, type SiteId } from '../construction/Catalog';
 import * as C from './Campaign';
 import {
   encounters,
@@ -48,11 +34,14 @@ import {
   recruits,
   relics,
   wallSpec,
-  wallTiers,
+  royalWeapons,
+  mountHeight,
+  isSupport,
+  fitsMount,
   type Relic,
   type ItemKind,
 } from './Catalog';
-import { Battle, type Actor, type Telegraph } from './Battle';
+import { Battle, wallSide, type Actor } from './Battle';
 import { Character, kit } from './Character';
 import type { Weapon } from '../presentation/Paladin';
 import './castle.css';
@@ -60,6 +49,12 @@ import { buildingCouncil, companyCouncil } from './Council';
 import { platformAt } from './Placement';
 import { Environment } from './Environment';
 import { RoyalEffects } from './RoyalEffects';
+import { ContactShadows } from './ContactShadows';
+import { AttackView } from './AttackView';
+import { WallDamage } from './WallDamage';
+import { CombatAudio } from './CombatAudio';
+import { CastleAssembly } from './CastleAssembly';
+import { bindTouchTaps } from './TouchTaps';
 
 const roman = ['I', 'II', 'III'];
 const escape = (value: string) =>
@@ -69,19 +64,24 @@ const escape = (value: string) =>
   );
 export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => void) {
   const loaded = C.loadCampaign();
+  const audio = new CombatAudio();
   let campaign = loaded.state || C.createCampaign(),
     battle = new Battle(campaign),
     tab = 'castle',
-    site: SiteId = 'east-court';
+    site: SiteId = 'inner-sw';
   let selectedKnight = 'aldren';
+  const expandedDetails = new Set<string>();
   let picked: string | null = null;
   let notice =
     loaded.notice ||
-    'Your King fights from the walls. Equip the company, mount defenses, then begin the watch.';
+    (C.hasTavern(campaign)
+      ? 'Company ready. Choose your next upgrade.'
+      : 'Build a tavern to recruit more knights.');
   let accumulator = 0;
   let battlePortrait = false;
   let frame = 0,
     last = performance.now(),
+    lastFrameSample = last,
     hudTime = 0,
     finished = false,
     disposed = false,
@@ -89,20 +89,30 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
   const input = {
     rotate: 0,
     heading: undefined as number | undefined,
-    charge: false,
+    guard: false,
     decree: false,
   };
   const keys = new Set<string>();
-  app.innerHTML = `<div class="castle-app"><header class="castle-header"><a class="wordmark" href="${import.meta.env.BASE_URL}"><span class="crest">N</span>NEON <b>KNIGHTS</b></a><span class="castle-chapter">THE KING'S BATTLEMENTS</span><div><button class="quiet" id="castle-foundry">Art & training</button><button class="quiet" id="castle-pause">Pause</button></div></header><main class="castle-layout"><section class="castle-stage" aria-label="Castle siege battlefield"><div class="castle-canvas"></div><div class="castle-labels" aria-hidden="true"></div><div class="castle-title"><span class="eyebrow">THE ROYAL HOLD</span><h1>Hold the crown.</h1><p id="castle-objective"></p></div><div class="castle-boss" hidden><span>THE EMBERWING DRAGON</span><meter min="0" max="1650" value="1650"></meter><small>Move the King out of marked attacks. Royal Decree can interrupt a breath during its warning.</small></div><div class="castle-announcement" role="status"></div><div class="castle-hud"><div class="royal-vital"><span class="eyebrow">♔ LEGENDARY KING</span><strong id="royal-hp"></strong><meter id="royal-health" min="0" max="160"></meter></div><div class="castle-rotation"><button id="king-left" aria-label="Move King clockwise">↶</button><span>FOLLOW THE CROWN<br><small>MOUSE TO MOVE · AUTO FIRE</small></span><button id="king-right" aria-label="Move King counterclockwise">↷</button></div><button id="king-charge" class="royal-skill">Charged shot <small>HOLD CLICK / E</small><i id="royal-charge"></i></button><button id="king-decree" class="royal-skill">Royal Decree <small id="decree-power"></small><i id="royal-power"></i></button></div><div class="castle-result" hidden></div></section><aside class="war-council"><div class="council-heading"><span class="eyebrow">WAR COUNCIL</span><div><h2 id="watch-name"></h2><strong id="castle-gold"></strong></div><p id="watch-description"></p><button class="quiet new-siege" data-action="new-dialog">New siege</button></div><nav class="council-tabs" aria-label="Castle management"><button data-tab="castle">Build</button><button data-tab="company">Knights</button><button data-tab="armory">King & gear</button><button data-tab="relics">Relics</button></nav><div class="council-content"></div><div class="council-bottom"><p id="council-notice" role="status"></p><button class="primary" id="begin-watch">Begin watch <span>↗</span></button><p class="checkpoint-note">Council choices save automatically. Reloading a battle returns to its starting checkpoint.</p></div></aside></main></div>`;
+  app.innerHTML = `<div class="castle-app"><header class="castle-header"><a class="wordmark" href="${import.meta.env.BASE_URL}"><span class="crest">N</span>NEON <b>KNIGHTS</b></a><span class="castle-chapter">THE KING'S BATTLEMENTS</span><div><button class="quiet" id="castle-foundry">Art & training</button><button class="quiet" id="castle-sound" aria-label="Toggle combat sound">Sound</button><button class="quiet" id="castle-pause">Pause</button></div></header><main class="castle-layout"><section class="castle-stage" aria-label="Castle siege battlefield"><div class="castle-canvas"></div><div class="castle-labels" aria-hidden="true"></div><div class="castle-title"><span class="eyebrow">THE ROYAL HOLD</span><h1>Hold the crown.</h1><p id="castle-objective"></p></div><div class="castle-boss" hidden><span>THE EMBERWING DRAGON</span><meter min="0" max="1650" value="1650"></meter><small>Amber: move away &middot; Red: impact</small></div><div class="castle-announcement" role="status"></div><div class="castle-chain" aria-live="polite"></div><div class="castle-assault"><span></span><i></i></div><div class="castle-hud"><div class="castle-integrity" aria-label="Castle wall integrity">${['N', 'E', 'S', 'W'].map((name, i) => `<div><span>${name}</span><meter id="wall-health-${i}" min="0" max="100" value="100"></meter></div>`).join('')}</div><div class="castle-rotation"><button id="king-left" aria-label="Move King clockwise">↶</button><button id="king-weapon" data-action="weapon-swap" class="weapon-switch"><b>Stormbow</b><small>AUTO FIRE / Q TO SWAP</small></button><button id="king-right" aria-label="Move King counterclockwise">↷</button></div><button id="king-guard" class="royal-skill">Guard wall <small id="guard-status">READY / E</small><i id="guard-ready"></i></button><button id="king-decree" class="royal-skill">Royal Decree <small id="decree-power"></small><i id="royal-power"></i></button></div><div class="castle-result" hidden></div></section><aside class="war-council"><div class="council-heading"><span class="eyebrow">WAR COUNCIL</span><div><h2 id="watch-name"></h2><strong id="castle-gold"></strong></div><p id="watch-description"></p><button class="quiet new-siege" data-action="new-dialog">New siege</button></div><nav class="council-tabs" aria-label="Castle management"><button data-tab="castle">Build</button><button data-tab="company">Knights</button><button data-tab="armory">King & gear</button><button data-tab="relics">Relics</button></nav><div class="council-content"></div><div class="council-bottom"><p id="council-notice" role="status"></p><button class="primary" id="begin-watch">Begin watch <span>↗</span></button><p class="checkpoint-note">Saved between watches</p></div></aside></main></div>`;
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => app.querySelector<T>(s)!;
   const stage = $('.castle-stage'),
     canvas = $('.castle-canvas'),
     labels = $('.castle-labels'),
     content = $('.council-content');
+  const soundButton = $('#castle-sound');
+  const syncSound = () => {
+    soundButton.textContent = audio.muted ? 'Sound off' : 'Sound on';
+    soundButton.setAttribute('aria-pressed', String(!audio.muted));
+  };
+  syncSound();
+  soundButton.onclick = () => {
+    audio.toggle();
+    syncSound();
+  };
   const touchControls = matchMedia('(pointer: coarse)').matches;
   if (touchControls) {
-    $('.castle-rotation small').textContent = 'DRAG TO MOVE · AUTO FIRE';
-    $('#king-charge small').textContent = 'HOLD TO CHARGE';
+    $('#king-weapon small').textContent = 'AUTO FIRE / TAP TO SWAP';
+    $('#king-guard small').textContent = 'TAP TO GUARD';
   }
   const wallLabels = Array.from({ length: 4 }, (_, i) => {
     const label = document.createElement('div');
@@ -123,9 +133,13 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
   renderer.toneMappingExposure = 1.17;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = PCFShadowMap;
+  renderer.shadowMap.autoUpdate = false;
+  renderer.shadowMap.needsUpdate = true;
+  let viewportWidth = canvas.clientWidth,
+    viewportHeight = canvas.clientHeight;
   canvas.append(renderer.domElement);
   const camera = new PerspectiveCamera(41, 1, 0.1, 400);
-  camera.position.set(0, 24, 30);
+  camera.position.set(0, 30, 25);
   const orbit = new OrbitControls(camera, renderer.domElement);
   orbit.target.set(0, 1, 0);
   orbit.enableDamping = true;
@@ -149,10 +163,19 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
   scene.add(assets.get('castle-ground').scene.clone(true));
   scene.add(assets.get('highland-foliage').scene.clone(true));
   let castle: Group;
-  const keepMaterials = new Set<MeshStandardMaterial>();
+  let wallDamage: WallDamage | undefined;
+  let assembly: CastleAssembly | undefined;
+  const towerMaterials = new Set<MeshStandardMaterial>();
   const occlusionRay = new Raycaster(),
     occlusionPoint = new Vector3(),
     occlusionDirection = new Vector3();
+  const towerBounds = new Box3(),
+    occlusionHit = new Vector3();
+  const contactShadows = new ContactShadows();
+  scene.add(contactShadows.root);
+  let shadowRevision = -1;
+  let renderSampleTime = 0,
+    renderSamples = 0;
   const characters = new Map<number, Character>(),
     defenseViews = new Map<number, DefenseView>(),
     actorLabels = new Map<number, HTMLElement>();
@@ -170,7 +193,7 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     green = new MeshBasicMaterial({ color: 0x8df4bd });
   const boltMeshes = new Map<number, Mesh>(),
     effectMeshes = new Map<number, Mesh>(),
-    dangerMeshes = new Map<number, Group>();
+    dangerMeshes = new Map<number, AttackView>();
   const mountMaterial = new MeshBasicMaterial({
     color: 0xe7c67d,
     transparent: true,
@@ -180,9 +203,10 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
   const mountRings: Mesh[] = [];
   for (const m of mounts) {
     const ring = new Mesh(mountGeometry, mountMaterial.clone());
-    ring.position.set(m.x, wallSpec(campaign.wallTier).height + 0.1, m.z);
+    ring.position.set(m.x, mountHeight(m.id, campaign.wallTier) + 0.1, m.z);
     ring.rotation.x = -Math.PI / 2;
     ring.userData.site = m.id;
+    if (m.inner) ring.scale.setScalar(0.8);
     mountRings.push(ring);
     mountGroup.add(ring);
   }
@@ -294,18 +318,12 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     stage.classList.add('inspecting');
   }
   function clearTransient() {
-    for (const group of dangerMeshes.values())
-      group.traverse((o) => {
-        if (o instanceof Mesh || o instanceof Line) {
-          if (o instanceof InstancedMesh) o.dispose();
-          o.geometry.dispose();
-          (o.material as MeshBasicMaterial).dispose();
-        }
-      });
+    for (const view of dangerMeshes.values()) view.dispose();
     dangerMeshes.clear();
     dangerGroup.clear();
     boltMeshes.clear();
     projectileGroup.clear();
+    effectMeshes.forEach((m) => (m.material as MeshBasicMaterial).dispose());
     effectMeshes.clear();
     effectGroup.clear();
   }
@@ -313,7 +331,7 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     closeInspection();
     if (battle.phase !== 'planning') {
       camera.fov = 41;
-      camera.position.set(0, 24, 30);
+      camera.position.set(0, 30, 25);
       orbit.target.set(0, 1, 0);
       camera.updateProjectionMatrix();
       scene.fog = new Fog(0x96b8ba, 65, 115);
@@ -325,44 +343,48 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     actorLabels.clear();
     labels.replaceChildren();
     clearTransient();
+    wallDamage?.dispose();
+    assembly?.dispose();
     castle?.removeFromParent();
-    keepMaterials.forEach((m) => m.dispose());
-    keepMaterials.clear();
+    towerMaterials.clear();
     castle = assets.get(`castle-${campaign.wallTier}`).scene.clone(true);
-    const copied = new Map<MeshStandardMaterial, MeshStandardMaterial>();
-    castle.getObjectByName('RoyalKeep')!.traverse((o) => {
-      if (o instanceof Mesh) {
-        const source = o.material as MeshStandardMaterial;
-        let mat = copied.get(source);
-        if (!mat) {
-          mat = source.clone();
-          mat.transparent = true;
-          copied.set(source, mat);
-          keepMaterials.add(mat);
-        }
-        o.material = mat;
-      }
-    });
+    castle.getObjectByName('RoyalKeep')?.removeFromParent();
+    assembly = new CastleAssembly(campaign, assets);
+    castle.add(assembly.root);
     scene.add(castle);
+    wallDamage = new WallDamage(castle, wallSpec(campaign.wallTier).height);
+    scene.add(wallDamage.root);
     battle = new Battle(campaign);
     finished = false;
     for (const b of battle.defenses) {
-      const v = new DefenseView(assets, b.kind, b.rank);
+      const v = new DefenseView(assets, b.kind, b.rank, false, true);
       defenseViews.set(b.id, v);
-      scene.add(v.root);
+      v.update(b);
+      (isSupport(b.kind) ? assembly.root : scene).add(v.root);
       if (campaign.relic === 'worldpiercer' && b.kind === 'ballista') {
         const module = kit(assets, 'WorldpiercerModule');
         module.position.y = b.rank === 1 ? 1.08 : b.rank === 2 ? 1.43 : 1.78;
         v.model.getObjectByName('Turret')!.add(module);
       }
     }
+    towerBounds.setFromObject(assembly.root);
+    renderer.shadowMap.needsUpdate = true;
+    shadowRevision = -1;
+    assembly.root.traverse((o) => {
+      if (o instanceof Mesh && o.material instanceof MeshStandardMaterial) {
+        o.material.transparent = true;
+        towerMaterials.add(o.material);
+      }
+    });
     if (campaign.relic === 'black-standard')
       for (const z of [-9.6, 9.6]) {
         const banner = kit(assets, 'BlackStandard');
         banner.position.set(3, 0, z);
         castle.add(banner);
       }
-    mountRings.forEach((r) => (r.position.y = wallSpec(campaign.wallTier).height + 0.1));
+    mountRings.forEach(
+      (r, i) => (r.position.y = mountHeight(mounts[i].id, campaign.wallTier) + 0.1),
+    );
     renderCouncil();
   }
   function transact(fn: () => string | null | void) {
@@ -375,6 +397,10 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
   const button = (label: string, action: string, disabled = false, extra = '') =>
     `<button class="council-button ${extra}" data-action="${action}" ${disabled ? 'disabled' : ''}>${label}</button>`;
   function renderCouncil() {
+    content.querySelectorAll('details[class]').forEach((d) => {
+      if ((d as HTMLDetailsElement).open) expandedDetails.add(d.className);
+      else expandedDetails.delete(d.className);
+    });
     const active = battle.phase === 'battle';
     $('.new-siege').hidden = active;
     $('.castle-app').classList.toggle('in-battle', active);
@@ -399,7 +425,7 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
       .querySelectorAll<HTMLButtonElement>('[data-tab]')
       .forEach((b) => b.classList.toggle('selected', b.dataset.tab === tab));
     if (active) {
-      content.innerHTML = `<div class="battle-orders"><span class="eyebrow">THE COMPANY IS FIGHTING</span><h3>The crown holds the line.</h3><p>Move your mouse around the castle to guide the King. He fires automatically toward nearby invaders.</p><p>Hold left click or E, then release a piercing shot. Space casts Royal Decree when ready.</p><p>Your knights fight and use their talents automatically. On touchscreens, drag around the castle and use the skill buttons.</p><div id="battle-company"></div><div id="battle-walls"></div><button class="council-button" data-action="pause">Pause the watch</button></div>`;
+      content.innerHTML = `<div class="battle-orders"><span class="eyebrow">YOUR COMPANY</span><div id="battle-company"></div><div id="battle-walls"></div><details><summary>Controls</summary><p>Mouse / drag to move. Auto fire.</p><p>E: Guard your wall. Space: Royal Decree.</p><p>Move to the marked wall. Guard just before impact to stagger the Dragon.</p></details><button class="council-button" data-action="pause">Pause</button></div>`;
       return;
     }
     if (tab === 'castle') {
@@ -407,7 +433,7 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     } else if (tab === 'company') {
       content.innerHTML = companyCouncil(campaign, selectedKnight);
     } else if (tab === 'armory') {
-      content.innerHTML = `<article class="king-plate"><span class="eyebrow">♔ LEGENDARY COMMANDER</span><h3>The Storm King</h3>${button('Inspect the King', 'inspect:king')}${button(`Treat the King \u00b7 ${Math.ceil((160 - campaign.kingHp) / 2)} \u265c`, 'king-treat', campaign.kingHp === 160)}<p>Patrols the walls and fires automatically. Charged shots pierce three invaders. Royal Decree breaks nearby attackers and can interrupt the Dragon's breath.</p><label class="council-label" for="royal-weapon">ROYAL WEAPON</label><select id="royal-weapon"><option value="stormbow" ${campaign.weapon === 'stormbow' ? 'selected' : ''}>Stormbow · ${roman[campaign.ranks.stormbow - 1]}</option><option value="sunlance" ${campaign.weapon === 'sunlance' ? 'selected' : ''}>Sunlance · ${roman[campaign.ranks.sunlance - 1]}</option></select>${button(campaign.ranks[campaign.weapon] < 3 ? `Improve ${campaign.weapon === 'stormbow' ? 'Stormbow' : 'Sunlance'} · ${campaign.ranks[campaign.weapon] === 1 ? 150 : 280} ♜` : 'Royal weapon complete', 'weapon-up', campaign.ranks[campaign.weapon] === 3)}<p>${campaign.sockets[campaign.weapon].length} / ${campaign.wallTier} sockets occupied. Equipping and removing owned runes is free.</p><div class="owned-runes">${
+      content.innerHTML = `<article class="king-plate"><span class="eyebrow">♔ LEGENDARY COMMANDER</span><h3>The Storm King</h3>${button('Inspect the King', 'inspect:king')}<p>The castle is your lifeline. Auto-attacks continue while moving and guarding.</p><p>${royalWeapons[campaign.weapon].description}</p><p>E: protect your wall for 1.5 seconds. A guard just before impact exposes the Dragon. Q: swap weapons.</p><label class="council-label" for="royal-weapon">ROYAL WEAPON</label><select id="royal-weapon"><option value="stormbow" ${campaign.weapon === 'stormbow' ? 'selected' : ''}>Stormbow · ${roman[campaign.ranks.stormbow - 1]}</option><option value="sunlance" ${campaign.weapon === 'sunlance' ? 'selected' : ''}>Sunlance · ${roman[campaign.ranks.sunlance - 1]}</option></select>${button(campaign.ranks[campaign.weapon] < 3 ? `Improve ${campaign.weapon === 'stormbow' ? 'Stormbow' : 'Sunlance'} · ${campaign.ranks[campaign.weapon] === 1 ? 150 : 280} ♜` : 'Royal weapon complete', 'weapon-up', campaign.ranks[campaign.weapon] === 3)}<p>${campaign.sockets[campaign.weapon].length} / ${campaign.wallTier} sockets occupied. Equipping and removing owned runes is free.</p><div class="owned-runes">${
         campaign.inventory
           .filter((i) => items[i.kind].kind === 'rune')
           .map((i) =>
@@ -421,15 +447,18 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
           .join('') || '<p class="fine">Purchase a rune below to socket it.</p>'
       }</div></article><div class="shop-heading"><span class="eyebrow">SIX ARMORY OFFERS</span>${button(`Refresh · ${35 + campaign.rerolls * 15} ♜`, 'reroll')}</div><p class="fine">Buying keeps the other offers in place. Knight items and royal runes have separate equipment slots.</p><div class="market-offers">${campaign.offers.map((kind, i) => `<article class="item-plate ${items[kind].kind}"><span class="eyebrow">${items[kind].kind === 'gear' ? 'KNIGHT EQUIPMENT' : 'ROYAL RUNE'}</span><h3>${items[kind].name}</h3><p>${items[kind].description}</p>${button(campaign.bought.includes(i) ? 'Owned' : `Purchase · ${items[kind].cost} ♜`, `buy:${i}`, campaign.bought.includes(i) || campaign.gold < items[kind].cost)}</article>`).join('')}</div>`;
     } else {
-      content.innerHTML = `<div class="council-intro"><span class="eyebrow">RELIC VAULT</span><h3>Power with a purpose.</h3><p>${campaign.relic ? 'Your chosen relic is bound to this siege.' : campaign.encounter === 2 ? 'The Dragon has fallen. Choose one legendary relic for the counter-siege.' : 'Defeat the Emberwing Dragon in the second encounter to claim one of these relics.'}</p></div>${(
+      content.innerHTML = `<div class="council-intro"><span class="eyebrow">RELIC VAULT</span><h3>Power with a purpose.</h3><p>${campaign.relic ? 'Your chosen relic is bound to this siege.' : campaign.encounter === 2 ? 'The siege is broken. Claim a relic for the final battle.' : 'Break the second siege to claim a relic before facing Emberwing.'}</p></div>${(
         Object.keys(relics) as Relic[]
       )
         .map((id) => {
           const r = relics[id];
-          return `<article class="relic-plate ${campaign.relic === id ? 'chosen' : ''}"><span class="relic-symbol">${r.symbol}</span><span class="eyebrow">LEGENDARY · ${r.system}</span><h3>${r.name}</h3><p>${r.effect}</p><p class="relic-tradeoff">${r.tradeoff}</p>${button(campaign.relic === id ? 'Bound to the castle' : campaign.relic ? 'Another relic is bound' : campaign.encounter === 2 ? 'Claim this relic' : 'Earned from the Dragon', `relic:${id}`, !!campaign.relic || campaign.encounter !== 2)}</article>`;
+          return `<article class="relic-plate ${campaign.relic === id ? 'chosen' : ''}"><span class="relic-symbol">${r.symbol}</span><span class="eyebrow">LEGENDARY · ${r.system}</span><h3>${r.name}</h3><p>${r.effect}</p><p class="relic-tradeoff">${r.tradeoff}</p>${button(campaign.relic === id ? 'Bound to the castle' : campaign.relic ? 'Another relic is bound' : campaign.encounter === 2 ? 'Claim this relic' : 'Earned from the siege', `relic:${id}`, !!campaign.relic || campaign.encounter !== 2)}</article>`;
         })
         .join('')}`;
     }
+    content
+      .querySelectorAll<HTMLDetailsElement>('details[class]')
+      .forEach((d) => (d.open = expandedDetails.has(d.className)));
   }
   function openNew() {
     if (battle.phase === 'battle') return;
@@ -446,18 +475,19 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     }
     if (campaign.encounter === 2 && !campaign.relic) {
       tab = 'relics';
-      notice = 'Choose the relic you earned before the counter-siege.';
+      notice = 'Choose your siege relic before facing Emberwing.';
       renderCouncil();
       return;
     }
     C.saveCampaign(campaign);
+    audio.unlock();
     battle.start();
     clearInput();
     renderCouncil();
     fitBattle();
   }
   function fitBattle() {
-    battlePortrait = canvas.clientWidth < canvas.clientHeight * 0.8;
+    battlePortrait = viewportWidth < viewportHeight * 0.8;
     scene.fog = new Fog(0x96b8ba, battlePortrait ? 95 : 65, battlePortrait ? 140 : 115);
     orbit.target.set(0, 1, 0);
     if (battlePortrait) {
@@ -474,7 +504,7 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     keys.clear();
     input.rotate = 0;
     input.heading = undefined;
-    input.charge = false;
+    input.guard = false;
     input.decree = false;
     dragging = false;
   }
@@ -509,6 +539,10 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     }
     const [action, arg, rank] = target.dataset.action!.split(':'),
       selected = campaign.buildings.find((b) => b.site === site);
+    if (action === 'weapon-swap') {
+      swapWeapon();
+      return;
+    }
     if (action === 'slot') {
       site = arg as SiteId;
       if (picked) commitPlacement(site);
@@ -533,6 +567,12 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
       inspection.attack = !inspection.attack;
       inspection.actor.actionTime = 0;
       target.textContent = inspection.attack ? 'Return to idle' : 'Play attack';
+      return;
+    }
+    if (action === 'zone' && battle.phase === 'planning') {
+      cancelPlacement();
+      site = arg === 'inner' ? 'inner-sw' : 'east-court';
+      renderCouncil();
       return;
     }
     if (action === 'pause') {
@@ -574,7 +614,7 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     if (action === 'continue') {
       $('.castle-result').hidden = true;
       campaign = structuredClone(battle.state);
-      notice = 'The company has returned. Treat wounds and strengthen the castle.';
+      notice = 'All knights fully recovered. Strengthen the castle.';
       if (campaign.encounter === 2) tab = 'relics';
       rebuild();
       return;
@@ -591,16 +631,16 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
       if (action === 'buy') return C.buyOffer(campaign, +arg);
       if (action === 'reroll') return C.reroll(campaign);
       if (action === 'rune') return C.equipRune(campaign, campaign.weapon, +arg);
-      if (action === 'king-treat') return C.treatKing(campaign);
       if (action === 'weapon-up') return C.improveWeapon(campaign, campaign.weapon);
       if (action === 'assign') return C.assign(campaign, arg);
       if (action === 'treat') return C.treat(campaign, arg);
       if (action === 'promote') return C.promote(campaign, arg);
-      if (action === 'recruit') return C.recruit(campaign, 'lysa');
+      if (action === 'recruit') return C.recruit(campaign, arg);
       if (action === 'relic') return C.chooseRelic(campaign, arg as Relic);
     });
   };
   app.addEventListener('click', click);
+  const unbindTouchTaps = bindTouchTaps(app);
   const change = (event: Event) => {
     const t = event.target as HTMLSelectElement;
     if (battle.phase !== 'planning') return;
@@ -631,6 +671,12 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     });
   };
   app.addEventListener('change', change);
+  function swapWeapon() {
+    if (battle.phase !== 'battle' || battle.paused) return;
+    battle.state.weapon = battle.state.weapon === 'stormbow' ? 'sunlance' : 'stormbow';
+    battle.king.action = '';
+    battle.king.cooldown = 0;
+  }
   function keydown(event: KeyboardEvent) {
     if (['INPUT', 'SELECT', 'TEXTAREA'].includes((event.target as HTMLElement)?.tagName)) return;
     if (
@@ -648,11 +694,8 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     keys.add(event.code);
     if (['KeyA', 'KeyD', 'ArrowLeft', 'ArrowRight'].includes(event.code)) input.heading = undefined;
     if (event.code === 'Space' && !event.repeat) input.decree = true;
-    if (event.code === 'KeyQ' && !event.repeat) {
-      battle.state.weapon = battle.state.weapon === 'stormbow' ? 'sunlance' : 'stormbow';
-      battle.king.action = '';
-      battle.charge = 0;
-    }
+    if (event.code === 'KeyE' && !event.repeat) input.guard = true;
+    if (event.code === 'KeyQ' && !event.repeat) swapWeapon();
   }
   const keyup = (e: KeyboardEvent) => keys.delete(e.code);
   window.addEventListener('keydown', keydown);
@@ -703,9 +746,9 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     () => (input.rotate = 0),
   );
   hold(
-    '#king-charge',
-    () => (input.charge = true),
-    () => (input.charge = false),
+    '#king-guard',
+    () => (input.guard = true),
+    () => {},
   );
   $('#king-decree').onclick = () => (input.decree = true);
   const raycaster = new Raycaster(),
@@ -721,10 +764,10 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
   stage.append(placementHint);
   const platformButtons = mounts.map((m) => {
     const button = document.createElement('button');
-    button.className = 'platform-target';
+    button.className = `platform-target${m.inner ? ' inner-target' : ''}`;
     button.dataset.action = `slot:${m.id}`;
     button.setAttribute('aria-label', `Place on ${m.name} platform`);
-    button.innerHTML = `<strong>${m.name[0]}</strong><small>PLACE</small>`;
+    button.innerHTML = `<strong>${m.inner ? m.name.split(' ')[1] : m.name[0]}</strong><small>PLACE</small>`;
     stage.append(button);
     return button;
   });
@@ -749,7 +792,7 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     if (!Object.hasOwn(defenses, kind)) return;
     picked = value;
     stage.classList.add('placing');
-    ghost = new DefenseView(assets, kind, existing?.rank || 1, true);
+    ghost = new DefenseView(assets, kind, existing?.rank || 1, true, true);
     scene.add(ghost.root);
     ghost.root.visible = false;
     placementHint.hidden = false;
@@ -776,9 +819,15 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     }
     site = destination;
     cancelPlacement();
-    notice = 'Building placed. It will fight automatically when the watch begins.';
+    notice =
+      value === 'tavern' ? 'Tavern open. Recruit your next knight in Knights.' : 'Building ready.';
     C.saveCampaign(campaign);
     rebuild();
+  }
+  function pickedKind(): DefenseKind | undefined {
+    return picked?.startsWith('move:')
+      ? campaign.buildings.find((b) => b.id === +picked!.split(':')[1])?.kind
+      : (picked as DefenseKind | undefined);
   }
   function groundPoint(e: { clientX: number; clientY: number }) {
     const rect = renderer.domElement.getBoundingClientRect();
@@ -793,19 +842,28 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
       ((e.clientX - rect.left) / rect.width) * 2 - 1,
       (-(e.clientY - rect.top) / rect.height) * 2 + 1,
     );
-    plane.constant = -wallSpec(campaign.wallTier).height;
+    plane.constant = picked && isSupport(pickedKind()!) ? 0 : -wallSpec(campaign.wallTier).height;
     raycaster.setFromCamera(pointer, camera);
     return raycaster.ray.intersectPlane(plane, point);
   }
   function placementMove(e: PointerEvent) {
     if (!picked) return;
     const p = groundPoint(e);
-    hovered = p ? platformAt(p.x, p.z) : null;
+    // Labels spread apart at small viewports; drags must land on the visible target too.
+    const target = document
+      .elementFromPoint(e.clientX, e.clientY)
+      ?.closest<HTMLButtonElement>('.platform-target');
+    hovered =
+      target && !target.hidden
+        ? (target.dataset.action!.slice(5) as SiteId)
+        : p
+          ? platformAt(p.x, p.z, isSupport(pickedKind()!))
+          : null;
     const m = mounts.find((m) => m.id === hovered);
     if (ghost) {
       ghost.root.visible = !!m;
       if (m) {
-        ghost.root.position.set(m.x, wallSpec(campaign.wallTier).height, m.z);
+        ghost.root.position.set(m.x, mountHeight(m.id, campaign.wallTier), m.z);
         ghost.root.rotation.y = m.yaw;
       }
     }
@@ -859,8 +917,27 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
   const pointerdown = (e: PointerEvent) => {
     if (inspection) return;
     if (battle.phase === 'planning') {
+      if (!picked) {
+        groundPoint(e);
+        const hit = raycaster.intersectObjects(
+          [...defenseViews.values()].map((v) => v.root),
+          true,
+        )[0];
+        if (hit) {
+          const selected = [...defenseViews.entries()].find(([, v]) => {
+            let o = hit.object;
+            while (o.parent && o !== v.root) o = o.parent;
+            return o === v.root;
+          });
+          if (selected) {
+            site = campaign.buildings.find((b) => b.id === selected[0])!.site;
+            renderCouncil();
+            return;
+          }
+        }
+      }
       const p = groundPoint(e),
-        destination = p ? platformAt(p.x, p.z) : null;
+        destination = p ? platformAt(p.x, p.z, isSupport(pickedKind()!)) : null;
       if (destination) {
         site = destination;
         if (picked) commitPlacement(destination);
@@ -872,7 +949,6 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     dragging = true;
     renderer.domElement.setPointerCapture(e.pointerId);
     aim(e);
-    if (e.pointerType === 'mouse' && e.button === 0) input.charge = true;
   };
   const pointermove = (e: PointerEvent) => {
     if (
@@ -885,83 +961,13 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
   };
   const pointerup = () => {
     dragging = false;
-    input.charge = false;
+    input.guard = false;
   };
   renderer.domElement.addEventListener('pointerdown', pointerdown);
   renderer.domElement.addEventListener('pointermove', pointermove);
   renderer.domElement.addEventListener('pointerup', pointerup);
   renderer.domElement.addEventListener('pointercancel', pointerup);
   renderer.domElement.addEventListener('lostpointercapture', pointerup);
-  function danger(t: Telegraph) {
-    const group = new Group(),
-      points: Vector3[] = [];
-    if (t.kind !== 'hex') points.push(new Vector3(t.x, 0.08, t.z));
-    const count = 48;
-    for (let i = 0; i <= count; i++) {
-      const angle =
-          t.kind === 'hex' ? (i * Math.PI * 2) / count : t.yaw - t.arc / 2 + (i * t.arc) / count,
-        r = t.kind === 'hex' ? t.radius : t.length;
-      points.push(new Vector3(t.x + Math.sin(angle) * r, 0.08, t.z + Math.cos(angle) * r));
-    }
-    if (t.kind !== 'hex') points.push(points[0].clone());
-    for (const y of [0, wallSpec(campaign.wallTier).height]) {
-      const path = points.map((p) => new Vector3(p.x, p.y + y, p.z)),
-        vertices: number[] = [];
-      for (let i = 1; i < path.length - 1; i++)
-        vertices.push(...path[0].toArray(), ...path[i].toArray(), ...path[i + 1].toArray());
-      const g = new BufferGeometry();
-      g.setAttribute('position', new Float32BufferAttribute(vertices, 3));
-      group.add(
-        new Mesh(
-          g,
-          new MeshBasicMaterial({
-            color: 0xef6078,
-            transparent: true,
-            opacity: 0.1,
-            depthWrite: false,
-            side: DoubleSide,
-          }),
-        ),
-        new Line(
-          new BufferGeometry().setFromPoints(path),
-          new LineBasicMaterial({
-            color: 0xffb097,
-            transparent: true,
-            opacity: 0.8,
-            depthWrite: false,
-          }),
-        ),
-      );
-    }
-    if (t.kind === 'breath' || t.kind === 'rake') {
-      const particles = new InstancedMesh(
-        t.kind === 'rake'
-          ? new CylinderGeometry(0.05, 0.16, 1.3, 6)
-          : new SphereGeometry(0.2, 6, 4),
-        new MeshBasicMaterial({
-          color: 0xffffff,
-          transparent: true,
-          opacity: 0.7,
-          depthWrite: false,
-          blending: AdditiveBlending,
-        }),
-        80,
-      );
-      particles.name = 'breath-stream';
-      particles.frustumCulled = false;
-      for (let i = 0; i < 80; i++)
-        particles.setColorAt(
-          i,
-          new Color(
-            (t.kind === 'rake' ? [0xb4dfff, 0xffffff, 0x96ead9] : [0xffb451, 0xff563a, 0xffe7a2])[
-              i % 3
-            ],
-          ),
-        );
-      group.add(particles);
-    }
-    return group;
-  }
   const projected = new Vector3();
   function present(a: Actor, dt: number) {
     let c = characters.get(a.id);
@@ -972,6 +978,9 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
         a.role === 'king' ? battle.state.weapon : 'stormbow',
         a.gear ? items[a.gear].model : undefined,
       );
+      c.root.traverse((o) => {
+        if (o instanceof Mesh) o.castShadow = false;
+      });
       characters.set(a.id, c);
       scene.add(c.root);
       const label = document.createElement('div');
@@ -980,47 +989,95 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
       actorLabels.set(a.id, label);
       labels.append(label);
     }
-    c.update(
-      a,
-      dt,
-      a.role === 'king' ? battle.state.weapon : 'stormbow',
-      a.role === 'king' && battle.charge > 0,
-    );
+    c.update(a, dt, a.role === 'king' ? battle.state.weapon : 'stormbow', false);
     const label = actorLabels.get(a.id)!;
     projected.set(a.x, a.y + (a.role === 'dragon' ? 4.7 : 2.45), a.z).project(camera);
     const visible =
       projected.z < 1 &&
       Math.abs(projected.x) < 1 &&
       Math.abs(projected.y) < 1 &&
-      !(a.hp <= 0 && battle.enemies.includes(a));
+      !(a.hp <= 0 && battle.enemies.includes(a)) &&
+      a.role !== 'dragon' &&
+      (!battle.enemies.includes(a) || a.hp < a.maxHp);
     label.hidden = !visible;
     if (visible) {
-      label.style.transform = `translate(${(projected.x * 0.5 + 0.5) * canvas.clientWidth}px,${(-projected.y * 0.5 + 0.5) * canvas.clientHeight}px) translate(-50%,-100%)`;
+      label.style.transform = `translate(${(projected.x * 0.5 + 0.5) * viewportWidth}px,${(-projected.y * 0.5 + 0.5) * viewportHeight}px) translate(-50%,-100%)`;
       label.querySelector('i')!.style.setProperty('--hp', `${(a.hp / a.maxHp) * 100}%`);
       label.classList.toggle('fallen', a.hp <= 0);
+      label.classList.toggle('struck', a.hitFlash > 0);
+      label.classList.toggle('evading', a.action === 'dodge');
     }
   }
   function updateHud() {
-    $('#royal-hp').textContent = `${Math.ceil(battle.king.hp)} / 160`;
-    ($('#royal-health') as HTMLMeterElement).value = battle.king.hp;
+    $('#king-weapon b').textContent = royalWeapons[battle.state.weapon].name;
+    $('#king-weapon').setAttribute(
+      'aria-label',
+      `Switch weapon: ${royalWeapons[battle.state.weapon].name}`,
+    );
+    const maxWall = wallSpec(campaign.wallTier).hp;
+    battle.state.walls.forEach((hp, i) => {
+      const meter = $<HTMLMeterElement>(`#wall-health-${i}`);
+      meter.value = (hp / maxWall) * 100;
+      meter.setAttribute(
+        'aria-label',
+        `${['North', 'East', 'South', 'West'][i]} wall ${Math.ceil((hp / maxWall) * 100)}%`,
+      );
+      meter.parentElement!.classList.toggle('critical', hp / maxWall < 0.35);
+      meter.parentElement!.classList.toggle(
+        'guarded',
+        battle.guardTime > 0 && battle.guardSide === i,
+      );
+    });
+    const sideName = ['NORTH', 'EAST', 'SOUTH', 'WEST'][wallSide(battle.king)];
+    $('#guard-status').textContent =
+      battle.guardTime > 0
+        ? 'GUARDING'
+        : battle.guardCooldown > 0
+          ? `${battle.guardCooldown.toFixed(1)}s`
+          : `${sideName} / ${touchControls ? 'TAP' : 'E'}`;
+    $('#guard-ready').style.width = `${(1 - battle.guardCooldown / 4.5) * 100}%`;
+    $('#king-guard').classList.toggle('ready', battle.guardCooldown === 0);
     $('#decree-power').textContent =
       battle.power >= 100
         ? `READY · ${touchControls ? 'TAP' : 'SPACE'}`
         : `${Math.floor(battle.power)} / 100 · ${touchControls ? 'TAP' : 'SPACE'}`;
     $('#royal-power').style.width = `${battle.power}%`;
-    $('#royal-charge').style.width = `${battle.charge * 100}%`;
     $('#king-decree').classList.toggle('ready', battle.power >= 100);
-    $('.castle-announcement').textContent = battle.phase === 'planning' ? '' : battle.announcement;
-    const weakest = Math.min(...battle.state.walls);
-    if (
-      battle.phase === 'battle' &&
-      weakest < wallSpec(campaign.wallTier).hp * 0.35 &&
-      !battle.dangers.length
-    ) {
-      const side = battle.state.walls.indexOf(weakest);
-      $('.castle-announcement').textContent =
-        `${['North', 'East', 'South', 'West'][side]} wall is failing — move the King to defend it.`;
-    }
+    const danger = battle.dangers.find((t) => t.kind !== 'hex');
+    const boss = battle.enemies.find((e) => e.role === 'dragon' && e.hp > 0);
+    const attackName =
+      danger?.kind === 'breath'
+        ? 'DRAGONFIRE'
+        : danger?.kind === 'rake'
+          ? 'CLAW GALE'
+          : 'TAIL SWEEP';
+    const warning = danger && danger.age < danger.windup;
+    const message =
+      battle.feedbackTime > 0
+        ? battle.feedback
+        : danger
+          ? danger.wall !== undefined
+            ? `${['NORTH', 'EAST', 'SOUTH', 'WEST'][danger.wall]} WALL \u00b7 ${warning ? (danger.windup - danger.age).toFixed(1) + 's / GUARD' : 'IMPACT'}`
+            : `${attackName} \u00b7 COMPANY UNDER ATTACK`
+          : boss && boss.exposed > 0
+            ? 'EXPOSED \u00b7 +30% damage'
+            : battle.time < 2.5 && battle.phase === 'battle'
+              ? 'HOLD THE LINE'
+              : '';
+    $('.castle-announcement').textContent = message;
+    $('.castle-announcement').classList.toggle('impact', !!danger && !warning);
+    $('.castle-announcement').hidden = !message || battle.phase !== 'battle';
+    $('.castle-chain').textContent =
+      battle.streak >= 3 && battle.streakTime > 0
+        ? `${battle.streak} CHAIN \u00b7 +${battle.loot} \u265c`
+        : '';
+    $('.castle-assault').hidden = battle.phase !== 'battle';
+    const total = encounters[Math.min(2, campaign.encounter)].budget;
+    const remaining = battle.enemies.filter((e) => e.hp > 0).length;
+    $('.castle-assault span').textContent =
+      battle.spawned >= total ? `${remaining} remaining` : 'Assault';
+    $('.castle-assault i').style.width = `${Math.min(100, (battle.spawned / total) * 100)}%`;
+    $('#castle-gold').textContent = `${battle.state.gold} \u265c`;
     $('#castle-objective').textContent =
       battle.phase === 'planning'
         ? `${wallSpec(campaign.wallTier).name} · ${campaign.difficulty.toUpperCase()}`
@@ -1030,12 +1087,17 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
               2,
               '0',
             )} · ${battle.kills} invaders defeated · ${battle.state.weapon === 'stormbow' ? 'Stormbow' : 'Sunlance'}`;
-    const boss = battle.enemies.find((e) => e.role === 'dragon' && e.hp > 0);
     $('.castle-boss').hidden = !boss;
     if (boss) {
       const m = $<HTMLMeterElement>('.castle-boss meter');
       m.max = boss.maxHp;
       m.value = boss.hp;
+      $('.castle-boss small').textContent =
+        boss.exposed > 0
+          ? 'Exposed \u00b7 strike now'
+          : boss.hp < boss.maxHp * 0.5
+            ? 'Enraged \u00b7 faster attacks'
+            : 'Hunts knights, then attacks a marked wall';
     }
     const company = app.querySelector('#battle-company');
     if (company)
@@ -1062,6 +1124,18 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     if (disposed) return;
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
+    const rawFrame = (now - lastFrameSample) / 1000;
+    lastFrameSample = now;
+    if (battle.phase === 'battle' && !battle.paused && rawFrame < 0.15) {
+      renderSampleTime += rawFrame;
+      renderSamples++;
+      if (renderSamples >= 90) {
+        if (renderSampleTime / renderSamples > 0.022 && renderer.getPixelRatio() > 0.66)
+          renderer.setPixelRatio(Math.max(0.65, renderer.getPixelRatio() * 0.86));
+        renderSampleTime = 0;
+        renderSamples = 0;
+      }
+    }
     const running = battle.phase === 'battle' && !battle.paused;
     const effective = {
       ...input,
@@ -1069,21 +1143,25 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
         input.rotate +
         (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) -
         (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0),
-      charge: input.charge || keys.has('KeyE'),
+      guard: input.guard,
     };
     if (running) {
       accumulator += dt;
       while (accumulator >= 1 / 60) {
         battle.tick(1 / 60, effective);
         effective.decree = false;
+        effective.guard = false;
         input.decree = false;
+        input.guard = false;
         accumulator -= 1 / 60;
       }
     } else accumulator = 0;
+    audio.update(battle, dt);
     environment.update(dt);
     orbit.update();
     for (const a of [battle.king, ...battle.knights, ...battle.enemies])
       present(a, running || battle.phase === 'planning' ? dt : 0);
+    wallDamage?.update(battle, !!picked && isSupport(pickedKind()!));
     const live = new Set([battle.king, ...battle.knights, ...battle.enemies].map((a) => a.id));
     for (const [id, c] of characters)
       if (!live.has(id)) {
@@ -1092,9 +1170,14 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
         actorLabels.get(id)?.remove();
         actorLabels.delete(id);
       }
+    contactShadows.update(battle);
+    if (wallDamage && wallDamage.revision !== shadowRevision) {
+      shadowRevision = wallDamage.revision;
+      renderer.shadowMap.needsUpdate = true;
+    }
     royalEffects.update(battle);
     kingHalo.position.set(battle.king.x, battle.king.y + 0.1, battle.king.z);
-    kingHalo.visible = battle.king.hp > 0;
+    kingHalo.visible = true;
     wallLabels.forEach((label, i) => {
       label.hidden = !!inspection;
       const p = [
@@ -1104,9 +1187,16 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
         { x: -6.4, z: 0 },
       ][i];
       projected.set(p.x, wallSpec(campaign.wallTier).height + 2.6, p.z).project(camera);
-      label.style.left = `${(projected.x * 0.5 + 0.5) * canvas.clientWidth}px`;
-      label.style.top = `${(-projected.y * 0.5 + 0.5) * canvas.clientHeight}px`;
-      label.textContent = `${['N', 'E', 'S', 'W'][i]}${battle.phase === 'battle' ? ` ${Math.ceil(battle.state.walls[i])}` : ''}`;
+      label.style.left = `${(projected.x * 0.5 + 0.5) * viewportWidth}px`;
+      label.style.top = `${(-projected.y * 0.5 + 0.5) * viewportHeight}px`;
+      const targeted = battle.dangers.some((t) => t.wall === i);
+      label.textContent = `${['N', 'E', 'S', 'W'][i]}${targeted ? ' / GUARD' : ''}`;
+      label.classList.toggle('targeted', targeted);
+      label.classList.toggle('struck', battle.wallImpacts[i] > 0);
+      label.style.setProperty(
+        '--wall-hp',
+        `${(battle.state.walls[i] / wallSpec(campaign.wallTier).hp) * 100}%`,
+      );
       label.classList.toggle(
         'critical',
         battle.state.walls[i] < wallSpec(campaign.wallTier).hp * 0.35,
@@ -1117,38 +1207,56 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     occlusionRay.set(camera.position, occlusionDirection.clone().normalize());
     occlusionRay.far = occlusionDirection.length();
     const blocked =
-      occlusionRay.intersectObject(castle.getObjectByName('RoyalKeep')!, true).length > 0;
-    keepMaterials.forEach((m) => {
-      m.opacity += ((blocked ? 0.26 : 1) - m.opacity) * Math.min(1, dt * 7);
+      !!occlusionRay.ray.intersectBox(towerBounds, occlusionHit) &&
+      camera.position.distanceToSquared(occlusionHit) < occlusionDirection.lengthSq();
+    towerMaterials.forEach((m) => {
+      m.opacity +=
+        ((blocked && battle.phase === 'battle' ? 0.24 : 1) - m.opacity) * Math.min(1, dt * 7);
       m.depthWrite = m.opacity > 0.95;
     });
     for (const b of battle.defenses) {
       const v = defenseViews.get(b.id)!;
       v.update(b, battle.phase === 'planning');
-      v.coverage.visible = battle.phase === 'planning' && tab === 'castle' && b.site === site;
+      v.coverage.visible =
+        !!picked && battle.phase === 'planning' && tab === 'castle' && b.site === site;
     }
     mountGroup.visible = battle.phase === 'planning' && tab === 'castle';
+    const innerCenter = new Vector3(0, 0.15, 0).project(camera);
+    const centerX = (innerCenter.x * 0.5 + 0.5) * viewportWidth;
+    const centerY = (-innerCenter.y * 0.5 + 0.5) * viewportHeight;
     mountRings.forEach((r, i) => {
       const m = mounts[i],
         occupied = campaign.buildings.some((b) => b.site === m.id && picked !== `move:${b.id}`);
+      const valid = !picked || fitsMount(pickedKind()!, m.id);
+      r.visible = valid;
       const material = r.material as MeshBasicMaterial;
       material.color.setHex(
         picked ? (occupied ? 0xf0797d : 0x79f0cf) : r.userData.site === site ? 0xffda86 : 0xbcb391,
       );
       material.opacity = picked ? 0.75 + Math.sin(now * 0.004) * 0.2 : 0.42;
-      r.scale.setScalar(hovered === m.id ? 1.12 : 1);
+      r.scale.setScalar((m.inner ? 0.8 : 1) * (hovered === m.id ? 1.12 : 1));
       const button = platformButtons[i];
-      button.hidden = !picked || !!inspection || battle.phase !== 'planning';
-      projected.set(m.x, wallSpec(campaign.wallTier).height + 0.15, m.z).project(camera);
-      button.style.left = `${(projected.x * 0.5 + 0.5) * canvas.clientWidth}px`;
-      button.style.top = `${(-projected.y * 0.5 + 0.5) * canvas.clientHeight}px`;
+      button.hidden = !picked || !valid || !!inspection || battle.phase !== 'planning';
+      projected.set(m.x, mountHeight(m.id, campaign.wallTier) + 0.15, m.z).project(camera);
+      let x = (projected.x * 0.5 + 0.5) * viewportWidth;
+      let y = (-projected.y * 0.5 + 0.5) * viewportHeight;
+      if (m.inner) {
+        x = centerX + Math.sign(m.x) * Math.max(36, Math.abs(x - centerX));
+        y = centerY + Math.sign(m.z) * Math.max(36, Math.abs(y - centerY));
+      }
+      button.style.left = `${x}px`;
+      button.style.top = `${y}px`;
       button.classList.toggle('occupied', occupied);
       button.classList.toggle('hovered', hovered === m.id);
       button.querySelector('small')!.textContent = occupied ? 'OCCUPIED' : 'PLACE';
     });
     for (const gateName of ['NorthGate', 'SouthGate']) {
       const gate = castle.getObjectByName(gateName);
-      if (gate) gate.position.y = battle.phase === 'battle' && battle.time < 4 ? 2.1 : 0;
+      if (gate) {
+        const y = battle.phase === 'battle' && battle.time < 4 ? 2.1 : 0;
+        if (gate.position.y !== y) renderer.shadowMap.needsUpdate = true;
+        gate.position.y = y;
+      }
     }
     for (const b of battle.bolts) {
       let mesh = boltMeshes.get(b.id);
@@ -1172,6 +1280,7 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
         boltMeshes.delete(id);
       }
     for (const e of battle.effects) {
+      if (['wall', 'dodge', 'guard'].includes(e.kind)) continue;
       let mesh = effectMeshes.get(e.id);
       if (!mesh) {
         mesh = new Mesh(
@@ -1186,9 +1295,13 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
               ? blue
               : gold,
         );
+        mesh.material = (mesh.material as MeshBasicMaterial).clone();
+        (mesh.material as MeshBasicMaterial).transparent = true;
+        (mesh.material as MeshBasicMaterial).depthWrite = false;
         effectMeshes.set(e.id, mesh);
         effectGroup.add(mesh);
       }
+      (mesh.material as MeshBasicMaterial).opacity = Math.max(0, 1 - e.age / 0.5);
       mesh.position.set(e.x, e.y + 0.25, e.z);
       mesh.scale.setScalar(e.kind === 'decree' ? 1 + e.age * 36 : Math.max(0.1, 1 - e.age));
       if (['decree', 'slam', 'taunt', 'charge', 'heal'].includes(e.kind)) {
@@ -1201,7 +1314,7 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
               : e.kind === 'slam'
                 ? 4
                 : e.kind === 'charge'
-                  ? 3
+                  ? 1.2
                   : 1.3;
         mesh.scale.setScalar(Math.min(1, e.age / 0.45) * radius * 2);
       }
@@ -1217,50 +1330,21 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     for (const [id, m] of effectMeshes)
       if (!battle.effects.some((e) => e.id === id)) {
         m.removeFromParent();
+        (m.material as MeshBasicMaterial).dispose();
         effectMeshes.delete(id);
       }
     for (const t of battle.dangers) {
-      let group = dangerMeshes.get(t.id);
-      if (!group) {
-        group = danger(t);
-        dangerMeshes.set(t.id, group);
-        dangerGroup.add(group);
+      let view = dangerMeshes.get(t.id);
+      if (!view) {
+        view = new AttackView(t, wallSpec(campaign.wallTier).height);
+        dangerMeshes.set(t.id, view);
+        dangerGroup.add(view.root);
       }
-      group.traverse((o) => {
-        if (o instanceof InstancedMesh && o.name === 'breath-stream') {
-          o.visible = t.age >= t.windup;
-          const matrix = new Matrix4();
-          for (let i = 0; i < 80; i++) {
-            const u = ((t.age - t.windup) * 1.6 + i / 80 + 10) % 1,
-              angle = t.yaw + Math.sin(i * 37) * t.arc * 0.46,
-              r = 2.9 + u * (t.length - 2.9),
-              y =
-                2.8 * (1 - u) + (wallSpec(campaign.wallTier).height + 1.6) * ((i * 0.618) % 1) * u;
-            if (t.kind === 'rake') {
-              matrix.makeRotationY(angle).multiply(new Matrix4().makeRotationX(Math.PI / 2));
-              matrix.scale(new Vector3(0.7, 1 + u * 2, 0.7));
-            } else matrix.makeScale(0.6 + u * 1.6, 0.6 + u * 1.6, 0.6 + u * 1.6);
-            matrix.setPosition(t.x + Math.sin(angle) * r, y, t.z + Math.cos(angle) * r);
-            o.setMatrixAt(i, matrix);
-          }
-          o.instanceMatrix.needsUpdate = true;
-        } else if (o instanceof Mesh) {
-          const m = o.material as MeshBasicMaterial;
-          m.opacity = t.age < t.windup ? 0.1 + (0.08 * t.age) / t.windup : 0.48;
-          m.color.setHex(t.age < t.windup ? 0xef6078 : 0xffb761);
-        }
-      });
+      view.update();
     }
-    for (const [id, g] of dangerMeshes)
-      if (!battle.dangers.some((d) => d.id === id)) {
-        g.traverse((o) => {
-          if (o instanceof Mesh || o instanceof Line) {
-            if (o instanceof InstancedMesh) o.dispose();
-            o.geometry.dispose();
-            (o.material as MeshBasicMaterial).dispose();
-          }
-        });
-        g.removeFromParent();
+    for (const [id, view] of dangerMeshes)
+      if (!battle.dangers.some((t) => t.id === id)) {
+        view.dispose();
         dangerMeshes.delete(id);
       }
     hudTime += dt;
@@ -1290,8 +1374,11 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     frame = requestAnimationFrame(animate);
   }
   const resize = new ResizeObserver(() => {
-    const w = canvas.clientWidth,
-      h = canvas.clientHeight;
+    const w = (viewportWidth = canvas.clientWidth),
+      h = (viewportHeight = canvas.clientHeight);
+    renderer.setPixelRatio(
+      Math.min(devicePixelRatio, 1.25, Math.sqrt(1400000 / Math.max(1, w * h))),
+    );
     renderer.setSize(w, h);
     camera.aspect = w / h;
     if (battle.phase === 'battle' && !inspection && w < h * 0.8 !== battlePortrait) fitBattle();
@@ -1307,6 +1394,14 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
       snapshot: () => ({
         phase: battle.phase,
         time: battle.time,
+        paused: battle.paused,
+        power: battle.power,
+        guardTime: battle.guardTime,
+        guardCooldown: battle.guardCooldown,
+        guardSide: battle.guardSide,
+        streak: battle.streak,
+        loot: battle.loot,
+        wallImpacts: [...battle.wallImpacts],
         king: { ...battle.king },
         knights: structuredClone(battle.knights),
         enemies: structuredClone(battle.enemies),
@@ -1314,6 +1409,15 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
         state: structuredClone(battle.state),
         stats: { ...battle.stats },
         render: { ...renderer.info.render },
+        pixelRatio: renderer.getPixelRatio(),
+        characterMeshes: [...characters.values()].map((c) => {
+          let count = 0;
+          c.model.traverse((o) => {
+            if (o instanceof Mesh) count++;
+          });
+          return { role: c.role, count };
+        }),
+        architecture: assembly?.summary,
       }),
     };
   return () => {
@@ -1322,6 +1426,7 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     resize.disconnect();
     clearInput();
     app.removeEventListener('click', click);
+    unbindTouchTaps();
     app.removeEventListener('change', change);
     window.removeEventListener('keydown', keydown);
     window.removeEventListener('keyup', keyup);
@@ -1343,9 +1448,13 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
       geometry.dispose();
     for (const mat of [gold, blue, red, green, mountMaterial]) mat.dispose();
     sun.shadow.map?.dispose();
-    keepMaterials.forEach((m) => m.dispose());
+    assembly?.dispose();
+    towerMaterials.clear();
+    contactShadows.dispose();
     royalEffects.dispose();
+    wallDamage?.dispose();
     environment.dispose();
+    audio.dispose();
     cancelPlacement();
     mountRings.forEach((r) => (r.material as MeshBasicMaterial).dispose());
     renderer.dispose();

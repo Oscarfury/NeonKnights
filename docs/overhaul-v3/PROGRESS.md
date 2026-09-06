@@ -4,9 +4,11 @@ The preview at `/NeonKnights/next/` now opens **The King's Battlements**, a conn
 
 The earlier [combat courtyard](COMBAT_PREVIEW.md), [Royal Workshop](CONSTRUCTION_PREVIEW.md) and Foundry inspection remain available under Art & training. Their free-movement and sandbox rules are separate from the castle campaign.
 
-The circular playability pass adds mouse-follow movement, four cardinal drag targets, four building families at three ranks each, branching knight talents, a CC0 painted Dragon with eight authored clips, and a river-valley environment. Current verification is recorded in [the castle preview](CASTLE_PREVIEW.md); the Foundry/construction figures below are historical.
+The latest combat pass removes King health and charge/release attacks. Both royal weapons auto-fire while moving; fast swept projectiles lead targets and push them back. E guards the current wall section, with a timed block exposing the final-watch Dragon. Knights engage faster and recover fully after victory. Character body batching, cached scenery shadows, contact shadows, cached projection dimensions and adaptive render resolution reduce rendering work. The attached castle wings and three visual tiers remain. Current verification is recorded in [the castle preview](CASTLE_PREVIEW.md); the Foundry/construction figures below are historical.
 
-The full campaign and final art/balance acceptance remain outstanding. This delivery connects the foundations; it does not close every work package below.
+The [full fifteen-level campaign design](CAMPAIGN_15.md) and [all launch upgrade paths](UPGRADE_PATHS.md) are complete as specifications. Encounter packets, unlock gates and a reference purchase route have a checked [data worksheet](campaign-15.json). Content implementation and final art/balance acceptance remain outstanding; the preview still has three encounters.
+
+The latest castle assault AI reserves wall positions, keeps targets stable, commits attack facing, and returns diverted enemies to their assigned wall. The current **123 tests and production build pass**, with three legal browser victories, an unattended wall-pressure observation and unchanged frame timing in the existing desktop fixture. See [the assault record](evidence/castle-assault.json). Historical work-package descriptions below retain the earlier courtyard scope where noted.
 
 ## Implemented
 

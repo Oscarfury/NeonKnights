@@ -1,6 +1,6 @@
 # Neon Knights: command a living fortress
 
-Current direction: [King on the battlements, automatic company, three wall tiers](CASTLE_DIRECTION.md). This supersedes the earlier ground-roaming commander loop where they conflict.
+**Historical working design.** The current main-game specification is [the fifteen-level castle campaign](CAMPAIGN_15.md) and [its complete upgrade paths](UPGRADE_PATHS.md), following [the castle direction](CASTLE_DIRECTION.md). They supersede the free-roaming controls, commander health, larger company, building counts, wounds and early Dragon proposed below. The courtyard remains a separate training scene. Use [CASTLE_PREVIEW.md](CASTLE_PREVIEW.md) for what is currently playable.
 
 The player is a commander fighting beside a company they have recruited and equipped. The fortress is a changing battlefield and a visible record of their decisions. Attacks have physical consequences; expensive purchases transform something the player can point to.
 

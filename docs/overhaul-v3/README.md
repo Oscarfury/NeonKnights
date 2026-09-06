@@ -1,6 +1,6 @@
 # Neon Knights: the second overhaul
 
-**Implementation status:** the [Foundry preview](PROGRESS.md) now implements the 3D runtime, imported paladin, animation studies and a playable courtyard with [combat and recovery drills](COMBAT_PREVIEW.md). The replacement siege/campaign remains outstanding.
+**Implementation status:** [The King's Battlements](CASTLE_PREVIEW.md) is a playable three-encounter castle siege with auto-fire, wall Guard, a recruited company, a modular castle and committed enemy assault AI. The [fifteen-level campaign](CAMPAIGN_15.md) and [complete upgrade paths](UPGRADE_PATHS.md) are specified; their additional content is not yet implemented. The Foundry, workshop and courtyard remain separate inspection/training scenes.
 
 **Baseline:** `2259a28`. The user's complete playthrough rates that build at roughly 15–20% of the intended game. Treat that as a prototype assessment, not as a release that needs a little polish.
 
@@ -8,14 +8,18 @@
 
 ## Read this set in order
 
-1. [Game design](DESIGN.md): movement, enemies, real boss attacks, construction, recruiting and equipping knights, separate upgrade systems, legendary items, and pacing.
-2. [Art and animation standard](ART_STANDARD.md): the minimum visual quality, the runtime renderer decision, clip requirements, buildings by rank, asset verification, and the first production asset set.
-3. [Implementation plan](IMPLEMENTATION_PLAN.md): dependency-ordered work, concrete completion evidence, first playable scope, and full-campaign rollout.
-4. [Baseline diagnostics](evidence/v2-audit.json): reproducible code probes supporting the redesign. Run `npx tsx tools/review/audit-v2.ts` against the recorded baseline to regenerate them.
+1. [Fifteen-level campaign](CAMPAIGN_15.md): exact encounters, enemy AI, all three bosses, director constraints, economy and acceptance.
+2. [Complete upgrade paths](UPGRADE_PATHS.md): castle tiers and wings, four defenses, two weapons, four knight classes, gear, runes and relics.
+3. [Current playable scope](CASTLE_PREVIEW.md) and [progress](PROGRESS.md): implemented behavior and verification.
+4. [Art and animation standard](ART_STANDARD.md): required models, clips and asset verification.
+5. [Implementation plan](IMPLEMENTATION_PLAN.md): historical work packages; the campaign specification now defines the expansion stages.
+6. [Historical design](DESIGN.md) and [baseline diagnostics](evidence/v2-audit.json): the earlier proposals and their supporting probes.
 
 This set supersedes the earlier proposal for **future development**. The root application and `docs/IMPLEMENTATION.md` still describe the deployed prototype. The plans here are proposals, not shipped features.
 
-## Decisions arising from the playthrough
+## Historical decisions arising from the first playthrough
+
+The table and slice target below predate the castle controls. The current campaign documents above replace conflicting counts and mechanics.
 
 | Player feedback                              | Replacement design                                                                                                                                | Evidence required before calling it done                                                                                 |
 | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
@@ -28,7 +32,7 @@ This set supersedes the earlier proposal for **future development**. The root ap
 | Knights clump and expire                     | Recruited knights with health, equipment, roles and persistent orders; formation slots, collision avoidance, retreat and recovery                 | Knights survive between waves, maintain useful spacing and show equipped items in combat                                 |
 | Prototype is far from the intended game      | A small, high-quality playable slice before expanding the campaign                                                                                | A recorded playthrough and asset/animation review; feature counts and passing unit tests are insufficient                |
 
-## The next playable delivery
+## Historical three-encounter target
 
 Build a **three-encounter, roughly 5–8 minute siege** at the new quality level: a free-moving commander with Stormbow and Sunlance, three enemy roles, a moving Dragon, three persistent knights and a recruitable reserve, two constructible buildings with all three tiers, separate planning sections, and an earned choice among three legendary build changes. The final encounter lets the player use that reward.
 

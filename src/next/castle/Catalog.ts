@@ -1,23 +1,57 @@
-import type { Rank, SiteId } from '../construction/Catalog';
+import type { DefenseKind, Rank, SiteId } from '../construction/Catalog';
 export type Role = 'warden' | 'marksman';
 export type EnemyRole = 'raider' | 'bulwark' | 'hexcaster';
 export type Relic = 'worldpiercer' | 'storm-oath' | 'black-standard';
 export const wallTiers = [
-  { name: 'Stone curtain', height: 2.28, hp: 230, cost: 0, capacity: 4 },
-  { name: 'Fortified battlements', height: 3.28, hp: 360, cost: 260, capacity: 6 },
-  { name: 'Royal bastion', height: 4.28, hp: 520, cost: 460, capacity: 8 },
+  { name: 'Outpost', height: 2.28, hp: 230, cost: 0, capacity: 4 },
+  { name: 'Stonehold', height: 3.28, hp: 360, cost: 260, capacity: 6 },
+  { name: 'Crownspire', height: 4.28, hp: 520, cost: 460, capacity: 8 },
 ] as const;
 export const wallSpec = (rank: Rank) => wallTiers[rank - 1];
-export const mounts: { id: SiteId; name: string; x: number; z: number; yaw: number }[] = [
+export const mounts: {
+  id: SiteId;
+  name: string;
+  x: number;
+  z: number;
+  yaw: number;
+  inner?: boolean;
+}[] = [
   { id: 'west-watch', name: 'North', x: 0, z: -7.6, yaw: Math.PI },
   { id: 'east-watch', name: 'East', x: 7.6, z: 0, yaw: Math.PI / 2 },
   { id: 'east-court', name: 'South', x: 0, z: 7.6, yaw: 0 },
   { id: 'west-court', name: 'West', x: -7.6, z: 0, yaw: -Math.PI / 2 },
+  { id: 'inner-nw', name: 'Courtyard NW', x: -1.4, z: -1.4, yaw: Math.PI, inner: true },
+  { id: 'inner-ne', name: 'Courtyard NE', x: 1.4, z: -1.4, yaw: Math.PI, inner: true },
+  { id: 'inner-se', name: 'Courtyard SE', x: 1.4, z: 1.4, yaw: 0, inner: true },
+  { id: 'inner-sw', name: 'Courtyard SW', x: -1.4, z: 1.4, yaw: 0, inner: true },
 ];
+export const isSupport = (kind: DefenseKind) => kind === 'tavern' || kind === 'sanctuary';
+export const fitsMount = (kind: DefenseKind, site: SiteId) =>
+  mounts.some((m) => m.id === site && !!m.inner === isSupport(kind));
+export const mountHeight = (site: SiteId, rank: Rank) =>
+  mounts.find((m) => m.id === site)?.inner ? 0 : wallSpec(rank).height;
 export const roles = {
-  warden: { name: 'Warden', hp: 135, damage: 23, range: 1.9, speed: 3.2 },
-  marksman: { name: 'Marksman', hp: 95, damage: 22, range: 8, speed: 3.5 },
+  warden: { name: 'Warden', hp: 135, damage: 26, range: 2.1, speed: 4.3 },
+  marksman: { name: 'Marksman', hp: 95, damage: 22, range: 9, speed: 4.5 },
 };
+export const royalWeapons = {
+  stormbow: {
+    name: 'Stormbow',
+    description: 'Rapid arrows. Tracks moving targets and knocks them back.',
+    contact: 0.07,
+    interval: 0.36,
+    damage: 25,
+    upgrade: 7,
+  },
+  sunlance: {
+    name: 'Sunlance',
+    description: 'Piercing sunbolts. Breaks shields and drives through three invaders.',
+    contact: 0.06,
+    interval: 0.62,
+    damage: 43,
+    upgrade: 10,
+  },
+} as const;
 export const enemyRoles = {
   raider: { name: 'Ash Raider', hp: 94, damage: 13, speed: 2.25, range: 1.8, cost: 1 },
   bulwark: { name: 'Iron Bulwark', hp: 175, damage: 23, speed: 1.25, range: 2.1, cost: 2.5 },
@@ -142,25 +176,25 @@ export const encounters = [
   {
     name: 'The First Watch',
     subtitle: 'Hold every side. Send the company beyond the gates.',
-    budget: 24,
-    interval: 3.1,
+    budget: 18,
+    interval: 2.5,
     reward: 430,
     boss: false,
   },
   {
-    name: 'Emberwing Descends',
-    subtitle: 'A Dragon approaches. Keep your King clear of its breath.',
-    budget: 16,
-    interval: 4.4,
+    name: 'Break the Siege',
+    subtitle: 'Rally the knights. Break the raiders and claim a siege relic.',
+    budget: 28,
+    interval: 1.9,
     reward: 740,
-    boss: true,
+    boss: false,
   },
   {
-    name: 'Break the Counter-siege',
-    subtitle: 'Use your relic against a coordinated assault.',
-    budget: 49,
-    interval: 2.5,
+    name: 'Emberwing — The Final Siege',
+    subtitle: 'The Dragon hunts your knights, then burns the walls. Guard the marked section.',
+    budget: 18,
+    interval: 3.2,
     reward: 850,
-    boss: false,
+    boss: true,
   },
 ] as const;

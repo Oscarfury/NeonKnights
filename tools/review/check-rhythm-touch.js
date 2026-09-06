@@ -1,0 +1,72 @@
+async (page) => {
+  for(const previous of page.context().browser().contexts()) if(previous!==page.context()) await previous.close();
+  const context = await page.context().browser().newContext({ viewport: { width: 412, height: 915 }, hasTouch: true, isMobile: true, deviceScaleFactor: 1 });
+  const p = await context.newPage(), errors = [];
+  p.on('pageerror', (e) => errors.push(e.message));
+  await p.goto('http://127.0.0.1:4173/NeonKnights/next/');
+  await p.getByRole('button', { name: 'Build', exact: true }).waitFor();
+  const client = await context.newCDPSession(p);
+  const state = () => p.evaluate(() => JSON.parse(localStorage.getItem('neon-knights:v3:castle:1')));
+  const overflow = () => p.evaluate(() => document.documentElement.scrollWidth > innerWidth || document.documentElement.scrollHeight > innerHeight + 1);
+  const center = async (selector) => { await p.locator(selector).scrollIntoViewIfNeeded(); const r = await p.locator(selector).boundingBox(); return { x: r.x + r.width / 2, y: r.y + r.height / 2, id: 1 }; };
+  const touch = (type, point) => client.send('Input.dispatchTouchEvent', { type, touchPoints: point ? [point] : [] });
+  // Use one CDP input session for the entire gesture sequence (including taps).
+  const tap = async locator => {
+    await locator.scrollIntoViewIfNeeded(); const r=await locator.boundingBox();
+    await touch('touchStart',{x:r.x+r.width/2,y:r.y+r.height/2,id:1});await touch('touchEnd');
+    await p.waitForTimeout(100);
+  };
+  const drag = async (kind, label) => {
+    const from = await center(`[data-pick="${kind}"]`); await touch('touchStart', from);
+    await p.locator('.platform-target:visible').first().waitFor();
+    const targets = await p.locator('.platform-target:visible').count();
+    if (targets !== 4) throw Error(`Expected 4 matching targets, got ${targets}`);
+    const to = await center(`[aria-label="Place on ${label} platform"]`);
+    for (let n = 1; n <= 12; n++) await touch('touchMove', { x: from.x + (to.x-from.x)*n/12, y: from.y + (to.y-from.y)*n/12, id: 1 });
+    await touch('touchEnd');
+    // Let the native touch-end/capture release finish before switching input drivers.
+    await p.waitForTimeout(150);
+  };
+  if (await overflow()) throw Error('Portrait planning overflows');
+  await tap(p.locator('[data-pick="tavern"]'));
+  await tap(p.getByRole('button', { name: 'Cancel', exact: true }));
+  if (!(await p.locator('#castle-gold').textContent()).includes('360')) throw Error('Cancellation spent gold');
+  await drag('tavern', 'Courtyard SW');
+  if ((await state()).gold !== 240 || (await state()).buildings[0].site !== 'inner-sw') throw Error('Tavern drag failed');
+  await tap(p.getByRole('button', { name: 'Knights', exact: true }));
+  await tap(p.locator('[data-action="recruit:elin"]'));
+  if ((await p.locator('#council-notice').textContent()).includes('already')) throw Error('Recruit tap fired twice');
+  if ((await state()).knights.length !== 2 || !(await state()).knights[1].active) throw Error('Recruit did not deploy');
+  await tap(p.getByRole('button', { name: 'Build', exact: true }));
+  await tap(p.locator('[data-action="zone:wall"]'));
+  await drag('ballista', 'North');
+  if ((await state()).gold !== 0) throw Error('Defense placement charged incorrectly');
+  await p.screenshot({ path: 'output/playwright/rhythm-touch-planning.png' });
+  await p.reload(); await p.getByRole('button', { name: 'Build', exact: true }).waitFor();
+  if ((await state()).knights.length !== 2 || (await state()).buildings.length !== 2) throw Error('Recruitment or buildings did not persist');
+  await tap(p.getByRole('button', { name: /^Begin watch/ }));
+  const canvas = await p.locator('.castle-canvas canvas').boundingBox();
+  const before = await p.locator('.unit-label.legendary').getAttribute('style');
+  await touch('touchStart', { x: canvas.x + canvas.width * 0.87, y: canvas.y + canvas.height * 0.5, id: 1 });
+  await p.waitForTimeout(1000); await touch('touchEnd');
+  if (await p.locator('.unit-label.legendary').getAttribute('style') === before) throw Error('Touch movement failed');
+  if(await p.locator('#royal-health, #king-charge').count()) throw Error('Old King health or heavy attack remains');
+  await tap(p.locator('#king-weapon'));await p.waitForTimeout(160);
+  if((await p.locator('#king-weapon b').textContent())!=='Sunlance')throw Error('Touch weapon swap failed');
+  const guard=await center('#king-guard');
+  await touch('touchStart',guard);await touch('touchEnd');await p.waitForTimeout(160);
+  const guardActive=(await p.locator('#guard-status').textContent())==='GUARDING';
+  if(!guardActive)throw Error('Touch guard did not activate');
+  await p.screenshot({ path: 'output/playwright/rhythm-touch-battle.png' });
+  await tap(p.getByRole('button', { name: 'Pause', exact: true }));
+  await p.getByRole('button', { name: 'Resume the watch', exact: true }).waitFor();
+  if (await overflow()) throw Error('Portrait battle overflows');
+  await p.setViewportSize({ width: 915, height: 412 }); await p.waitForTimeout(150);
+  await p.screenshot({ path: 'output/playwright/rhythm-touch-landscape.png' });
+  if (await overflow()) throw Error('Landscape battle overflows');
+  const clipped = await p.locator('.castle-hud button').evaluateAll((list) => list.some((e) => { const r=e.getBoundingClientRect(); return r.width && (r.x<0 || r.y<0 || r.right>innerWidth || r.bottom>innerHeight); }));
+  if (clipped) throw Error('Battle controls clipped');
+  const noDebug = await p.evaluate(() => typeof window.__castle === 'undefined');
+  await client.detach(); await context.close();
+  return { innerAndWallTouchDrag: true, canceledWithoutSpending: true, recruitmentPersisted: true, guard: guardActive, weaponSwap: true, movement: true, pause: true, portrait: '412x915', landscape: '915x412', productionHasNoDebugControls: noDebug, errors };
+}

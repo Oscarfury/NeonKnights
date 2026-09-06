@@ -13,6 +13,7 @@ import {
   wallSpec,
   mounts,
   encounters,
+  fitsMount,
   type ItemKind,
   type Relic,
 } from './Catalog';
@@ -35,6 +36,7 @@ export interface OwnedItem {
 export interface Campaign {
   version: 1;
   layout?: 'circle';
+  playability?: 1;
   gold: number;
   encounter: number;
   wallTier: Rank;
@@ -60,7 +62,8 @@ export function createCampaign(difficulty: Campaign['difficulty'] = 'normal'): C
   return {
     version: 1,
     layout: 'circle',
-    gold: 650,
+    playability: 1,
+    gold: 360,
     encounter: 0,
     wallTier: 1,
     walls: [230, 230, 230, 230],
@@ -68,7 +71,7 @@ export function createCampaign(difficulty: Campaign['difficulty'] = 'normal'): C
     weapon: 'stormbow',
     ranks: { stormbow: 1, sunlance: 1 },
     sockets: { stormbow: [], sunlance: [] },
-    knights: recruits.slice(0, 3).map((r) => ({
+    knights: recruits.slice(0, 1).map((r) => ({
       id: r.id,
       active: true,
       hp: r.role === 'warden' ? 135 : 95,
@@ -76,7 +79,7 @@ export function createCampaign(difficulty: Campaign['difficulty'] = 'normal'): C
       xp: 0,
       gear: null,
       talents: [],
-      stance: r.role === 'warden' ? 'guard' : 'hunt',
+      stance: 'hunt',
     })),
     inventory: [],
     offers: ['ward-seal', 'storm-seal', 'field-kit', 'quickdraw', 'sundering', 'vital-spark'],
@@ -99,6 +102,10 @@ export function build(s: Campaign, kind: DefenseKind, site: SiteId, rank: Rank =
   )
     return 'Choose a highlighted platform and a building.';
   if (s.buildings.some((b) => b.site === site)) return 'That bastion already has a defense.';
+  if (!fitsMount(kind, site))
+    return 'Support buildings go in the courtyard; defenses go on the walls.';
+  if (kind === 'tavern' && s.buildings.some((b) => b.kind === 'tavern'))
+    return 'Your company already has a tavern.';
   if (capacity(s) + defenses[kind].capacity > wallSpec(s.wallTier).capacity)
     return 'Upgrade the walls or salvage a defense to free capacity.';
   const cost = investment(kind, rank);
@@ -119,6 +126,7 @@ export function moveBuilding(s: Campaign, id: number, site: SiteId): string | nu
   const b = s.buildings.find((b) => b.id === id),
     mount = mounts.find((m) => m.id === site);
   if (!b || !mount) return 'Choose a building and a highlighted platform.';
+  if (!fitsMount(b.kind, site)) return 'Choose a matching courtyard or wall slot.';
   if (s.buildings.some((other) => other.id !== id && other.site === site))
     return 'That platform is occupied.';
   b.site = site;
@@ -242,14 +250,17 @@ export function equipKnight(s: Campaign, knight: string, id: number): string | n
   k.gear = id;
   return null;
 }
+export const recruitCost = 140;
+export const hasTavern = (s: Campaign) => s.buildings.some((b) => b.kind === 'tavern' && b.hp > 0);
 export function recruit(s: Campaign, id: string): string | null {
+  if (!hasTavern(s)) return 'Build a tavern in the courtyard to recruit knights.';
   if (!recruits.some((r) => r.id === id) || s.knights.some((k) => k.id === id))
     return 'This knight has already joined.';
-  if (s.gold < 180) return 'Recruitment costs 180 crowns.';
-  s.gold -= 180;
+  if (s.gold < recruitCost) return `Recruitment costs ${recruitCost} crowns.`;
+  s.gold -= recruitCost;
   const k: Knight = {
     id,
-    active: false,
+    active: s.knights.filter((k) => k.active).length < 3,
     hp: 95,
     rank: 1,
     xp: 0,
@@ -323,13 +334,11 @@ export function completeEncounter(s: Campaign) {
   s.gold += encounters[s.encounter].reward;
   s.encounter++;
   s.wins++;
-  s.kingHp = Math.min(160, s.kingHp + 45);
-  for (const k of s.knights)
-    if (k.active) {
-      k.xp += 2;
-      if (k.hp <= 0) k.hp = 25;
-      else k.hp = Math.min(knightMax(k), k.hp + 15);
-    }
+  s.kingHp = 160;
+  for (const k of s.knights) {
+    if (k.active) k.xp += 2;
+    k.hp = knightMax(k);
+  }
   s.bought = [];
   s.rerolls = 0;
   const pool = Object.keys(items) as ItemKind[];
@@ -433,7 +442,8 @@ export function decodeCampaign(raw: string): Campaign | null {
       s.bought.some((i) => !int(i, 0, 5))
     )
       return null;
-    if (!Array.isArray(s.buildings) || s.buildings.length > 4) return null;
+    if (!Array.isArray(s.buildings) || s.buildings.length > 8) return null;
+    if (s.buildings.filter((b) => b?.kind === 'tavern').length > 1) return null;
     const used = new Set<string>();
     for (const b of s.buildings) {
       if (
@@ -455,6 +465,19 @@ export function decodeCampaign(raw: string): Campaign | null {
       ids.add(b.id);
       if (s.layout !== 'circle') b.yaw = mounts.find((m) => m.id === b.site)!.yaw;
     }
+    // Move legacy shrines into the new courtyard without charging or losing their upgrades.
+    if (s.playability === undefined) {
+      for (const b of s.buildings.filter((b) => b.kind === 'sanctuary')) {
+        if (fitsMount(b.kind, b.site)) continue;
+        const free = mounts.find(
+          (m) => m.inner && !s.buildings.some((other) => other.site === m.id),
+        );
+        if (!free) return null;
+        b.site = free.id;
+        b.yaw = free.yaw;
+      }
+    } else if (s.playability !== 1) return null;
+    if (s.buildings.some((b) => !fitsMount(b.kind, b.site))) return null;
     if (
       capacity(s) > wallSpec(s.wallTier).capacity ||
       (s.relic !== null && !['worldpiercer', 'storm-oath', 'black-standard'].includes(s.relic)) ||
@@ -462,6 +485,7 @@ export function decodeCampaign(raw: string): Campaign | null {
     )
       return null;
     s.layout = 'circle';
+    s.playability = 1;
     return structuredClone(s);
   } catch {
     return null;

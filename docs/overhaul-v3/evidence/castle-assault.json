@@ -1,0 +1,92 @@
+{
+  "date": "2026-09-06",
+  "scope": "Current three-watch castle preview. Fifteen-level campaign remains design-only.",
+  "changes": [
+    "Persistent wall and attack-slot assignments",
+    "Rear caster firing positions",
+    "Staggered target decisions and pursuit hysteresis",
+    "Committed target and facing through attack recovery",
+    "Moving units yield to planted attackers; separation stays outside the curtain"
+  ],
+  "checks": {
+    "testsPassed": 123,
+    "productionBuild": "passed",
+    "designWorksheet": "15 levels, 8 ordinary roles, 3 bosses; 4801 crowns available before finale; 385 reserved for repairs; 56 remaining on reference route"
+  },
+  "campaign": {
+    "encounters": [
+      {
+        "phase": "won",
+        "seconds": 28.53,
+        "wallDamage": 13,
+        "perfectGuards": 0
+      },
+      {
+        "phase": "won",
+        "seconds": 35.73,
+        "wallDamage": 0,
+        "perfectGuards": 0
+      },
+      {
+        "phase": "won",
+        "seconds": 38.08,
+        "wallDamage": 26,
+        "perfectGuards": 1
+      }
+    ],
+    "errors": []
+  },
+  "observation": {
+    "fixture": "Fresh watch, one knight, no purchases or player input",
+    "samples": 311,
+    "committedSamples": 368,
+    "wallContacts": 19,
+    "maxTurnDuringStrike": 0,
+    "phase": "lost",
+    "time": 35.73333333333259,
+    "walls": [0, 127, 230, 230],
+    "stats": {
+      "royalDamage": 245.6,
+      "companyDamage": 376.2000000000003,
+      "defenseDamage": 0,
+      "wallDamage": 333,
+      "bossDamage": 0,
+      "shielded": 0,
+      "rescues": 0,
+      "guardPrevented": 0,
+      "perfectGuards": 0,
+      "royalShots": 25
+    },
+    "errors": []
+  },
+  "profile": {
+    "viewport": "1600x1000",
+    "samples": 300,
+    "medianMs": 16.699999999999818,
+    "p95Ms": 16.80000000000109,
+    "over33ms": 0,
+    "pixelRatio": 0.9710241660404146,
+    "render": {
+      "frame": 673,
+      "calls": 230,
+      "triangles": 440029,
+      "points": 0,
+      "lines": 4
+    },
+    "actors": 7,
+    "errors": []
+  },
+  "limitations": [
+    "Scripted desktop checks do not measure player retention or physical mobile performance.",
+    "Profile uses the same funded seven-actor fixture as the preceding combat pass, not the planned eleven-enemy finale.",
+    "Unattended fresh-watch defeat is intentional evidence of effective wall pressure. Wall contact counter in the observation records committed attack releases, including caster projectiles."
+  ],
+  "reproduce": [
+    "npm test",
+    "npm run build",
+    "npx tsx tools/review/check-campaign-design.ts",
+    "tools/review/check-assault.js",
+    "tools/review/play-rhythm.js",
+    "tools/review/profile-castle.js"
+  ]
+}

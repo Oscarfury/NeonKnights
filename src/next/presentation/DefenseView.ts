@@ -12,6 +12,7 @@ import {
 import type { Assets } from './Assets';
 import { spec, type DefenseKind, type Rank } from '../construction/Catalog';
 import type { Defense } from '../construction/DefenseSystem';
+import { towerWing } from '../castle/TowerWing';
 
 export class DefenseView {
   readonly root = new Group();
@@ -26,12 +27,18 @@ export class DefenseView {
     readonly kind: DefenseKind,
     readonly rank: Rank,
     ghost = false,
+    castleModule = false,
   ) {
-    this.model = assets.get(`${kind}-${rank}`).scene.clone(true);
+    this.model =
+      kind === 'tavern' || (castleModule && kind === 'sanctuary')
+        ? towerWing(assets, kind as 'tavern' | 'sanctuary', rank)
+        : assets.get(`${kind}-${rank}`).scene.clone(true);
     const clones = new Map<MeshStandardMaterial, MeshStandardMaterial>();
+    const generatedMaterials = new Set<MeshStandardMaterial>();
     this.model.traverse((o) => {
       if (!(o instanceof Mesh)) return;
       const original = o.material as MeshStandardMaterial;
+      if (o.userData.modularGeometry) generatedMaterials.add(original);
       let material = clones.get(original);
       if (!material) {
         material = original.clone();
@@ -46,6 +53,7 @@ export class DefenseView {
       o.castShadow = !ghost;
     });
     this.root.add(this.model);
+    generatedMaterials.forEach((m) => m.dispose());
     for (const part of this.model.children) this.origins.set(part, part.position.clone());
     const r = spec(kind, rank),
       half = (r.arc * Math.PI) / 360;
@@ -136,6 +144,9 @@ export class DefenseView {
     }
   }
   dispose() {
+    this.model.traverse((o) => {
+      if (o instanceof Mesh && o.userData.modularGeometry) o.geometry.dispose();
+    });
     this.materials.forEach((m) => m.dispose());
     this.coverage.geometry.dispose();
     (this.coverage.material as LineBasicMaterial).dispose();

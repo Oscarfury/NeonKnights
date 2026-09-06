@@ -18,29 +18,42 @@ import { stepDefenses, interceptSegment } from '../src/next/construction/Defense
 const step = (b: Battle, seconds: number, input = { rotate: 0, charge: false, decree: false }) => {
   for (let n = 0; n < seconds * 60; n++) b.tick(1 / 60, input);
 };
+// Existing combat/equipment contracts use a fully recruited company and a fixed ledger.
+const preparedCompany = () => {
+  const s = C.createCampaign();
+  s.gold = 2000;
+  C.build(s, 'tavern', 'inner-nw');
+  C.recruit(s, 'elin');
+  C.recruit(s, 'corvin');
+  s.buildings = [];
+  s.nextId = 1;
+  s.gold = 650;
+  s.knights[0].stance = s.knights[2].stance = 'guard';
+  return s;
+};
 const quiet = () => {
-  const b = new Battle(C.createCampaign());
+  const b = new Battle(preparedCompany());
   b.start();
   b.spawnTimer = 9999;
   return b;
 };
 
 test('four cardinal placement targets reject the courtyard and occupied moves are atomic', () => {
-  const s = C.createCampaign();
+  const s = preparedCompany();
   for (const m of mounts) assert.equal(platformAt(m.x, m.z), m.id);
   assert.equal(platformAt(0, 0), null);
   assert.equal(platformAt(6, 6), null);
   C.build(s, 'spire', 'west-watch');
-  C.build(s, 'sanctuary', 'east-court');
+  C.build(s, 'sanctuary', 'inner-se');
   const saved = structuredClone(s);
-  assert.ok(C.moveBuilding(s, s.buildings[0].id, 'east-court'));
+  assert.ok(C.moveBuilding(s, s.buildings[0].id, 'inner-se'));
   assert.deepEqual(s, saved);
   assert.equal(C.moveBuilding(s, s.buildings[0].id, 'east-watch'), null);
   assert.equal(s.gold, saved.gold);
   assert.equal(s.buildings[0].yaw, Math.PI / 2);
 });
 test('old checkpoints migrate to cardinal mounts without losing equipment, wounds or gold', () => {
-  const s = C.createCampaign();
+  const s = preparedCompany();
   C.build(s, 'ballista', 'west-watch');
   s.kingHp = 81.6;
   const raw = JSON.parse(JSON.stringify(s));
@@ -54,7 +67,7 @@ test('old checkpoints migrate to cardinal mounts without losing equipment, wound
   assert.deepEqual(migrated.knights[0].talents, []);
 });
 test('talent trees enforce class, prerequisite and point budgets; resets refund every point', () => {
-  const s = C.createCampaign(),
+  const s = preparedCompany(),
     k = s.knights[0];
   assert.ok(C.learnTalent(s, k.id, 'aftershock'));
   assert.ok(C.learnTalent(s, k.id, 'mending'));
@@ -116,7 +129,7 @@ test('Thunder Slam damages nearby invaders, stuns normal enemies and respects it
   assert.equal(enemy.hp, hp);
   assert.ok(k.ability > 7);
 });
-test('Challenging Cry redirects a hex caster away from the King and does not taunt a Dragon', () => {
+test('Challenging Cry redirects a hex caster toward its Warden and does not taunt a Dragon', () => {
   const b = quiet(),
     k = b.knights[0];
   Object.assign(k, {
@@ -133,8 +146,13 @@ test('Challenging Cry redirects a hex caster away from the King and does not tau
   assert.equal(e.taunter, k.id);
   assert.ok(e.taunted > 3.9);
   assert.equal(dragon.taunted, 0);
-  step(b, 1);
-  const shot = b.bolts.find((p) => p.owner === e.id);
+  b.king.cooldown = 99;
+  // The caster now turns before committing its cast; inspect the first released bolt.
+  let shot = b.bolts.find((p) => p.owner === e.id);
+  for (let i = 0; i < 100 && !shot; i++) {
+    b.tick(0.02);
+    shot = b.bolts.find((p) => p.owner === e.id);
+  }
   assert.ok(shot && shot.vx > 0, 'Caster shoots toward the taunting knight');
 });
 test('Mending Light heals living allies, grants bounded shields and never resurrects', () => {
@@ -163,9 +181,9 @@ test('Mending Light heals living allies, grants bounded shields and never resurr
   assert.equal(target.barrier, 10);
 });
 test('new buildings have distinct healing and chained-damage behavior', () => {
-  const s = C.createCampaign();
+  const s = preparedCompany();
   C.build(s, 'spire', 'west-watch');
-  C.build(s, 'sanctuary', 'east-court');
+  C.build(s, 'sanctuary', 'inner-se');
   const b = new Battle(s);
   b.start();
   b.spawnTimer = 9999;
@@ -212,7 +230,7 @@ test('the King follows a continuous circular battlement at each upgraded height'
   b.paused = true;
   step(b, 1, { rotate: -1, charge: true, decree: true });
   assert.deepEqual(b.king, before);
-  assert.equal(b.charge, 0);
+  assert.equal(b.guardTime, 0);
 });
 test('knights walk through both gates, hold separate positions and never expire on a summon timer', () => {
   const b = quiet();
@@ -229,7 +247,7 @@ test('knights walk through both gates, hold separate positions and never expire 
   assert.ok(distance(b.knights[1], b.knights[2]) > 1);
 });
 test('construction commits costs once and rejected purchases preserve the complete ledger', () => {
-  const s = C.createCampaign();
+  const s = preparedCompany();
   assert.equal(C.build(s, 'ballista', 'east-court', 3), null);
   assert.equal(s.gold, 150);
   const before = structuredClone(s);
@@ -243,7 +261,7 @@ test('construction commits costs once and rejected purchases preserve the comple
   assert.equal(s.gold, 500);
 });
 test('wall upgrades add visible-tier capacity and preserve existing wounds', () => {
-  const s = C.createCampaign();
+  const s = preparedCompany();
   s.walls[1] = 100;
   assert.equal(C.upgradeWalls(s), null);
   assert.equal(s.wallTier, 2);
@@ -257,7 +275,7 @@ test('wall upgrades add visible-tier capacity and preserve existing wounds', () 
   assert.equal(s.gold, 368);
 });
 test('six shop offers remain stable after a purchase and each item has one equipment owner', () => {
-  const s = C.createCampaign(),
+  const s = preparedCompany(),
     offers = [...s.offers];
   C.buyOffer(s, 0);
   C.buyOffer(s, 3);
@@ -280,7 +298,7 @@ test('six shop offers remain stable after a purchase and each item has one equip
   assert.equal(s.gold, gold);
 });
 test('full rune slots reject a transfer atomically; reserve and recruitment limits hold', () => {
-  const s = C.createCampaign();
+  const s = preparedCompany();
   s.gold = 3000;
   C.buyOffer(s, 3);
   C.buyOffer(s, 4);
@@ -289,6 +307,7 @@ test('full rune slots reject a transfer atomically; reserve and recruitment limi
   const before = structuredClone(s);
   assert.ok(C.equipRune(s, 'stormbow', s.inventory[1].id));
   assert.deepEqual(s, before);
+  C.build(s, 'tavern', 'inner-nw');
   C.recruit(s, 'lysa');
   assert.ok(C.assign(s, 'lysa'));
   C.assign(s, 'elin');
@@ -299,7 +318,7 @@ test('full rune slots reject a transfer atomically; reserve and recruitment limi
   assert.equal(s.gold, gold);
 });
 test('checkpoint validation accepts fractional wounds and rejects duplicate or impossible ownership', () => {
-  const s = C.createCampaign();
+  const s = preparedCompany();
   s.kingHp = 93.6;
   s.knights[0].hp = 76.2;
   C.buyOffer(s, 0);
@@ -337,7 +356,7 @@ test('shield facing changes received damage and the ward seal recharges instead 
   assert.equal(k.hp, 63);
 });
 test('mounted ballistas emit from their elevated mechanisms and aim down at field targets', () => {
-  const s = C.createCampaign();
+  const s = preparedCompany();
   C.build(s, 'ballista', 'east-court');
   C.upgradeWalls(s);
   const b = new Battle(s),
@@ -357,7 +376,7 @@ test('mounted ballistas emit from their elevated mechanisms and aim down at fiel
   assert.ok(bolts[0].vy < 0);
 });
 test('wall shields intercept at their actual height and can protect a King behind the projector', () => {
-  const s = C.createCampaign();
+  const s = preparedCompany();
   C.build(s, 'aegis', 'east-court');
   C.upgradeWalls(s);
   const b = new Battle(s),
@@ -379,7 +398,7 @@ test('wall shields intercept at their actual height and can protect a King behin
   assert.equal(d.charge, 31);
 });
 test('Worldpiercer trades a narrower arc and slower reload for heavier piercing bolts', () => {
-  const s = C.createCampaign();
+  const s = preparedCompany();
   C.build(s, 'ballista', 'east-court');
   const b = new Battle(s),
     d = b.defenses[0];
@@ -424,17 +443,17 @@ test('Dragon warning and active footprints share the same cone; committed attack
   step(b, 0.8);
   assert.equal(b.king.hp, 160);
   step(b, 0.4);
-  assert.equal(b.king.hp, 121);
+  assert.equal(b.king.hp, 160);
   step(b, 0.7);
-  assert.equal(b.king.hp, 121);
+  assert.equal(b.king.hp, 160);
   assert.ok(b.stats.wallDamage > 0);
 });
 test('the Dragon arrives from a seeded radial approach, moves, commits multiple abilities and takes physical damage', () => {
-  const s = C.createCampaign();
-  s.encounter = 1;
+  const s = preparedCompany();
+  s.encounter = 2;
   const b = new Battle(s);
   b.start();
-  b.spawned = encounters[1].budget;
+  b.spawned = encounters[2].budget;
   step(b, 12.1);
   const dragon = b.enemies.find((e) => e.role === 'dragon')!;
   assert.ok(dragon);
@@ -455,39 +474,29 @@ test('the Dragon arrives from a seeded radial approach, moves, commits multiple 
   assert.ok(b.stats.bossDamage > 0);
   assert.ok(b.king.hp < 160 || b.stats.wallDamage > 0);
 });
-test('Royal Decree interrupts a warned breath once, while a committed breath remains active', () => {
-  const make = () => {
-    const s = C.createCampaign();
-    s.encounter = 1;
-    const b = new Battle(s);
-    b.start();
-    b.spawned = encounters[1].budget;
-    step(b, 18.9);
-    const d = b.enemies.find((e) => e.role === 'dragon')!;
-    d.x = 0;
-    d.z = 13;
-    d.y = 0;
-    d.action = 'breath';
-    d.actionTime = 0.6;
-    b.bossResolve = 90;
-    b.power = 100;
-    return b;
-  };
-  const b = make();
-  b.tick(1 / 60, { rotate: 0, charge: false, decree: true });
-  assert.equal(b.bossInterrupts, 1);
-  assert.equal(b.enemies.find((e) => e.role === 'dragon')!.action, 'stagger');
+test('Royal Decree clears nearby invaders without canceling a boss wall commitment', () => {
+  const b = quiet();
+  const dragon = invader(b, {
+    role: 'dragon',
+    x: 0,
+    z: 13,
+    action: 'breath',
+    actionTime: 0.5,
+    hp: 3000,
+    maxHp: 3000,
+  });
+  b.power = 100;
+  b.king.cooldown = 99;
+  b.tick(1 / 60, { rotate: 0, decree: true });
   assert.equal(b.power, 0);
-  assert.equal(b.dangers.filter((t) => t.kind !== 'hex').length, 0);
-  const committed = make();
-  committed.enemies.find((e) => e.role === 'dragon')!.actionTime = 2.3;
-  committed.tick(1 / 60, { rotate: 0, charge: false, decree: true });
-  assert.equal(committed.bossInterrupts, 0);
+  assert.equal(dragon.action, 'breath');
+  assert.ok(dragon.hp < 3000);
+  assert.equal(b.bossInterrupts, 0);
 });
-test('defeat keeps the original checkpoint; victory grants a single reward and persists wounds', () => {
+test('defeat keeps the original checkpoint; victory grants a single reward and fully restores the company', () => {
   const lost = quiet(),
     checkpoint = structuredClone(lost.checkpoint);
-  lost.king.hp = 0;
+  lost.state.walls[0] = 0;
   lost.tick(0.02);
   assert.equal(lost.phase, 'lost');
   assert.deepEqual(lost.checkpoint, checkpoint);
@@ -497,7 +506,7 @@ test('defeat keeps the original checkpoint; victory grants a single reward and p
   won.tick(0.02);
   assert.equal(won.phase, 'won');
   assert.equal(won.state.gold, 650 + encounters[0].reward);
-  assert.equal(won.state.knights[0].hp, 55);
+  assert.equal(won.state.knights[0].hp, C.knightMax(won.state.knights[0]));
   const state = structuredClone(won.state);
   step(won, 10);
   assert.deepEqual(won.state, state);

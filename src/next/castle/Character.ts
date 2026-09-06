@@ -7,6 +7,7 @@ import {
   Object3D,
   PropertyBinding,
   Quaternion,
+  Matrix4,
   Vector3,
   SkinnedMesh,
 } from 'three';
@@ -14,6 +15,8 @@ import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { Assets } from '../presentation/Assets';
 import { Paladin } from '../presentation/Paladin';
 import type { Actor } from './Battle';
+import { dragonTiming } from './Battle';
+import { royalWeapons } from './Catalog';
 import type { Weapon } from '../presentation/Paladin';
 export function kit(assets: Assets, name: string) {
   const part = assets.get('company-kit').scene.getObjectByName(name);
@@ -34,6 +37,8 @@ export class Character {
   private p = new Vector3();
   private q = new Quaternion();
   private rotation = new Quaternion();
+  private inverseRoot = new Matrix4();
+  private scale = new Vector3();
   constructor(
     assets: Assets,
     readonly role: Actor['role'],
@@ -110,20 +115,37 @@ export class Character {
     if (this.action) action.crossFadeFrom(this.action, 0.16, false);
     this.action = action;
   }
-  private updateAttachments() {
-    this.root.updateMatrixWorld(true);
-    this.root.getWorldQuaternion(this.rotation).invert();
+  private updateAttachments(updateWorld = true) {
+    if (updateWorld) this.root.updateMatrixWorld(true);
+    this.inverseRoot.copy(this.root.matrixWorld).invert();
+    this.root.matrixWorld.decompose(this.p, this.rotation, this.scale);
+    this.rotation.invert();
     for (const a of this.attachments) {
-      a.bone.getWorldPosition(this.p);
-      this.root.worldToLocal(this.p);
-      a.bone.getWorldQuaternion(this.q).premultiply(this.rotation).multiply(a.rest);
+      a.bone.matrixWorld.decompose(this.p, this.q, this.scale);
+      this.p.applyMatrix4(this.inverseRoot);
+      this.q.premultiply(this.rotation).multiply(a.rest);
       a.model.position.copy(a.offset).applyQuaternion(this.q).add(this.p);
       a.model.quaternion.copy(this.q);
     }
   }
   update(a: Actor, dt: number, weapon: Weapon = 'stormbow', charging = false) {
     this.root.position.set(a.x, a.y, a.z);
+    if (a.hp > 0 && a.hitFlash > 0) {
+      this.root.position.x -= Math.sin(a.yaw) * a.hitFlash * 1.1;
+      this.root.position.z -= Math.cos(a.yaw) * a.hitFlash * 1.1;
+    }
     this.root.rotation.y = a.yaw;
+    let actionTime = a.actionTime;
+    if (a.role === 'king' && a.action) {
+      const w = royalWeapons[weapon];
+      // Fast simulation cadence retimes the authored draw/release, preserving the contact pose.
+      actionTime =
+        weapon === 'stormbow'
+          ? a.actionTime < w.contact
+            ? 0.45 + (a.actionTime / w.contact) * 0.21
+            : 0.66 + ((a.actionTime - w.contact) / (w.interval - w.contact)) * 0.52
+          : a.actionTime / w.interval;
+    }
     if (this.paladin) {
       this.paladin.weapon = weapon;
       this.paladin.setDowned(a.hp <= 0);
@@ -133,7 +155,7 @@ export class Character {
         charging ? (weapon === 'stormbow' ? 'bow_hold' : 'lance_charge') : a.action,
         1,
         false,
-        a.action ? a.actionTime : undefined,
+        a.action ? actionTime : undefined,
       );
       this.paladin.update(dt);
     } else {
@@ -155,14 +177,23 @@ export class Character {
       this.play(name, !!a.action || a.hp <= 0);
       this.mixer.update(dt);
       if (this.action && (a.action || a.hp <= 0)) {
-        this.action.time = Math.min(
-          a.hp <= 0 ? a.deadTime : a.actionTime,
-          this.action.getClip().duration,
-        );
+        let time = a.hp <= 0 ? a.deadTime : a.actionTime;
+        if (a.hp > 0 && this.role === 'dragon' && ['breath', 'rake', 'tail'].includes(a.action)) {
+          const t = dragonTiming(a.action),
+            start = a.action === 'breath' ? 1.5 : a.action === 'rake' ? 1.35 : 1.4;
+          const end = a.action === 'breath' ? 3.2 : a.action === 'rake' ? 2.2 : 2;
+          time =
+            time < t.windup
+              ? (time / t.windup) * start
+              : time < t.windup + t.duration
+                ? start + ((time - t.windup) / t.duration) * (end - start)
+                : end + ((time - t.windup - t.duration) / t.recovery) * (4 - end);
+        }
+        this.action.time = Math.min(time, this.action.getClip().duration);
         this.mixer.update(0);
       }
     }
-    this.updateAttachments();
+    this.updateAttachments(!this.paladin);
   }
   dispose() {
     if (this.paladin) this.paladin.dispose();

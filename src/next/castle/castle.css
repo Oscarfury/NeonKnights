@@ -6,6 +6,272 @@
   background: #111c22;
 }
 
+/* Keep planning compact and give the action the full battlefield. */
+.build-section {
+  margin: 18px 0;
+}
+.build-zones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.build-zones button {
+  padding: 9px;
+  border: 1px solid #8fa5a13b;
+  border-radius: 6px;
+  background: #14232b;
+  color: #c4c8b8;
+  font-size: 12px;
+}
+.build-zones button.selected {
+  background: #685c3638;
+  border-color: #d6bc7d;
+  color: #ffe0a1;
+}
+.build-zones small {
+  display: block;
+  font-size: 9px;
+  margin-top: 4px;
+  color: #9eb3ac;
+}
+.build-section .building-card {
+  display: grid;
+  grid-template-columns: 25px 1fr;
+  align-items: center;
+}
+.build-section .building-card > span:not(.building-emblem) {
+  grid-column: 1 / -1;
+  min-height: 0;
+}
+.build-section .building-card small {
+  grid-column: 1 / -1;
+  padding-top: 5px;
+}
+.build-section .platform-tabs {
+  margin: 8px 0;
+}
+.build-section .building-card {
+  padding: 10px;
+  gap: 5px;
+}
+.build-section .building-emblem {
+  width: 27px;
+  height: 27px;
+  font-size: 22px;
+}
+.build-section .building-card strong {
+  font-size: 12px;
+}
+.build-section .building-card > span:not(.building-emblem) {
+  font-size: 10px;
+  line-height: 1.4;
+}
+.build-section .building-card.tavern {
+  --accent: #f3be7c;
+}
+.recruit-list {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.recruit-list .recruit-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  margin: 0;
+}
+.recruit-list .recruit-card > div {
+  flex: 1;
+}
+.recruit-list small {
+  display: block;
+  color: #b1bcae;
+  font-size: 10px;
+  margin-top: 6px;
+}
+.recruit-list .council-button {
+  width: auto;
+  margin: 0;
+  white-space: nowrap;
+}
+.knight-settings,
+.knight-talents {
+  border-top: 1px solid #aab6b32b;
+  padding: 14px 0;
+}
+.knight-settings summary,
+.knight-talents summary {
+  cursor: pointer;
+  color: #ddc793;
+  font-size: 12px;
+}
+.castle-app.in-battle .castle-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+.castle-app.in-battle .war-council {
+  display: none;
+}
+.in-battle .castle-title h1,
+.in-battle .castle-title > .eyebrow {
+  display: none;
+}
+.in-battle .unit-label.enemy span {
+  display: none;
+}
+.in-battle .unit-label.enemy {
+  min-width: 27px;
+  width: 27px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.in-battle .unit-label.ally span {
+  font-size: 8px;
+}
+.unit-label.struck i {
+  filter: brightness(2);
+}
+.unit-label.evading {
+  opacity: 0.6;
+}
+.castle-wall-label::after {
+  content: '';
+  display: block;
+  height: 3px;
+  width: var(--wall-hp, 100%);
+  background: #abc6a2;
+  margin-top: 4px;
+  transition: width 0.18s;
+}
+.castle-wall-label.critical::after {
+  background: #ff7f66;
+}
+.castle-wall-label.struck {
+  color: #ffe8b2;
+  background: #824324;
+}
+.castle-chain {
+  position: absolute;
+  right: 24px;
+  top: 26px;
+  color: #ffe0a3;
+  font-size: 12px;
+  font-weight: 800;
+  pointer-events: none;
+}
+.castle-assault {
+  position: absolute;
+  left: 24px;
+  top: 72px;
+  width: 112px;
+  height: 3px;
+  background: #cadbca22;
+  pointer-events: none;
+}
+.castle-assault span {
+  position: absolute;
+  top: -18px;
+  font-size: 9px;
+  color: #bdc9bf;
+}
+.castle-assault i {
+  display: block;
+  height: 3px;
+  background: #d4bc85;
+}
+.castle-announcement.impact {
+  color: #ffd3ae;
+  border-color: #e77554;
+}
+.castle-announcement:empty,
+.castle-chain:empty {
+  display: none;
+}
+.castle-app.in-battle .castle-title {
+  top: 18px;
+  left: 24px;
+}
+.castle-app.in-battle .castle-title p {
+  margin: 0;
+  padding: 7px 10px;
+  color: #e0ded1;
+  background: #12212bdd;
+  border-radius: 4px;
+}
+.castle-app.in-battle .castle-boss {
+  top: 18px;
+  width: min(380px, 52%);
+  padding: 10px 16px;
+  border-radius: 5px;
+}
+.castle-app.in-battle .castle-announcement {
+  top: 106px;
+  left: 50%;
+  right: auto;
+  bottom: auto;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 90%;
+  padding: 8px 16px;
+  border-radius: 5px;
+  background: #24251ded;
+  border: 1px solid #d8ad61;
+  color: #ffe7ad;
+  font-weight: 700;
+  font-size: 13px;
+  text-align: center;
+}
+.castle-app .castle-assault {
+  top: 83px;
+}
+.castle-app .castle-assault span {
+  top: -25px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: #ebdfc6;
+  background: #14232be8;
+}
+.castle-chain:not(:empty) {
+  padding: 8px 10px;
+  background: #19242bed;
+  border-radius: 4px;
+}
+@media (max-width: 650px) {
+  .castle-app.in-battle .castle-title {
+    top: 9px;
+    left: 10px;
+  }
+  .castle-app.in-battle .castle-title p {
+    font-size: 8px;
+  }
+  .castle-app .castle-chain {
+    top: 9px;
+    right: 10px;
+    font-size: 9px;
+  }
+  .castle-app.in-battle .castle-boss {
+    top: 49px;
+    width: 70%;
+  }
+  .castle-app.in-battle .castle-boss small {
+    display: none;
+  }
+  .castle-app.in-battle .castle-announcement {
+    top: 119px;
+    font-size: 10px;
+    padding: 6px 10px;
+  }
+  .castle-app .castle-assault {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .castle-wall-label::after {
+    transition: none;
+  }
+}
+
 /* The council is a compact command board with contextual choices. */
 .build-intro p {
   margin: 8px 0 18px;
@@ -228,6 +494,13 @@
   font:
     25px Georgia,
     serif;
+}
+.platform-target.inner-target {
+  width: 60px;
+  height: 60px;
+}
+.inner-target strong {
+  font-size: 20px;
 }
 .platform-target small {
   font:
@@ -1453,6 +1726,106 @@
 .placement-hint {
   bottom: 18px;
 }
+.castle-tier-track {
+  display: flex;
+  gap: 5px;
+  margin: 15px 0 8px;
+}
+.castle-tier-track span {
+  flex: 1;
+  padding: 7px 3px;
+  border-top: 2px solid #9ba69b33;
+  color: #879a9b;
+  font-size: 9px;
+  text-align: center;
+}
+.castle-tier-track b {
+  margin-right: 5px;
+}
+.castle-tier-track .reached {
+  border-color: #d1b976;
+  color: #e3d29f;
+}
 .castle-stage.placing .castle-hud {
   visibility: hidden;
+}
+.castle-integrity {
+  display: flex;
+  gap: 12px;
+  min-width: 160px;
+}
+#king-weapon {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 118px;
+  min-height: 42px;
+  padding: 5px;
+  font:
+    11px Manrope,
+    sans-serif;
+  color: #e2cea0;
+  border-color: transparent;
+  background: transparent;
+}
+#king-weapon small {
+  font-size: 7px;
+}
+@media (max-width: 600px) {
+  #king-weapon {
+    width: 100px;
+  }
+}
+.castle-integrity > div {
+  display: grid;
+  gap: 6px;
+  width: 34px;
+  color: #b9d1c8;
+  font-size: 10px;
+  text-align: center;
+}
+.castle-integrity meter {
+  width: 100%;
+  height: 7px;
+  background: #1c3539;
+  border: 0;
+}
+.castle-integrity meter::-webkit-meter-bar {
+  background: #1c3539;
+  border: 0;
+}
+.castle-integrity meter::-webkit-meter-optimum-value {
+  background: #99c6a9;
+}
+.castle-integrity .critical meter::-webkit-meter-optimum-value {
+  background: #e88965;
+}
+.castle-integrity .guarded meter::-webkit-meter-optimum-value {
+  background: #91eeff;
+}
+.castle-wall-label.targeted {
+  color: #ffdfae;
+  border: 2px solid #ffc378;
+  background: #6a362c;
+  font-weight: 700;
+}
+.castle-app:not(.in-battle) .castle-hud::after {
+  content: 'Build the castle. Your knights recover after each watch.';
+}
+.unit-label.legendary i {
+  display: none;
+}
+@media (max-width: 600px) {
+  .castle-integrity {
+    gap: 6px;
+    min-width: 116px;
+  }
+  .castle-integrity > div {
+    width: 23px;
+  }
+  .castle-app:not(.in-battle) .castle-hud::after {
+    content: 'Knights recover between watches';
+    font-size: 8px;
+  }
 }
