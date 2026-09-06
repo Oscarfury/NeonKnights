@@ -1,0 +1,645 @@
+[
+  {
+    "level": 1,
+    "act": 1,
+    "name": "The First Watch",
+    "targetSeconds": 32,
+    "reward": 140,
+    "maxActive": 5,
+    "introduces": "raider",
+    "boss": null,
+    "groups": [
+      {
+        "trigger": "0",
+        "side": "N",
+        "units": {
+          "raider": 4
+        }
+      },
+      {
+        "trigger": "10",
+        "side": "E",
+        "units": {
+          "raider": 4
+        }
+      },
+      {
+        "trigger": "20",
+        "side": "N",
+        "units": {
+          "raider": 4
+        }
+      }
+    ]
+  },
+  {
+    "level": 2,
+    "act": 1,
+    "name": "Shields on the Causeway",
+    "targetSeconds": 36,
+    "reward": 160,
+    "maxActive": 6,
+    "introduces": "bulwark",
+    "boss": null,
+    "groups": [
+      {
+        "trigger": "0",
+        "side": "E",
+        "units": {
+          "raider": 4
+        }
+      },
+      {
+        "trigger": "10",
+        "side": "E",
+        "units": {
+          "bulwark": 1,
+          "raider": 2
+        }
+      },
+      {
+        "trigger": "22",
+        "side": "N",
+        "units": {
+          "bulwark": 1,
+          "raider": 2
+        }
+      }
+    ]
+  },
+  {
+    "level": 3,
+    "act": 1,
+    "name": "The Far Bank",
+    "targetSeconds": 40,
+    "reward": 180,
+    "maxActive": 7,
+    "introduces": "arbalist",
+    "boss": null,
+    "groups": [
+      {
+        "trigger": "0",
+        "side": "N",
+        "units": {
+          "raider": 3,
+          "arbalist": 1
+        }
+      },
+      {
+        "trigger": "12",
+        "side": "E",
+        "units": {
+          "bulwark": 1,
+          "raider": 2,
+          "arbalist": 1
+        }
+      },
+      {
+        "trigger": "24",
+        "side": "N",
+        "units": {
+          "bulwark": 1,
+          "raider": 1,
+          "arbalist": 1
+        }
+      }
+    ]
+  },
+  {
+    "level": 4,
+    "act": 1,
+    "name": "Sparks at the Gate",
+    "targetSeconds": 44,
+    "reward": 210,
+    "maxActive": 7,
+    "introduces": "sapper",
+    "boss": null,
+    "groups": [
+      {
+        "trigger": "0",
+        "side": "W",
+        "units": {
+          "raider": 3,
+          "sapper": 1
+        }
+      },
+      {
+        "trigger": "12",
+        "side": "W",
+        "units": {
+          "bulwark": 1,
+          "arbalist": 1,
+          "sapper": 2
+        }
+      },
+      {
+        "trigger": "24",
+        "side": "S",
+        "units": {
+          "raider": 3,
+          "bulwark": 1,
+          "arbalist": 1,
+          "sapper": 1
+        }
+      }
+    ]
+  },
+  {
+    "level": 5,
+    "act": 1,
+    "name": "The Procession Golem",
+    "targetSeconds": 65,
+    "reward": 300,
+    "maxActive": 5,
+    "introduces": null,
+    "boss": "procession-golem",
+    "groups": [
+      {
+        "trigger": "0",
+        "side": "N",
+        "units": {
+          "raider": 2,
+          "bulwark": 1
+        }
+      },
+      {
+        "trigger": "hp65",
+        "side": "N",
+        "units": {
+          "raider": 2,
+          "bulwark": 1
+        }
+      },
+      {
+        "trigger": "hp35",
+        "side": "E",
+        "units": {
+          "sapper": 2
+        }
+      }
+    ]
+  },
+  {
+    "level": 6,
+    "act": 2,
+    "name": "Hexfall",
+    "targetSeconds": 44,
+    "reward": 220,
+    "maxActive": 8,
+    "introduces": "hexcaster",
+    "boss": null,
+    "groups": [
+      {
+        "trigger": "0",
+        "side": "E",
+        "units": {
+          "raider": 4,
+          "hexcaster": 1
+        }
+      },
+      {
+        "trigger": "14",
+        "side": "N",
+        "units": {
+          "raider": 2,
+          "bulwark": 1,
+          "arbalist": 1
+        }
+      },
+      {
+        "trigger": "28",
+        "side": "E",
+        "units": {
+          "raider": 2,
+          "bulwark": 1,
+          "hexcaster": 1
+        }
+      },
+      {
+        "trigger": "38",
+        "side": "S",
+        "units": {
+          "hexcaster": 1,
+          "arbalist": 1
+        }
+      }
+    ]
+  },
+  {
+    "level": 7,
+    "act": 2,
+    "name": "Banners in the Rain",
+    "targetSeconds": 48,
+    "reward": 240,
+    "maxActive": 8,
+    "introduces": "banneret",
+    "boss": null,
+    "groups": [
+      {
+        "trigger": "0",
+        "side": "W",
+        "units": {
+          "raider": 3,
+          "bulwark": 1,
+          "banneret": 1
+        }
+      },
+      {
+        "trigger": "14",
+        "side": "S",
+        "units": {
+          "raider": 3,
+          "arbalist": 2
+        }
+      },
+      {
+        "trigger": "28",
+        "side": "W",
+        "units": {
+          "raider": 2,
+          "bulwark": 2,
+          "banneret": 1
+        }
+      },
+      {
+        "trigger": "38",
+        "side": "N",
+        "units": {
+          "arbalist": 1
+        }
+      }
+    ]
+  },
+  {
+    "level": 8,
+    "act": 2,
+    "name": "The Iron Road",
+    "targetSeconds": 52,
+    "reward": 260,
+    "maxActive": 9,
+    "introduces": "ram",
+    "boss": null,
+    "groups": [
+      {
+        "trigger": "0",
+        "side": "N",
+        "units": {
+          "ram": 1,
+          "bulwark": 2
+        }
+      },
+      {
+        "trigger": "12",
+        "side": "E",
+        "units": {
+          "raider": 3,
+          "sapper": 2,
+          "arbalist": 1
+        }
+      },
+      {
+        "trigger": "26",
+        "side": "N",
+        "units": {
+          "bulwark": 2
+        }
+      },
+      {
+        "trigger": "40",
+        "side": "S",
+        "units": {
+          "raider": 3,
+          "sapper": 2,
+          "arbalist": 1
+        }
+      }
+    ]
+  },
+  {
+    "level": 9,
+    "act": 2,
+    "name": "Hunters at Dusk",
+    "targetSeconds": 54,
+    "reward": 280,
+    "maxActive": 9,
+    "introduces": "reaver",
+    "boss": null,
+    "groups": [
+      {
+        "trigger": "0",
+        "side": "E",
+        "units": {
+          "raider": 3,
+          "reaver": 2
+        }
+      },
+      {
+        "trigger": "12",
+        "side": "S",
+        "units": {
+          "hexcaster": 1,
+          "bulwark": 1,
+          "raider": 2
+        }
+      },
+      {
+        "trigger": "26",
+        "side": "E",
+        "units": {
+          "reaver": 2,
+          "banneret": 1,
+          "raider": 2
+        }
+      },
+      {
+        "trigger": "40",
+        "side": "W",
+        "units": {
+          "hexcaster": 2,
+          "bulwark": 1,
+          "raider": 1
+        }
+      }
+    ]
+  },
+  {
+    "level": 10,
+    "act": 2,
+    "name": "Emberwing",
+    "targetSeconds": 80,
+    "reward": 400,
+    "maxActive": 5,
+    "introduces": null,
+    "boss": "emberwing",
+    "groups": [
+      {
+        "trigger": "0",
+        "side": "W",
+        "units": {
+          "raider": 2,
+          "hexcaster": 1
+        }
+      },
+      {
+        "trigger": "hp65",
+        "side": "S",
+        "units": {
+          "reaver": 2,
+          "bulwark": 1
+        }
+      },
+      {
+        "trigger": "hp35",
+        "side": "E",
+        "units": {
+          "hexcaster": 1,
+          "raider": 2
+        }
+      }
+    ]
+  },
+  {
+    "level": 11,
+    "act": 3,
+    "name": "Broken Standards",
+    "targetSeconds": 56,
+    "reward": 300,
+    "maxActive": 10,
+    "introduces": null,
+    "boss": null,
+    "groups": [
+      {
+        "trigger": "0",
+        "side": "N",
+        "units": {
+          "raider": 3,
+          "bulwark": 2,
+          "banneret": 1
+        }
+      },
+      {
+        "trigger": "12",
+        "side": "S",
+        "units": {
+          "sapper": 3,
+          "arbalist": 2
+        }
+      },
+      {
+        "trigger": "26",
+        "side": "E",
+        "units": {
+          "raider": 3,
+          "bulwark": 2,
+          "banneret": 1
+        }
+      },
+      {
+        "trigger": "42",
+        "side": "N",
+        "units": {
+          "raider": 2,
+          "sapper": 1,
+          "arbalist": 2
+        }
+      }
+    ]
+  },
+  {
+    "level": 12,
+    "act": 3,
+    "name": "The Quiet Knives",
+    "targetSeconds": 58,
+    "reward": 320,
+    "maxActive": 10,
+    "introduces": null,
+    "boss": null,
+    "groups": [
+      {
+        "trigger": "0",
+        "side": "W",
+        "units": {
+          "raider": 2,
+          "reaver": 2,
+          "hexcaster": 1
+        }
+      },
+      {
+        "trigger": "12",
+        "side": "E",
+        "units": {
+          "reaver": 2,
+          "arbalist": 2,
+          "hexcaster": 1
+        }
+      },
+      {
+        "trigger": "28",
+        "side": "S",
+        "units": {
+          "raider": 2,
+          "reaver": 2,
+          "hexcaster": 1
+        }
+      },
+      {
+        "trigger": "44",
+        "side": "W",
+        "units": {
+          "raider": 2,
+          "arbalist": 2,
+          "hexcaster": 1
+        }
+      }
+    ]
+  },
+  {
+    "level": 13,
+    "act": 3,
+    "name": "The Siege Train",
+    "targetSeconds": 62,
+    "reward": 340,
+    "maxActive": 11,
+    "introduces": null,
+    "boss": null,
+    "groups": [
+      {
+        "trigger": "0",
+        "side": "N",
+        "units": {
+          "ram": 1,
+          "bulwark": 2
+        }
+      },
+      {
+        "trigger": "12",
+        "side": "E",
+        "units": {
+          "raider": 4,
+          "arbalist": 2,
+          "sapper": 2
+        }
+      },
+      {
+        "trigger": "28",
+        "side": "S",
+        "units": {
+          "ram": 1,
+          "bulwark": 2
+        }
+      },
+      {
+        "trigger": "44",
+        "side": "W",
+        "units": {
+          "raider": 4,
+          "arbalist": 2,
+          "sapper": 2
+        }
+      }
+    ]
+  },
+  {
+    "level": 14,
+    "act": 3,
+    "name": "The Last Bell",
+    "targetSeconds": 68,
+    "reward": 420,
+    "maxActive": 11,
+    "introduces": null,
+    "boss": null,
+    "groups": [
+      {
+        "trigger": "0",
+        "side": "E",
+        "units": {
+          "raider": 3,
+          "bulwark": 1,
+          "hexcaster": 1,
+          "banneret": 1
+        }
+      },
+      {
+        "trigger": "12",
+        "side": "N",
+        "units": {
+          "reaver": 2,
+          "arbalist": 2,
+          "sapper": 2
+        }
+      },
+      {
+        "trigger": "24",
+        "side": "W",
+        "units": {
+          "raider": 3,
+          "bulwark": 2,
+          "hexcaster": 1,
+          "banneret": 1
+        }
+      },
+      {
+        "trigger": "36",
+        "side": "S",
+        "units": {
+          "reaver": 2,
+          "arbalist": 2,
+          "sapper": 2
+        }
+      },
+      {
+        "trigger": "48",
+        "side": "E",
+        "units": {
+          "raider": 4,
+          "bulwark": 1,
+          "hexcaster": 1
+        }
+      }
+    ]
+  },
+  {
+    "level": 15,
+    "act": 3,
+    "name": "The Hollow King",
+    "targetSeconds": 100,
+    "reward": 0,
+    "maxActive": 5,
+    "introduces": null,
+    "boss": "hollow-king",
+    "groups": [
+      {
+        "trigger": "0",
+        "side": "N",
+        "units": {
+          "raider": 3,
+          "bulwark": 1
+        }
+      },
+      {
+        "trigger": "hp75",
+        "side": "E",
+        "units": {
+          "reaver": 2,
+          "hexcaster": 1
+        }
+      },
+      {
+        "trigger": "hp50",
+        "side": "W",
+        "units": {
+          "banneret": 1,
+          "bulwark": 2
+        }
+      },
+      {
+        "trigger": "hp25",
+        "side": "S",
+        "units": {
+          "sapper": 2,
+          "arbalist": 1
+        }
+      }
+    ]
+  }
+]

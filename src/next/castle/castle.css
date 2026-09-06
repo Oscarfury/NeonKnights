@@ -1829,3 +1829,30 @@
     font-size: 8px;
   }
 }
+
+.campaign-track {
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  gap: 3px;
+  margin: 12px 0;
+}
+.campaign-track span {
+  font-size: 9px;
+  text-align: center;
+  padding: 5px 0;
+  background: #24333b;
+  color: #9aaeb3;
+  border-bottom: 2px solid transparent;
+}
+.campaign-track .done {
+  color: #91d2b1;
+  border-color: #91d2b1;
+}
+.campaign-track .current {
+  background: #c29655;
+  color: #111b20;
+}
+.campaign-track .boss {
+  border-radius: 6px 6px 0 0;
+  border-top: 2px solid #cf937c;
+}

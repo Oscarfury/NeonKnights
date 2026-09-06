@@ -17,6 +17,7 @@ export interface Blueprint {
   site: SiteId;
   yaw: number;
   hp: number;
+  specialization?: 'a' | 'b';
 }
 export interface Workshop {
   version: 1;
@@ -42,7 +43,7 @@ export function placeDefense(
   rank: Rank = 1,
 ): string | null {
   if (
-    kind === 'tavern' ||
+    ['tavern', 'forge', 'war-room', 'mortar'].includes(kind) ||
     !Object.hasOwn(defenses, kind) ||
     ![1, 2, 3].includes(rank) ||
     !sites.some((p) => p.id === site) ||
@@ -118,7 +119,7 @@ export function decodeWorkshop(raw: string): Workshop | null {
     for (const b of s.buildings) {
       if (
         !b ||
-        b.kind === 'tavern' ||
+        ['tavern', 'forge', 'war-room', 'mortar'].includes(b.kind) ||
         !Object.hasOwn(defenses, b.kind) ||
         ![1, 2, 3].includes(b.rank) ||
         !sites.some((p) => p.id === b.site)

@@ -30,6 +30,12 @@ packed stone and terrain textures, valley scenery, sky and game code. Defense me
 separate mechanical pivots driven by the simulation. Character animation and
 final art acceptance are still in progress.
 
+Campaign additions (6 September 2026): original Procession Golem skeleton,
+stone armor, nine animation clips and embedded material studies; Iron Ram;
+three articulated Cinder Mortars; spear, staff, powder pack and Hollow King
+equipment. Reproducible authoring source: tools/blender/build_campaign_assets.py.
+Humanoid variants retain the Paladin body and its source rights above.
+
 Cormorant Garamond and Manrope: SIL Open Font License 1.1.
 The corresponding license texts are included in /licenses/.
 Three.js: MIT license. Phaser (current game): MIT license.

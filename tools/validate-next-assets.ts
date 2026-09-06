@@ -132,6 +132,42 @@ for (const name of assetIds) {
       );
     }
   }
+  if (name === 'procession-golem') {
+    assert.equal(gltf.skins?.length, 1);
+    assert.ok(gltf.skins[0].joints.length >= 13);
+    assert.ok(gltf.images?.length, 'The Golem must retain textured materials');
+    assert.ok(gltf.nodes.some((n) => n.name === 'ThrowingArm'));
+    for (const action of [
+      'idle',
+      'walk',
+      'arrive',
+      'stagger',
+      'death',
+      'stomp',
+      'fist',
+      'quarry',
+    ]) {
+      const clip = gltf.animations?.find((a) => a.name === action);
+      assert.ok(clip, `Golem missing ${action}`);
+      assert.ok(
+        clip.samplers.some((s) => new Set(accessor(s.output).map((v) => v.toFixed(5))).size > 4),
+        `Golem ${action} is static`,
+      );
+    }
+  }
+  if (name.startsWith('mortar-'))
+    for (const part of ['Turret', 'Carriage', 'Winch'])
+      assert.ok(
+        gltf.nodes.some((n) => n.name === part),
+        `${name} missing ${part}`,
+      );
+  if (name === 'iron-ram') assert.ok(gltf.nodes.some((n) => n.name === 'RamHead'));
+  if (name === 'campaign-kit')
+    for (const part of ['LancerSpear', 'SapperPack', 'HollowCrown', 'HollowBlade', 'DawnStaff'])
+      assert.ok(
+        gltf.nodes.some((n) => n.name === part),
+        `Missing ${part}`,
+      );
   if (name.startsWith('spire-') || name.startsWith('sanctuary-'))
     for (const part of ['Foundation', 'Turret', 'Core'])
       assert.ok(

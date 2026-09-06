@@ -14,6 +14,14 @@ import {
   mounts,
   encounters,
   fitsMount,
+  isSupport,
+  roles,
+  buildingUnlock,
+  rankUnlock,
+  recruitUnlock,
+  recruitPrice,
+  itemUnlock,
+  relics,
   type ItemKind,
   type Relic,
 } from './Catalog';
@@ -34,7 +42,7 @@ export interface OwnedItem {
   kind: ItemKind;
 }
 export interface Campaign {
-  version: 1;
+  version: 2;
   layout?: 'circle';
   playability?: 1;
   gold: number;
@@ -53,14 +61,38 @@ export interface Campaign {
   nextId: number;
   buildings: Blueprint[];
   relic: Relic | null;
+  secondRelic: Relic | null;
+  ascended: Relic | null;
+  weaponPaths: { stormbow: 'gale' | 'hawkeye'; sunlance: 'breaker' | 'daybreak' };
   difficulty: 'normal' | 'veteran';
   wins: number;
 }
 export const knightMax = (k: Knight) =>
-  (recruits.find((r) => r.id === k.id)!.role === 'warden' ? 135 : 95) + (k.rank - 1) * 25;
+  roles[recruits.find((r) => r.id === k.id)!.role].hp + (k.rank - 1) * 25;
+export const hasRelic = (s: Campaign, relic: Relic) => s.relic === relic || s.secondRelic === relic;
+export const relicDue = (s: Campaign) =>
+  (s.encounter >= 5 && !s.relic) || (s.encounter >= 10 && !s.secondRelic);
+export function buildingGate(s: Campaign, kind: DefenseKind, rank: Rank): string | null {
+  const level = Math.max(buildingUnlock(kind), rankUnlock(rank));
+  if (s.encounter < level) return `Unlocks after level ${level}.`;
+  if (rank > s.wallTier) return `Requires ${wallSpec(rank).name} walls.`;
+  return null;
+}
+export const wallGate = (s: Campaign) =>
+  s.wallTier === 3
+    ? 'The castle is complete.'
+    : s.encounter < (s.wallTier === 1 ? 4 : 9)
+      ? `Unlocks after level ${s.wallTier === 1 ? 4 : 9}.`
+      : null;
+export const weaponGate = (s: Campaign, weapon: Weapon) =>
+  s.ranks[weapon] === 3
+    ? 'Rank III is complete.'
+    : s.encounter < (s.ranks[weapon] === 1 ? 3 : 10)
+      ? `Unlocks after level ${s.ranks[weapon] === 1 ? 3 : 10}.`
+      : null;
 export function createCampaign(difficulty: Campaign['difficulty'] = 'normal'): Campaign {
   return {
-    version: 1,
+    version: 2,
     layout: 'circle',
     playability: 1,
     gold: 360,
@@ -88,6 +120,9 @@ export function createCampaign(difficulty: Campaign['difficulty'] = 'normal'): C
     nextId: 1,
     buildings: [],
     relic: null,
+    secondRelic: null,
+    ascended: null,
+    weaponPaths: { stormbow: 'gale', sunlance: 'breaker' },
     difficulty,
     wins: 0,
   };
@@ -104,8 +139,10 @@ export function build(s: Campaign, kind: DefenseKind, site: SiteId, rank: Rank =
   if (s.buildings.some((b) => b.site === site)) return 'That bastion already has a defense.';
   if (!fitsMount(kind, site))
     return 'Support buildings go in the courtyard; defenses go on the walls.';
-  if (kind === 'tavern' && s.buildings.some((b) => b.kind === 'tavern'))
-    return 'Your company already has a tavern.';
+  if (isSupport(kind) && s.buildings.some((b) => b.kind === kind))
+    return 'That castle wing is already built.';
+  const gate = buildingGate(s, kind, rank);
+  if (gate) return gate;
   if (capacity(s) + defenses[kind].capacity > wallSpec(s.wallTier).capacity)
     return 'Upgrade the walls or salvage a defense to free capacity.';
   const cost = investment(kind, rank);
@@ -151,6 +188,8 @@ export function upgradeBuilding(s: Campaign, id: number): string | null {
   const b = s.buildings.find((b) => b.id === id);
   if (!b) return 'Choose a defense.';
   if (b.rank === 3) return 'Rank III is complete.';
+  const gate = buildingGate(s, b.kind, (b.rank + 1) as Rank);
+  if (gate) return gate;
   if (b.hp <= 0) return 'Repair the wreck before upgrading.';
   const rank = (b.rank + 1) as Rank,
     cost = spec(b.kind, rank).cost;
@@ -178,6 +217,8 @@ export function repairBuilding(s: Campaign, id: number): string | null {
   return null;
 }
 export function upgradeWalls(s: Campaign): string | null {
+  const gate = wallGate(s);
+  if (gate) return gate;
   if (s.wallTier === 3) return 'The royal bastion is complete.';
   const next = wallSpec((s.wallTier + 1) as Rank);
   if (s.gold < next.cost) return 'Not enough crowns.';
@@ -200,6 +241,7 @@ export function repairWalls(s: Campaign): string | null {
 export function buyOffer(s: Campaign, index: number): string | null {
   const kind = s.offers[index];
   if (!kind || s.bought.includes(index)) return 'This offer is no longer available.';
+  if (s.encounter < itemUnlock(kind)) return `Unlocks after level ${itemUnlock(kind)}.`;
   if (s.inventory.length >= 30) return 'The armory is full.';
   if (s.gold < items[kind].cost) return 'Not enough crowns.';
   s.gold -= items[kind].cost;
@@ -212,7 +254,7 @@ export function reroll(s: Campaign): string | null {
   if (s.gold < cost) return 'Not enough crowns.';
   s.gold -= cost;
   s.rerolls++;
-  const pool = Object.keys(items) as ItemKind[];
+  const pool = (Object.keys(items) as ItemKind[]).filter((k) => itemUnlock(k) <= s.encounter);
   s.offers = Array.from(
     { length: 6 },
     (_, n) => pool[(n + s.rerolls + s.encounter * 2) % pool.length],
@@ -256,14 +298,15 @@ export function recruit(s: Campaign, id: string): string | null {
   if (!hasTavern(s)) return 'Build a tavern in the courtyard to recruit knights.';
   if (!recruits.some((r) => r.id === id) || s.knights.some((k) => k.id === id))
     return 'This knight has already joined.';
-  if (s.gold < recruitCost) return `Recruitment costs ${recruitCost} crowns.`;
-  s.gold -= recruitCost;
+  if (s.encounter < recruitUnlock(id)) return `Available after level ${recruitUnlock(id)}.`;
+  if (s.gold < recruitPrice(id)) return `Recruitment costs ${recruitPrice(id)} crowns.`;
+  s.gold -= recruitPrice(id);
   const k: Knight = {
     id,
     active: s.knights.filter((k) => k.active).length < 3,
     hp: 95,
     rank: 1,
-    xp: 0,
+    xp: Math.min(16, s.encounter * 2),
     gear: null,
     stance: 'hunt',
     talents: [],
@@ -300,7 +343,9 @@ export function promote(s: Campaign, id: string): string | null {
   const k = s.knights.find((k) => k.id === id);
   if (!k) return 'Choose a knight.';
   if (k.rank === 3) return 'This knight is a veteran.';
-  if (k.xp < k.rank * 3) return `Requires ${k.rank * 3} service experience.`;
+  if (s.encounter < (k.rank === 1 ? 5 : 10)) return `Unlocks after level ${k.rank === 1 ? 5 : 10}.`;
+  if (k.xp < (k.rank === 1 ? 6 : 16))
+    return `Requires ${k.rank === 1 ? 6 : 16} service experience.`;
   const cost = k.rank === 1 ? 100 : 180;
   if (s.gold < cost) return 'Not enough crowns.';
   s.gold -= cost;
@@ -309,6 +354,8 @@ export function promote(s: Campaign, id: string): string | null {
   return null;
 }
 export function improveWeapon(s: Campaign, weapon: Weapon): string | null {
+  const gate = weaponGate(s, weapon);
+  if (gate) return gate;
   if (s.ranks[weapon] === 3) return 'Royal weapon rank III is complete.';
   const cost = s.ranks[weapon] === 1 ? 150 : 280;
   if (s.gold < cost) return 'Not enough crowns.';
@@ -325,8 +372,43 @@ export function treatKing(s: Campaign): string | null {
   return null;
 }
 export function chooseRelic(s: Campaign, relic: Relic): string | null {
-  if (s.encounter !== 2 || s.relic) return 'The earned relic has already been chosen.';
-  s.relic = relic;
+  if (!Object.hasOwn(relics, relic) || hasRelic(s, relic)) return 'Choose a different relic.';
+  const family =
+    relic === 'worldpiercer'
+      ? 'ballista'
+      : relic === 'dawn-engine'
+        ? 'aegis'
+        : relic === 'tempest-cathedral'
+          ? 'spire'
+          : null;
+  if (family && !s.buildings.some((b) => b.kind === family))
+    return `Build a ${defenses[family].name} first.`;
+  if (s.encounter >= 5 && !s.relic) s.relic = relic;
+  else if (s.encounter >= 10 && !s.secondRelic) s.secondRelic = relic;
+  else return 'Earn a relic after level 5 or level 10.';
+  return null;
+}
+export function ascendRelic(s: Campaign, relic: Relic): string | null {
+  if (s.encounter < 13 || !hasRelic(s, relic)) return 'Ascend an owned relic after level 13.';
+  s.ascended = relic;
+  return null;
+}
+export function setWeaponPath(s: Campaign, value: string): string | null {
+  const weapon = ['gale', 'hawkeye'].includes(value)
+    ? 'stormbow'
+    : ['breaker', 'daybreak'].includes(value)
+      ? 'sunlance'
+      : null;
+  if (!weapon || s.ranks[weapon] < 2) return 'Upgrade this weapon to rank II first.';
+  if (weapon === 'stormbow') s.weaponPaths.stormbow = value as 'gale' | 'hawkeye';
+  else s.weaponPaths.sunlance = value as 'breaker' | 'daybreak';
+  return null;
+}
+export function specialize(s: Campaign, id: number, path: string): string | null {
+  const b = s.buildings.find((b) => b.id === id);
+  if (!b || isSupport(b.kind) || b.rank !== 3 || !['a', 'b'].includes(path))
+    return 'Upgrade a defense to rank III first.';
+  b.specialization = path as 'a' | 'b';
   return null;
 }
 export function completeEncounter(s: Campaign) {
@@ -336,12 +418,12 @@ export function completeEncounter(s: Campaign) {
   s.wins++;
   s.kingHp = 160;
   for (const k of s.knights) {
-    if (k.active) k.xp += 2;
+    k.xp += k.active ? 2 : 1;
     k.hp = knightMax(k);
   }
   s.bought = [];
   s.rerolls = 0;
-  const pool = Object.keys(items) as ItemKind[];
+  const pool = (Object.keys(items) as ItemKind[]).filter((k) => itemUnlock(k) <= s.encounter);
   s.offers = Array.from({ length: 6 }, (_, n) => pool[(n + s.encounter) % pool.length]);
 }
 export function decodeCampaign(raw: string): Campaign | null {
@@ -351,16 +433,16 @@ export function decodeCampaign(raw: string): Campaign | null {
       Number.isInteger(n) && n >= min && n <= max;
     if (
       !s ||
-      s.version !== 1 ||
+      s.version !== 2 ||
       !int(s.gold, 0, 99999) ||
-      !int(s.encounter, 0, 3) ||
+      !int(s.encounter, 0, encounters.length) ||
       !int(s.wallTier, 1, 3) ||
       !Number.isFinite(s.kingHp) ||
       s.kingHp < 0 ||
       s.kingHp > 160 ||
       !int(s.nextId, 1, 1e6) ||
       !int(s.rerolls, 0, 1000) ||
-      !int(s.wins, 0, 3) ||
+      !int(s.wins, 0, encounters.length) ||
       !['normal', 'veteran'].includes(s.difficulty)
     )
       return null;
@@ -404,7 +486,7 @@ export function decodeCampaign(raw: string): Campaign | null {
     if (
       !Array.isArray(s.knights) ||
       s.knights.length < 1 ||
-      s.knights.length > 4 ||
+      s.knights.length > recruits.length ||
       s.knights.filter((k) => k.active).length > 3 ||
       !s.knights.some((k) => k.active)
     )
@@ -443,7 +525,8 @@ export function decodeCampaign(raw: string): Campaign | null {
     )
       return null;
     if (!Array.isArray(s.buildings) || s.buildings.length > 8) return null;
-    if (s.buildings.filter((b) => b?.kind === 'tavern').length > 1) return null;
+    for (const kind of ['tavern', 'sanctuary', 'forge', 'war-room'])
+      if (s.buildings.filter((b) => b?.kind === kind).length > 1) return null;
     const used = new Set<string>();
     for (const b of s.buildings) {
       if (
@@ -458,7 +541,8 @@ export function decodeCampaign(raw: string): Campaign | null {
         Math.abs(b.yaw) > 1e6 ||
         !Number.isFinite(b.hp) ||
         b.hp < 0 ||
-        b.hp > spec(b.kind, b.rank).health
+        b.hp > spec(b.kind, b.rank).health ||
+        (b.specialization !== undefined && !['a', 'b'].includes(b.specialization))
       )
         return null;
       used.add(b.site);
@@ -480,8 +564,13 @@ export function decodeCampaign(raw: string): Campaign | null {
     if (s.buildings.some((b) => !fitsMount(b.kind, b.site))) return null;
     if (
       capacity(s) > wallSpec(s.wallTier).capacity ||
-      (s.relic !== null && !['worldpiercer', 'storm-oath', 'black-standard'].includes(s.relic)) ||
-      (s.relic && s.encounter < 2)
+      [s.relic, s.secondRelic, s.ascended].some((r) => r !== null && !Object.hasOwn(relics, r)) ||
+      (s.relic && s.encounter < 5) ||
+      (s.secondRelic && (!s.relic || s.encounter < 10 || s.secondRelic === s.relic)) ||
+      (s.ascended && (s.encounter < 13 || !hasRelic(s, s.ascended))) ||
+      !s.weaponPaths ||
+      !['gale', 'hawkeye'].includes(s.weaponPaths.stormbow) ||
+      !['breaker', 'daybreak'].includes(s.weaponPaths.sunlance)
     )
       return null;
     s.layout = 'circle';
@@ -491,7 +580,8 @@ export function decodeCampaign(raw: string): Campaign | null {
     return null;
   }
 }
-const key = 'neon-knights:v3:castle:1';
+export const campaignKey = 'neon-knights:v3:campaign:2';
+const key = campaignKey;
 let session: Campaign | undefined;
 export function saveCampaign(s: Campaign) {
   session = structuredClone(s);
@@ -505,7 +595,13 @@ export function saveCampaign(s: Campaign) {
 export function loadCampaign(): { state: Campaign | null; notice: string } {
   try {
     const raw = localStorage.getItem(key);
-    if (!raw) return { state: session ? structuredClone(session) : null, notice: '' };
+    if (!raw)
+      return {
+        state: session ? structuredClone(session) : null,
+        notice: localStorage.getItem('neon-knights:v3:castle:1')
+          ? 'The 15-level campaign is ready. Your old three-watch checkpoint is kept separately.'
+          : '',
+      };
     const state = decodeCampaign(raw);
     return {
       state,

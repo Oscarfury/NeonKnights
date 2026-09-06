@@ -1,5 +1,8 @@
 # The King's Battlements - circular castle preview
 
+**Implementation update, 6 September 2026:** the fifteen-level expansion is now wired into the playable game at both `/NeonKnights/` and `/NeonKnights/next/`. See [the implementation record](CAMPAIGN_IMPLEMENTATION.md) for shipped content, tuning changes and current verification. The original specification below is retained as design history; runtime values take precedence.
+
+
 The playable preview is at `/NeonKnights/next/`. The latest pass focuses on combat readability, active companions and a shorter build–fight–recruit loop. The existing training courtyard remains independent.
 
 ## Castle assault AI and campaign design · 6 September 2026

@@ -25,6 +25,16 @@ export interface SiegeBolt extends Position {
   remaining: number;
   hit: number[];
 }
+export const defenseSpec = (b: Pick<Blueprint, 'kind' | 'rank' | 'specialization'>) => {
+  const r = spec(b.kind, b.rank);
+  return b.kind === 'aegis' && b.rank === 3
+    ? {
+        ...r,
+        capacity: b.specialization === 'b' ? 100 : 180,
+        arc: b.specialization === 'b' ? 160 : 180,
+      }
+    : r;
+};
 export const createDefenses = (plan: Workshop): Defense[] =>
   plan.buildings.map((b) => ({
     ...b,
@@ -46,10 +56,10 @@ export const positionOf = (b: Blueprint): Position => {
 export const footprint = (kind: DefenseKind, rank: Rank) =>
   kind === 'ballista' ? [1.3, 1.45, 1.85][rank - 1] : [0.9, 1.1, 1.3][rank - 1];
 export const inCoverage = (
-  b: Pick<Defense, 'x' | 'z' | 'yaw' | 'kind' | 'rank'>,
+  b: Pick<Defense, 'x' | 'z' | 'yaw' | 'kind' | 'rank' | 'specialization'>,
   target: Pick<Position, 'x' | 'z'>,
 ) => {
-  const r = spec(b.kind, b.rank),
+  const r = defenseSpec(b),
     dx = target.x - b.x,
     dz = target.z - b.z;
   return (
@@ -82,7 +92,7 @@ export function stepDefenses(
     b.flash = Math.max(0, b.flash - dt);
     b.lastBlocked = Math.max(0, b.lastBlocked - dt);
     if (b.hp <= 0 || b.age < 1.2) continue;
-    const r = spec(b.kind, b.rank);
+    const r = defenseSpec(b);
     if (b.kind === 'aegis') {
       if (!b.lastBlocked) b.charge = Math.min(r.capacity, b.charge + r.recharge * rechargeTime);
       continue;
@@ -146,7 +156,7 @@ export function interceptSegment(
   let remaining = damage;
   for (const b of buildings) {
     if (b.kind !== 'aegis' || b.hp <= 0 || b.age < 1.2 || b.charge <= 0) continue;
-    const r = spec(b.kind, b.rank),
+    const r = defenseSpec(b),
       dx = to.x - from.x,
       dz = to.z - from.z,
       ox = from.x - b.x,
@@ -194,7 +204,7 @@ export function interceptRay(
       !inCoverage(b, target)
     )
       continue;
-    const r = spec(b.kind, b.rank),
+    const r = defenseSpec(b),
       dx = hazard.x - target.x,
       dz = hazard.z - target.z;
     if (Math.hypot(hazard.x - b.x, hazard.z - b.z) <= r.range) continue;

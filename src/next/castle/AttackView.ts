@@ -9,6 +9,8 @@ import {
   Mesh,
   MeshBasicMaterial,
   ConeGeometry,
+  IcosahedronGeometry,
+  MeshStandardMaterial,
   Vector3,
   Quaternion,
 } from 'three';
@@ -18,6 +20,7 @@ import { mounts } from './Catalog';
 /** A single footprint draped over the ground and battlements, using combat's hit test. */
 export class AttackView {
   readonly root = new Group();
+  private boulder?: Mesh;
   private fill: Mesh;
   private edge: Mesh;
   private countdown: Mesh;
@@ -152,11 +155,32 @@ export class AttackView {
         ),
       );
     this.root.add(this.particles);
+    if (t.launch) {
+      this.boulder = new Mesh(
+        new IcosahedronGeometry(0.7, 1),
+        new MeshStandardMaterial({ color: 0x69706c, roughness: 0.9 }),
+      );
+      this.boulder.castShadow = true;
+      this.root.add(this.boulder);
+    }
+    if (t.style === 'stone') (this.particles.material as MeshBasicMaterial).color.setHex(0x8a8272);
+    if (t.style === 'crown') (this.particles.material as MeshBasicMaterial).color.setHex(0xba91dd);
   }
   update() {
     const t = this.attack,
       active = t.age >= t.windup,
       progress = Math.min(1, t.age / t.windup);
+    this.root.visible = t.age >= 0;
+    if (this.boulder && t.launch) {
+      const travel = Math.max(0, Math.min(1, (t.age - t.windup + 1) / 1));
+      this.boulder.visible = t.age >= t.windup - 1 && t.age < t.windup + 0.1;
+      this.boulder.position.set(
+        t.launch.x + (t.x - t.launch.x) * travel,
+        t.launch.y + (this.height - t.launch.y) * travel + Math.sin(travel * Math.PI) * 5,
+        t.launch.z + (t.z - t.launch.z) * travel,
+      );
+      this.boulder.rotation.set(travel * 3, travel * 2, 0);
+    }
     const fill = this.fill.material as MeshBasicMaterial,
       edge = this.edge.material as MeshBasicMaterial;
     fill.color.setHex(active ? 0xff5838 : 0xffb454);

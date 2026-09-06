@@ -1,4 +1,7 @@
 # The King's Battlements: fifteen levels
+
+**Implementation update, 6 September 2026:** the fifteen-level expansion is now wired into the playable game at both `/NeonKnights/` and `/NeonKnights/next/`. See [the implementation record](CAMPAIGN_IMPLEMENTATION.md) for shipped content, tuning changes and current verification. The original specification below is retained as design history; runtime values take precedence.
+
 **Design revision: 6 September 2026.** This is the full campaign specification for the castle preview at `/NeonKnights/next/`. It supersedes the campaign, controls, roster and progression proposals in [DESIGN.md](DESIGN.md). [UPGRADE_PATHS.md](UPGRADE_PATHS.md) specifies every launch upgrade. [campaign-15.json](campaign-15.json) contains the authored encounter packets and economy worksheet.
 
 **Delivery status:** the playable preview still has three encounters. This document designs the expansion; it does not mark these fifteen encounters or the new assets as implemented. The accompanying castle assault AI improvement is implemented and covered separately in [CASTLE_PREVIEW.md](CASTLE_PREVIEW.md).

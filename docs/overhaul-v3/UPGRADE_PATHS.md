@@ -1,4 +1,7 @@
 # Complete upgrade paths
+
+**Implementation update, 6 September 2026:** the fifteen-level expansion is now wired into the playable game at both `/NeonKnights/` and `/NeonKnights/next/`. See [the implementation record](CAMPAIGN_IMPLEMENTATION.md) for shipped content, tuning changes and current verification. The original specification below is retained as design history; runtime values take precedence.
+
 **Campaign design, 6 September 2026.** Companion specification to [CAMPAIGN_15.md](CAMPAIGN_15.md). Numbers are initial tuning values for the fifteen-level expansion. They are not a claim that these paths are already in the three-watch preview.
 
 The complete launch set is **two royal weapons, four knight classes, six named knights, four castle wings, four defensive buildings, six runes, eight gear items and six relics**. Ordinary equipment has one clear effect. New purchases change a job, a silhouette or a useful combat behavior; there are no randomized affix ladders.

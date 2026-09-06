@@ -6,6 +6,7 @@ export class CombatAudio {
   private seen = new Set<number>();
   private cooldown = 0;
   private phase = 'planning';
+  private packet = 0;
   muted = false;
   constructor() {
     try {
@@ -65,12 +66,19 @@ export class CombatAudio {
   update(b: Battle, dt: number) {
     if (b.phase === 'planning') {
       this.seen.clear();
+      this.packet = 0;
       this.phase = b.phase;
       return;
     }
     if (b.paused) return;
     this.cooldown = Math.max(0, this.cooldown - dt);
-    const warning = b.dangers.find((t) => t.kind !== 'hex' && !this.seen.has(t.id));
+    if (b.packet !== this.packet) {
+      this.packet = b.packet;
+      this.tone(145, 110, 0.45, 0.04, 'triangle');
+    }
+    const warning = b.dangers.find(
+      (t) => (t.kind !== 'hex' || t.wall !== undefined) && !this.seen.has(t.id),
+    );
     if (warning) {
       this.seen.add(warning.id);
       this.tone(110, 230, 0.28, 0.045, 'triangle');

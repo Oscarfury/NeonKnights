@@ -36,8 +36,9 @@ test('purchased wings create the shared tower; salvage removes the keep back to 
   assert.ok(initialHeight > 2);
   first.dispose();
   C.build(s, 'sanctuary', 'inner-se');
-  C.build(s, 'sanctuary', 'inner-ne');
-  C.build(s, 'sanctuary', 'inner-nw');
+  s.encounter = 5;
+  C.build(s, 'forge', 'inner-ne');
+  C.build(s, 'war-room', 'inner-nw');
   const full = new CastleAssembly(s, assets);
   assert.equal(full.summary.connections, 4);
   assert.ok(new Box3().setFromObject(full.root).max.y > initialHeight);
@@ -53,7 +54,7 @@ test('all three wing ranks add height without spreading into the patrol; disposa
   let sourceDisposed = 0;
   material.addEventListener('dispose', () => sourceDisposed++);
   (chapel.children[0] as Mesh).geometry.addEventListener('dispose', () => sourceDisposed++);
-  for (const kind of ['tavern', 'sanctuary'] as const) {
+  for (const kind of ['tavern', 'sanctuary', 'forge', 'war-room'] as const) {
     let previousHeight = 0;
     for (const rank of [1, 2, 3] as const) {
       const view = new DefenseView(assets, kind, rank, false, true);

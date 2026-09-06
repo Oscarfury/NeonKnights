@@ -1,5 +1,8 @@
 # Castle and Foundry preview — implementation progress
 
+**Implementation update, 6 September 2026:** the fifteen-level expansion is now wired into the playable game at both `/NeonKnights/` and `/NeonKnights/next/`. See [the implementation record](CAMPAIGN_IMPLEMENTATION.md) for shipped content, tuning changes and current verification. The original specification below is retained as design history; runtime values take precedence.
+
+
 The preview at `/NeonKnights/next/` now opens **The King's Battlements**, a connected three-encounter castle siege. The King fights on the walls; recruited, equipped knights deploy and fight automatically. See [the castle preview](CASTLE_PREVIEW.md) for controls, rules, persistence and verification, and [the latest direction](CASTLE_DIRECTION.md) for the design change.
 
 The earlier [combat courtyard](COMBAT_PREVIEW.md), [Royal Workshop](CONSTRUCTION_PREVIEW.md) and Foundry inspection remain available under Art & training. Their free-movement and sandbox rules are separate from the castle campaign.

@@ -1,83 +1,45 @@
-﻿# Neon Knights · The Last Bastion
+# Neon Knights · The King's Battlements
 
-[Play the overhaul](https://oscarfury.github.io/NeonKnights/) · [Classic draft](https://oscarfury.github.io/NeonKnights/classic/)
+[Play Neon Knights](https://oscarfury.github.io/NeonKnights/) · [Alternate campaign URL](https://oscarfury.github.io/NeonKnights/next/)
 
-**Next overhaul:** [The King's Battlements](https://oscarfury.github.io/NeonKnights/next/) is the circular castle preview. Guide the King with your mouse, start with one companion, and build a tavern to recruit your company. Four attached building wings replace the fixed keep, growing one castle through Outpost, Stonehold and Crownspire; four wall mounts hold its defenses. Fast auto-attacks, physical hit reactions and an E-key wall guard drive combat. Knights recover fully between watches; the Dragon is the final encounter and attacks the company before committing to a marked wall. Cached scenery shadows, batched character bodies and adaptive resolution reduce rendering work. The Foundry and workshop remain under Art & training. See [controls and scope](docs/overhaul-v3/CASTLE_PREVIEW.md) and [implementation progress](docs/overhaul-v3/PROGRESS.md). The root game described below remains the v2 prototype.
+Both links open the same fifteen-level castle campaign. The older Phaser game lives at [/v2/](https://oscarfury.github.io/NeonKnights/v2/); the first draft remains at [/classic/](https://oscarfury.github.io/NeonKnights/classic/).
 
-The preview's [fifteen-level expansion](docs/overhaul-v3/CAMPAIGN_15.md) and [complete upgrade paths](docs/overhaul-v3/UPGRADE_PATHS.md) are now designed, with bosses at levels 5, 10 and 15 and a checked purchase budget. This is planned content for the castle preview. Its enemy assault AI has been implemented; the preview still contains three playable watches.
+Build one modular castle from four attached wings: Tavern, Sanctuary, Royal Forge and War Room. Upgrade its walls and buildings through three visible tiers. Four outer mounts take Ballistas, Storm Spires, Aegis Projectors and Cinder Mortars, with two final specializations per defense.
 
-A static browser siege roguelite built with TypeScript, Vite, Phaser 3, and an original Blender character atlas. The root v2 campaign described below has fifteen authored waves, three bosses, and an optional endless continuation.
+Start with Aldren. A Tavern opens recruitment; six named knights cover Warden, Marksman, Lancer and Chanter classes. Deploy up to three, choose talents and equipment, and recover the whole company after each victory. Eight enemy roles arrive in authored assaults with stable wall assignments. The Procession Golem, Emberwing and Hollow King lead levels 5, 10 and 15.
 
-- Five weapon families, charged or alternate actions, two rank-III branches per weapon, and boss-seal awakenings.
-- Six bounded runes, four build pads, eight structures, two knight orders, and eight discoverable combinations.
-- Four-bastion movement, optional pointer orbit, time slow, squad commands, and complete touch actions.
-- Stable shop offers, separate repairs and rerolls, upgrade previews, act events, a training yard, and explanatory results.
-- Planning checkpoints, separate profile/settings saves, remappable keys, reduced motion/effects, damage-number controls, audio levels, and focus-loss pause.
+Two royal weapons have upgrade branches, six runes, eight knight items and six relics. Earn two relics across the campaign and ascend one before the final act ends. See [implementation and verification](docs/overhaul-v3/CAMPAIGN_IMPLEMENTATION.md) and the original [campaign](docs/overhaul-v3/CAMPAIGN_15.md) / [upgrade specifications](docs/overhaul-v3/UPGRADE_PATHS.md).
 
-## Run locally
+## Controls
 
-Node 22 is used in CI. No accounts, API keys, backend, or external asset CDN are required.
+| Input | Action |
+| --- | --- |
+| Mouse hover / touch drag | Move the King around the wall; weapons fire automatically |
+| A / D or arrow keys | Move around the wall |
+| Q / weapon button | Swap Stormbow and Sunlance |
+| E / Guard button | Protect the current wall; time it just before a boss impact to stagger the boss |
+| Space / Decree button | Release Royal Decree at full charge |
+| Escape | Pause |
+
+Any wall falling ends the siege. The King has no health bar. Saves record the council between levels; a mid-battle reload restores that level's starting choices. Old three-watch checkpoints are retained under their old key while this expanded campaign starts separately.
+
+## Run and verify
 
 ```powershell
 npm ci
 npm run dev
 ```
 
-Open `http://127.0.0.1:5173/NeonKnights/`. For the exact production artifact:
+Open `http://127.0.0.1:5173/NeonKnights/`.
 
 ```powershell
 npm test
+npm run assets:check
 npm run build
+npx tsx tools/review/play-campaign.ts
 npm run preview
 ```
 
-Open `http://127.0.0.1:4173/NeonKnights/`. Vite's base path is configured for this repository's GitHub Pages URL.
+The campaign simulation uses ordinary input and legal purchases. It checks reachability and progression, rather than measuring human difficulty. Browser reviews use the Playwright CLI; evidence and reproducible review scripts are described in the implementation record. GitHub Actions runs the tests, asset validator and production build before deploying Pages.
 
-## Controls
-
-| Input                           | Action                                                             |
-| ------------------------------- | ------------------------------------------------------------------ |
-| Hold left mouse / drag on touch | Aim and fire                                                       |
-| Right mouse / Alternate         | Charge and release, vent, recall, or detonate, depending on weapon |
-| W / A / S / D                   | Phase north / west / south / east                                  |
-| Shift                           | Time slow; optional toggle mode in settings                        |
-| Space                           | Command the garrison at the cursor                                 |
-| Escape                          | Pause                                                              |
-
-Touch devices have directional, alternate, slow, and command buttons. Landscape provides the most battlefield space. Menus and shops also support portrait.
-
-The campaign saves at planning breaks and after purchases. Reloading during a wave resumes its previous planning checkpoint; mid-wave state is deliberately not saved. A new campaign replaces the active checkpoint. Classic high scores remain separate because the rules have changed.
-
-## Verification and assets
-
-`npm test` checks simulation, economy, persistence, and input contracts. `npm run balance` runs five deterministic campaigns with automated aiming; this measures rules and progression, not human difficulty.
-
-Browser checks use the installed Playwright CLI:
-
-```powershell
-playwright-cli.cmd -s=neon-overhaul open http://127.0.0.1:5173/NeonKnights/ --browser=msedge
-playwright-cli.cmd -s=neon-overhaul run-code --filename=tools/review/check-overhaul.js
-playwright-cli.cmd -s=neon-overhaul run-code --filename=tools/review/check-touch.js
-```
-
-Screenshots go into ignored `output/playwright/`. Browser mutation helpers are present only in development builds. Production exposes `window.__NEON__.snapshot()` for read-only playtest inspection.
-
-Regenerate the original knight source proof, then the eight-direction, six-frame runtime atlas:
-
-```powershell
-& 'C:\Program Files\Blender Foundation\Blender 4.3\blender.exe' --background --factory-startup --python-exit-code 1 --python tools/blender/knight_puppet.py
-& 'C:\Program Files\Blender Foundation\Blender 4.3\blender.exe' --background --python-exit-code 1 --python tools/blender/render_atlas.py
-```
-
-The atlas contains idle, locomotion, anticipation, strike, and recovery poses. Runtime artwork is in `public/assets`; the editable source and GLB proof remain under `docs/assets/knight-puppet`. Fortress and enemy art use the code renderer. Audio is generated locally through Web Audio.
-
-## Deployment and design history
-
-Pushes to `main` run tests and a production build, then publish `dist` through `.github/workflows/pages.yml`. GitHub Pages must use **GitHub Actions** as its source. Only runtime files and the classic draft enter the published artifact; Blender sources and review documents do not.
-
-- [Implementation and validation notes](docs/IMPLEMENTATION.md)
-- [Original overhaul design](docs/OVERHAUL.md)
-- [Original architecture proposal](docs/ARCHITECTURE.md)
-- [Historical review and baseline evidence](docs/REVIEW.md)
-
-The original deployed baseline is commit `c32d843e601f3dec502fe17f64d716f7aeb31fa7`. The pre-existing unpublished HTML draft was preserved byte-for-byte in `public/classic/index.html` before replacement, including its chain-lightning and balance edits. Its old rules are separate from the overhaul.
+The game uses TypeScript, Vite, Three.js and Blender-authored GLBs. It needs no account, backend or external asset CDN. The Foundry and earlier training scenes remain under **Art & training**. Source and licensing records are in [the asset credits](public/assets/v3/CREDITS.txt).

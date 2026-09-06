@@ -24,7 +24,9 @@ const preparedCompany = () => {
   s.gold = 2000;
   C.build(s, 'tavern', 'inner-nw');
   C.recruit(s, 'elin');
+  s.encounter = 2;
   C.recruit(s, 'corvin');
+  s.encounter = 0;
   s.buildings = [];
   s.nextId = 1;
   s.gold = 650;
@@ -77,6 +79,10 @@ test('talent trees enforce class, prerequisite and point budgets; resets refund 
   assert.ok(C.learnTalent(s, k.id, 'taunt'));
   assert.deepEqual(s, before);
   C.completeEncounter(s);
+  assert.equal(talentRemaining(k), 0);
+  s.encounter = 5;
+  k.xp = 6;
+  C.promote(s, k.id);
   assert.equal(talentRemaining(k), 1);
   assert.equal(C.learnTalent(s, k.id, 'aftershock'), null);
   assert.ok(C.decodeCampaign(JSON.stringify(s)));
@@ -85,7 +91,7 @@ test('talent trees enforce class, prerequisite and point budgets; resets refund 
   assert.equal(C.decodeCampaign(JSON.stringify(invalid)), null);
   C.resetTalents(s, k.id);
   assert.equal(talentRemaining(k), 2);
-  assert.equal(s.gold, before.gold + encounters[0].reward);
+  assert.equal(s.gold, before.gold + encounters[0].reward - 100);
 });
 const invader = (b: Battle, p: Partial<Actor> = {}) => {
   const actor: Actor = {
@@ -203,10 +209,10 @@ test('new buildings have distinct healing and chained-damage behavior', () => {
   b.defenses.forEach((d) => (d.reload = 0));
   b.tick(0.02);
   assert.equal(first.hp, 280);
-  assert.equal(second.hp, 280);
+  assert.equal(second.hp, 300);
   assert.equal(far.hp, 300);
   assert.equal(k.hp, 58);
-  assert.equal(b.stats.defenseDamage, 40);
+  assert.equal(b.stats.defenseDamage, 20);
   assert.equal(b.bolts.filter((p) => b.defenses.some((d) => d.id === p.owner)).length, 0);
   assert.ok(b.effects.some((e) => e.kind === 'lightning' && e.end));
 });
@@ -248,6 +254,9 @@ test('knights walk through both gates, hold separate positions and never expire 
 });
 test('construction commits costs once and rejected purchases preserve the complete ledger', () => {
   const s = preparedCompany();
+  s.encounter = 10;
+  s.wallTier = 3;
+  s.walls = s.walls.map(() => 520);
   assert.equal(C.build(s, 'ballista', 'east-court', 3), null);
   assert.equal(s.gold, 150);
   const before = structuredClone(s);
@@ -262,6 +271,7 @@ test('construction commits costs once and rejected purchases preserve the comple
 });
 test('wall upgrades add visible-tier capacity and preserve existing wounds', () => {
   const s = preparedCompany();
+  s.encounter = 4;
   s.walls[1] = 100;
   assert.equal(C.upgradeWalls(s), null);
   assert.equal(s.wallTier, 2);
@@ -308,6 +318,7 @@ test('full rune slots reject a transfer atomically; reserve and recruitment limi
   assert.ok(C.equipRune(s, 'stormbow', s.inventory[1].id));
   assert.deepEqual(s, before);
   C.build(s, 'tavern', 'inner-nw');
+  s.encounter = 6;
   C.recruit(s, 'lysa');
   assert.ok(C.assign(s, 'lysa'));
   C.assign(s, 'elin');
@@ -358,6 +369,7 @@ test('shield facing changes received damage and the ward seal recharges instead 
 test('mounted ballistas emit from their elevated mechanisms and aim down at field targets', () => {
   const s = preparedCompany();
   C.build(s, 'ballista', 'east-court');
+  s.encounter = 4;
   C.upgradeWalls(s);
   const b = new Battle(s),
     defense = b.defenses[0];
@@ -378,6 +390,7 @@ test('mounted ballistas emit from their elevated mechanisms and aim down at fiel
 test('wall shields intercept at their actual height and can protect a King behind the projector', () => {
   const s = preparedCompany();
   C.build(s, 'aegis', 'east-court');
+  s.encounter = 4;
   C.upgradeWalls(s);
   const b = new Battle(s),
     d = b.defenses[0];
@@ -450,16 +463,16 @@ test('Dragon warning and active footprints share the same cone; committed attack
 });
 test('the Dragon arrives from a seeded radial approach, moves, commits multiple abilities and takes physical damage', () => {
   const s = preparedCompany();
-  s.encounter = 2;
+  s.encounter = 9;
   const b = new Battle(s);
   b.start();
-  b.spawned = encounters[2].budget;
-  step(b, 12.1);
+  b.spawnTimer = 9999;
+  step(b, 8.1);
   const dragon = b.enemies.find((e) => e.role === 'dragon')!;
   assert.ok(dragon);
   assert.equal(dragon.action, 'arrive');
   assert.ok(dragon.y > 0);
-  assert.ok(Math.abs(dragon.x) > 1);
+  assert.ok(Math.hypot(dragon.x, dragon.z) > 10);
   step(b, 3.2);
   assert.equal(dragon.y, 0);
   const start = { ...dragon };
@@ -505,7 +518,7 @@ test('defeat keeps the original checkpoint; victory grants a single reward and f
   won.knights[0].hp = 40;
   won.tick(0.02);
   assert.equal(won.phase, 'won');
-  assert.equal(won.state.gold, 650 + encounters[0].reward);
+  assert.equal(won.state.gold, 650 + encounters[0].reward + encounters[0].bounty);
   assert.equal(won.state.knights[0].hp, C.knightMax(won.state.knights[0]));
   const state = structuredClone(won.state);
   step(won, 10);

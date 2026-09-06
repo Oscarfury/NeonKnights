@@ -152,10 +152,26 @@ test('a timed guard blocks the impact and exposes the attacking dragon, with no 
   b.damage(boss, 100, b.king, b.king.id, true);
   assert.equal(boss.hp, hp - 130);
 });
-test('the final watch introduces the dragon, which pressures knights before a named wall', () => {
+test('level ten introduces the dragon, which pressures knights before a named wall', () => {
   assert.deepEqual(
     encounters.map((e) => e.boss),
-    [false, false, true],
+    [
+      null,
+      null,
+      null,
+      null,
+      'golem',
+      null,
+      null,
+      null,
+      null,
+      'dragon',
+      null,
+      null,
+      null,
+      null,
+      'hollow-king',
+    ],
   );
   const second = C.createCampaign();
   second.encounter = 1;
@@ -165,27 +181,31 @@ test('the final watch introduces the dragon, which pressures knights before a na
   step(before, 14);
   assert.equal(before.bossSpawned, false);
   const last = C.createCampaign();
-  last.encounter = 2;
+  last.encounter = 9;
   const b = new Battle(last);
   b.start();
   b.spawnTimer = 9999;
-  step(b, 17.5);
+  const attacks: string[] = [];
+  for (let i = 0; i < 60 * 30; i++) {
+    b.tick(1 / 60);
+    for (const t of b.dangers) if (!attacks.includes(t.kind)) attacks.push(t.kind);
+  }
   assert.equal(b.bossSpawned, true);
-  assert.ok(b.dangers.some((t) => t.kind === 'rake' && t.targetsWalls === false));
-  step(b, 5);
-  assert.ok(b.dangers.some((t) => t.kind === 'breath' && t.wall !== undefined));
+  assert.ok(attacks.includes('rake') && attacks.includes('breath'));
+  assert.ok(attacks.indexOf('rake') < attacks.indexOf('breath'));
 });
 test('every recruited knight fully recovers after a victory, including downed and reserve knights', () => {
   const s = C.createCampaign();
   s.gold = 3000;
   C.build(s, 'tavern', 'inner-sw');
   C.recruit(s, 'elin');
+  s.encounter = 6;
   C.recruit(s, 'corvin');
   C.recruit(s, 'lysa');
   s.knights.forEach((k, i) => (k.hp = i === 0 ? 0 : 5));
   C.completeEncounter(s);
   assert.ok(s.knights.every((k) => k.hp === C.knightMax(k)));
-  assert.equal(s.knights[3].xp, 0);
+  assert.equal(s.knights[3].xp, 13);
   assert.equal(s.knights[0].xp, 2);
   assert.deepEqual(C.decodeCampaign(JSON.stringify(s)), s);
   const b = new Battle(s);

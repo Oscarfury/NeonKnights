@@ -1,5 +1,6 @@
 import type { Position } from '../combat/Hazards';
 import type { Actor } from './Battle';
+import { isRanged } from './Catalog';
 
 /** Battle-only intent: a wall assignment survives diversions and knockback. */
 export interface AssaultPlan {
@@ -19,8 +20,8 @@ const distance = (a: Position, b: Position) => Math.hypot(a.x - b.x, a.z - b.z);
 
 export function reserveAssault(e: Actor, enemies: readonly Actor[], side: number): AssaultPlan {
   const middle = Math.PI - (side * Math.PI) / 2;
-  const ranged = e.role === 'hexcaster';
-  const radius = ranged ? 13.3 : 7.85;
+  const ranged = isRanged(e.role) || e.role === 'banneret';
+  const radius = ranged ? 13.3 : e.role === 'ram' ? 8.3 : 7.85;
   const incoming = Math.atan2(e.x, e.z);
   let slot = 0,
     best = Infinity;
@@ -33,8 +34,8 @@ export function reserveAssault(e: Actor, enemies: readonly Actor[], side: number
         other !== e &&
         other.hp > 0 &&
         other.assault?.side === side &&
-        other.assault.slot === n &&
-        (other.role === 'hexcaster') === ranged
+        Math.abs(other.assault.slot - n) <= (other.role === 'ram' || e.role === 'ram' ? 1 : 0) &&
+        (isRanged(other.role) || other.role === 'banneret') === ranged
       )
         score += 10;
     if (score < best) {
@@ -59,8 +60,9 @@ export function assaultTarget(
   clearPath: (a: Position, b: Position) => boolean,
 ): Actor | undefined {
   const plan = e.assault!;
-  const ranged = e.role === 'hexcaster';
-  const acquire = ranged ? 8 : e.role === 'bulwark' ? 2.8 : 4;
+  if (e.role === 'ram' || e.role === 'sapper') return undefined;
+  const ranged = isRanged(e.role);
+  const acquire = ranged ? 8 : e.role === 'bulwark' ? 2.8 : e.role === 'reaver' ? 6 : 4;
   const retain = acquire + 2;
   const reachable = (k: Actor) => k.hp > 0 && k.deployed && clearPath(e, k);
   const forced =
@@ -91,7 +93,7 @@ export function assaultTarget(
   let chosen: Actor | undefined,
     closest = acquire;
   for (const k of knights) {
-    const d = distance(e, k);
+    const d = distance(e, k) - (e.role === 'reaver' && isRanged(k.role) ? 1.5 : 0);
     if (d < closest && reachable(k)) {
       chosen = k;
       closest = d;

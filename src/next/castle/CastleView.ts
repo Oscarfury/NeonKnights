@@ -29,6 +29,8 @@ import { spec, defenses, type DefenseKind, type Rank, type SiteId } from '../con
 import * as C from './Campaign';
 import {
   encounters,
+  isBoss,
+  enemyRoles,
   items,
   mounts,
   recruits,
@@ -93,7 +95,7 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     decree: false,
   };
   const keys = new Set<string>();
-  app.innerHTML = `<div class="castle-app"><header class="castle-header"><a class="wordmark" href="${import.meta.env.BASE_URL}"><span class="crest">N</span>NEON <b>KNIGHTS</b></a><span class="castle-chapter">THE KING'S BATTLEMENTS</span><div><button class="quiet" id="castle-foundry">Art & training</button><button class="quiet" id="castle-sound" aria-label="Toggle combat sound">Sound</button><button class="quiet" id="castle-pause">Pause</button></div></header><main class="castle-layout"><section class="castle-stage" aria-label="Castle siege battlefield"><div class="castle-canvas"></div><div class="castle-labels" aria-hidden="true"></div><div class="castle-title"><span class="eyebrow">THE ROYAL HOLD</span><h1>Hold the crown.</h1><p id="castle-objective"></p></div><div class="castle-boss" hidden><span>THE EMBERWING DRAGON</span><meter min="0" max="1650" value="1650"></meter><small>Amber: move away &middot; Red: impact</small></div><div class="castle-announcement" role="status"></div><div class="castle-chain" aria-live="polite"></div><div class="castle-assault"><span></span><i></i></div><div class="castle-hud"><div class="castle-integrity" aria-label="Castle wall integrity">${['N', 'E', 'S', 'W'].map((name, i) => `<div><span>${name}</span><meter id="wall-health-${i}" min="0" max="100" value="100"></meter></div>`).join('')}</div><div class="castle-rotation"><button id="king-left" aria-label="Move King clockwise">↶</button><button id="king-weapon" data-action="weapon-swap" class="weapon-switch"><b>Stormbow</b><small>AUTO FIRE / Q TO SWAP</small></button><button id="king-right" aria-label="Move King counterclockwise">↷</button></div><button id="king-guard" class="royal-skill">Guard wall <small id="guard-status">READY / E</small><i id="guard-ready"></i></button><button id="king-decree" class="royal-skill">Royal Decree <small id="decree-power"></small><i id="royal-power"></i></button></div><div class="castle-result" hidden></div></section><aside class="war-council"><div class="council-heading"><span class="eyebrow">WAR COUNCIL</span><div><h2 id="watch-name"></h2><strong id="castle-gold"></strong></div><p id="watch-description"></p><button class="quiet new-siege" data-action="new-dialog">New siege</button></div><nav class="council-tabs" aria-label="Castle management"><button data-tab="castle">Build</button><button data-tab="company">Knights</button><button data-tab="armory">King & gear</button><button data-tab="relics">Relics</button></nav><div class="council-content"></div><div class="council-bottom"><p id="council-notice" role="status"></p><button class="primary" id="begin-watch">Begin watch <span>↗</span></button><p class="checkpoint-note">Saved between watches</p></div></aside></main></div>`;
+  app.innerHTML = `<div class="castle-app"><header class="castle-header"><a class="wordmark" href="${import.meta.env.BASE_URL}"><span class="crest">N</span>NEON <b>KNIGHTS</b></a><span class="castle-chapter">THE KING'S BATTLEMENTS</span><div><button class="quiet" id="castle-foundry">Art & training</button><button class="quiet" id="castle-sound" aria-label="Toggle combat sound">Sound</button><button class="quiet" id="castle-pause">Pause</button></div></header><main class="castle-layout"><section class="castle-stage" aria-label="Castle siege battlefield"><div class="castle-canvas"></div><div class="castle-labels" aria-hidden="true"></div><div class="castle-title"><span class="eyebrow">THE ROYAL HOLD</span><h1>Hold the crown.</h1><p id="castle-objective"></p></div><div class="castle-boss" hidden><span>THE EMBERWING DRAGON</span><meter min="0" max="1650" value="1650"></meter><small>Amber: move away &middot; Red: impact</small></div><div class="castle-announcement" role="status"></div><div class="castle-chain" aria-live="polite"></div><div class="castle-assault"><span></span><i></i></div><div class="castle-hud"><div class="castle-integrity" aria-label="Castle wall integrity">${['N', 'E', 'S', 'W'].map((name, i) => `<div><span>${name}</span><meter id="wall-health-${i}" min="0" max="100" value="100"></meter></div>`).join('')}</div><div class="castle-rotation"><button id="king-left" aria-label="Move King clockwise">↶</button><button id="king-weapon" data-action="weapon-swap" class="weapon-switch"><b>Stormbow</b><small>AUTO FIRE / Q TO SWAP</small></button><button id="king-right" aria-label="Move King counterclockwise">↷</button></div><button id="king-guard" class="royal-skill">Guard wall <small id="guard-status">READY / E</small><i id="guard-ready"></i></button><button id="king-decree" class="royal-skill">Royal Decree <small id="decree-power"></small><i id="royal-power"></i></button></div><div class="castle-result" hidden></div></section><aside class="war-council"><div class="council-heading"><span class="eyebrow">WAR COUNCIL</span><div><h2 id="watch-name"></h2><strong id="castle-gold"></strong></div><p id="watch-description"></p><div class="campaign-track" aria-label="15-level campaign"></div><button class="quiet new-siege" data-action="new-dialog">New siege</button></div><nav class="council-tabs" aria-label="Castle management"><button data-tab="castle">Build</button><button data-tab="company">Knights</button><button data-tab="armory">King & gear</button><button data-tab="relics">Relics</button></nav><div class="council-content"></div><div class="council-bottom"><p id="council-notice" role="status"></p><button class="primary" id="begin-watch">Begin watch <span>↗</span></button><p class="checkpoint-note">Saved between watches</p></div></aside></main></div>`;
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => app.querySelector<T>(s)!;
   const stage = $('.castle-stage'),
     canvas = $('.castle-canvas'),
@@ -186,8 +188,10 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
   scene.add(projectileGroup, dangerGroup, effectGroup, mountGroup);
   const boltGeometry = new CylinderGeometry(0.035, 0.035, 0.8, 6),
     sparkGeometry = new SphereGeometry(0.13, 8, 5),
+    shellGeometry = new SphereGeometry(0.24, 10, 6),
     ringGeometry = new TorusGeometry(0.5, 0.045, 6, 40);
   const gold = new MeshBasicMaterial({ color: 0xf8d68a }),
+    shellMaterial = new MeshStandardMaterial({ color: 0x394848, metalness: 0.6, roughness: 0.5 }),
     blue = new MeshBasicMaterial({ color: 0x76e6fa }),
     red = new MeshBasicMaterial({ color: 0xf581a6 }),
     green = new MeshBasicMaterial({ color: 0x8df4bd });
@@ -263,12 +267,12 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
               role: id as Actor['role'],
               name:
                 id === 'dragon'
-                  ? 'The Emberwing Dragon'
-                  : id === 'raider'
-                    ? 'Ash Raider'
-                    : id === 'bulwark'
-                      ? 'Iron Bulwark'
-                      : 'Hexcaster',
+                  ? 'Emberwing'
+                  : id === 'golem'
+                    ? 'The Procession Golem'
+                    : id === 'hollow-king'
+                      ? 'The Hollow King'
+                      : enemyRoles[id as keyof typeof enemyRoles]?.name || id,
             };
     const actor: Actor = {
       ...source,
@@ -305,7 +309,7 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
       target: orbit.target.clone(),
       attack: false,
     };
-    const dragon = actor.role === 'dragon';
+    const dragon = isBoss(actor.role);
     camera.position.set(dragon ? 8 : 3.2, dragon ? 6 : 2.7, dragon ? 12 : 5.3);
     orbit.target.set(0, dragon ? 1.8 : 1, dragon ? -1 : 0);
     orbit.enableRotate = true;
@@ -361,7 +365,7 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
       defenseViews.set(b.id, v);
       v.update(b);
       (isSupport(b.kind) ? assembly.root : scene).add(v.root);
-      if (campaign.relic === 'worldpiercer' && b.kind === 'ballista') {
+      if (C.hasRelic(campaign, 'worldpiercer') && b.kind === 'ballista') {
         const module = kit(assets, 'WorldpiercerModule');
         module.position.y = b.rank === 1 ? 1.08 : b.rank === 2 ? 1.43 : 1.78;
         v.model.getObjectByName('Turret')!.add(module);
@@ -376,7 +380,7 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
         towerMaterials.add(o.material);
       }
     });
-    if (campaign.relic === 'black-standard')
+    if (C.hasRelic(campaign, 'black-standard'))
       for (const z of [-9.6, 9.6]) {
         const banner = kit(assets, 'BlackStandard');
         banner.position.set(3, 0, z);
@@ -407,17 +411,26 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     $('#castle-pause').hidden = !active;
     orbit.enabled = true;
     orbit.enableRotate = !!inspection;
-    const e = encounters[Math.min(campaign.encounter, 2)];
-    $('#watch-name').textContent = campaign.encounter >= 3 ? 'The hold endures' : e.name;
+    const e = encounters[Math.min(campaign.encounter, encounters.length - 1)];
+    $('#watch-name').textContent =
+      campaign.encounter >= encounters.length
+        ? 'The hold endures'
+        : `Level ${campaign.encounter + 1} / 15 · ${e.name}`;
     $('#watch-description').textContent =
-      campaign.encounter >= 3
-        ? 'Three encounters won. Your company has held the royal castle.'
-        : e.subtitle;
+      campaign.encounter >= encounters.length
+        ? 'All 15 levels won. Your company has held the royal castle.'
+        : `Act ${e.act} · ${e.subtitle}`;
+    $('.campaign-track').innerHTML = encounters
+      .map(
+        (level, i) =>
+          `<span title="${i + 1}: ${level.name}" class="${i < campaign.encounter ? 'done' : i === campaign.encounter ? 'current' : ''} ${level.boss ? 'boss' : ''}">${i + 1}</span>`,
+      )
+      .join('');
     $('#castle-gold').textContent = `${campaign.gold} ♜`;
     $('#council-notice').textContent = notice;
     $('#begin-watch').textContent = active
       ? 'The watch is underway'
-      : campaign.encounter >= 3
+      : campaign.encounter >= encounters.length
         ? 'Begin a new siege'
         : 'Begin watch ↗';
     ($('#begin-watch') as HTMLButtonElement).disabled = active;
@@ -425,7 +438,7 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
       .querySelectorAll<HTMLButtonElement>('[data-tab]')
       .forEach((b) => b.classList.toggle('selected', b.dataset.tab === tab));
     if (active) {
-      content.innerHTML = `<div class="battle-orders"><span class="eyebrow">YOUR COMPANY</span><div id="battle-company"></div><div id="battle-walls"></div><details><summary>Controls</summary><p>Mouse / drag to move. Auto fire.</p><p>E: Guard your wall. Space: Royal Decree.</p><p>Move to the marked wall. Guard just before impact to stagger the Dragon.</p></details><button class="council-button" data-action="pause">Pause</button></div>`;
+      content.innerHTML = `<div class="battle-orders"><span class="eyebrow">YOUR COMPANY</span><div id="battle-company"></div><div id="battle-walls"></div><details><summary>Controls</summary><p>Mouse / drag to move. Auto fire.</p><p>E: Guard your wall. Space: Royal Decree.</p><p>Move to the marked wall. Guard just before impact to stagger the boss.</p></details><button class="council-button" data-action="pause">Pause</button></div>`;
       return;
     }
     if (tab === 'castle') {
@@ -433,7 +446,24 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     } else if (tab === 'company') {
       content.innerHTML = companyCouncil(campaign, selectedKnight);
     } else if (tab === 'armory') {
-      content.innerHTML = `<article class="king-plate"><span class="eyebrow">♔ LEGENDARY COMMANDER</span><h3>The Storm King</h3>${button('Inspect the King', 'inspect:king')}<p>The castle is your lifeline. Auto-attacks continue while moving and guarding.</p><p>${royalWeapons[campaign.weapon].description}</p><p>E: protect your wall for 1.5 seconds. A guard just before impact exposes the Dragon. Q: swap weapons.</p><label class="council-label" for="royal-weapon">ROYAL WEAPON</label><select id="royal-weapon"><option value="stormbow" ${campaign.weapon === 'stormbow' ? 'selected' : ''}>Stormbow · ${roman[campaign.ranks.stormbow - 1]}</option><option value="sunlance" ${campaign.weapon === 'sunlance' ? 'selected' : ''}>Sunlance · ${roman[campaign.ranks.sunlance - 1]}</option></select>${button(campaign.ranks[campaign.weapon] < 3 ? `Improve ${campaign.weapon === 'stormbow' ? 'Stormbow' : 'Sunlance'} · ${campaign.ranks[campaign.weapon] === 1 ? 150 : 280} ♜` : 'Royal weapon complete', 'weapon-up', campaign.ranks[campaign.weapon] === 3)}<p>${campaign.sockets[campaign.weapon].length} / ${campaign.wallTier} sockets occupied. Equipping and removing owned runes is free.</p><div class="owned-runes">${
+      content.innerHTML = `<article class="king-plate"><span class="eyebrow">♔ LEGENDARY COMMANDER</span><h3>The Storm King</h3>${button('Inspect the King', 'inspect:king')}<p>The castle is your lifeline. Auto-attacks continue while moving and guarding.</p><p>${royalWeapons[campaign.weapon].description}</p><p>E: protect your wall for 1.5 seconds. A guard just before impact exposes the boss. Q: swap weapons.</p><label class="council-label" for="royal-weapon">ROYAL WEAPON</label><select id="royal-weapon"><option value="stormbow" ${campaign.weapon === 'stormbow' ? 'selected' : ''}>Stormbow · ${roman[campaign.ranks.stormbow - 1]}</option><option value="sunlance" ${campaign.weapon === 'sunlance' ? 'selected' : ''}>Sunlance · ${roman[campaign.ranks.sunlance - 1]}</option></select>${button(campaign.ranks[campaign.weapon] < 3 ? `Improve ${campaign.weapon === 'stormbow' ? 'Stormbow' : 'Sunlance'} · ${campaign.ranks[campaign.weapon] === 1 ? 150 : 280} ♜` : 'Royal weapon complete', 'weapon-up', !!C.weaponGate(campaign, campaign.weapon))}<p class="fine">${C.weaponGate(campaign, campaign.weapon) || 'Choose your weapon path. Changes are free between levels.'}</p>${
+        campaign.ranks[campaign.weapon] >= 2
+          ? `<div class="knight-actions">${(campaign.weapon === 'stormbow'
+              ? [
+                  ['gale', 'Gale · crowd control'],
+                  ['hawkeye', 'Hawkeye · focused hits'],
+                ]
+              : [
+                  ['breaker', 'Breaker · armored targets'],
+                  ['daybreak', 'Daybreak · piercing burst'],
+                ]
+            )
+              .map(([id, name]) =>
+                button(name, `weapon-path:${id}`, campaign.weaponPaths[campaign.weapon] === id),
+              )
+              .join('')}</div>`
+          : ''
+      }<p>${campaign.sockets[campaign.weapon].length} / ${campaign.wallTier} sockets occupied. Equipping and removing owned runes is free.</p><div class="owned-runes">${
         campaign.inventory
           .filter((i) => items[i.kind].kind === 'rune')
           .map((i) =>
@@ -447,12 +477,22 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
           .join('') || '<p class="fine">Purchase a rune below to socket it.</p>'
       }</div></article><div class="shop-heading"><span class="eyebrow">SIX ARMORY OFFERS</span>${button(`Refresh · ${35 + campaign.rerolls * 15} ♜`, 'reroll')}</div><p class="fine">Buying keeps the other offers in place. Knight items and royal runes have separate equipment slots.</p><div class="market-offers">${campaign.offers.map((kind, i) => `<article class="item-plate ${items[kind].kind}"><span class="eyebrow">${items[kind].kind === 'gear' ? 'KNIGHT EQUIPMENT' : 'ROYAL RUNE'}</span><h3>${items[kind].name}</h3><p>${items[kind].description}</p>${button(campaign.bought.includes(i) ? 'Owned' : `Purchase · ${items[kind].cost} ♜`, `buy:${i}`, campaign.bought.includes(i) || campaign.gold < items[kind].cost)}</article>`).join('')}</div>`;
     } else {
-      content.innerHTML = `<div class="council-intro"><span class="eyebrow">RELIC VAULT</span><h3>Power with a purpose.</h3><p>${campaign.relic ? 'Your chosen relic is bound to this siege.' : campaign.encounter === 2 ? 'The siege is broken. Claim a relic for the final battle.' : 'Break the second siege to claim a relic before facing Emberwing.'}</p></div>${(
+      content.innerHTML = `<div class="council-intro"><span class="eyebrow">RELIC VAULT</span><h3>Two relics. One ascension.</h3><p>Claim relics after levels 5 and 10. Ascend one after level 13.</p></div>${(
         Object.keys(relics) as Relic[]
       )
         .map((id) => {
-          const r = relics[id];
-          return `<article class="relic-plate ${campaign.relic === id ? 'chosen' : ''}"><span class="relic-symbol">${r.symbol}</span><span class="eyebrow">LEGENDARY · ${r.system}</span><h3>${r.name}</h3><p>${r.effect}</p><p class="relic-tradeoff">${r.tradeoff}</p>${button(campaign.relic === id ? 'Bound to the castle' : campaign.relic ? 'Another relic is bound' : campaign.encounter === 2 ? 'Claim this relic' : 'Earned from the siege', `relic:${id}`, !!campaign.relic || campaign.encounter !== 2)}</article>`;
+          const r = relics[id],
+            owned = C.hasRelic(campaign, id);
+          const family =
+            id === 'worldpiercer'
+              ? 'ballista'
+              : id === 'dawn-engine'
+                ? 'aegis'
+                : id === 'tempest-cathedral'
+                  ? 'spire'
+                  : null;
+          const missing = family && !campaign.buildings.some((b) => b.kind === family);
+          return `<article class="relic-plate ${owned ? 'chosen' : ''}"><span class="relic-symbol">${r.symbol}</span><span class="eyebrow">${r.system}</span><h3>${r.name}</h3><p>${r.effect}</p><p class="relic-tradeoff">${r.tradeoff}</p>${button(owned ? 'Bound to the castle' : missing ? `Requires ${family}` : C.relicDue(campaign) ? 'Claim this relic' : 'Earn at level 5 or 10', `relic:${id}`, owned || !C.relicDue(campaign) || !!missing)}${owned && campaign.encounter >= 13 ? button(campaign.ascended === id ? 'Ascended' : 'Ascend this relic', `ascend:${id}`, campaign.ascended === id) : ''}</article>`;
         })
         .join('')}`;
     }
@@ -469,13 +509,13 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
   function start() {
     closeInspection();
     cancelPlacement();
-    if (campaign.encounter >= 3) {
+    if (campaign.encounter >= encounters.length) {
       openNew();
       return;
     }
-    if (campaign.encounter === 2 && !campaign.relic) {
+    if (C.relicDue(campaign)) {
       tab = 'relics';
-      notice = 'Choose your siege relic before facing Emberwing.';
+      notice = 'Claim your earned relic before the next level.';
       renderCouncil();
       return;
     }
@@ -615,7 +655,7 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
       $('.castle-result').hidden = true;
       campaign = structuredClone(battle.state);
       notice = 'All knights fully recovered. Strengthen the castle.';
-      if (campaign.encounter === 2) tab = 'relics';
+      if (C.relicDue(campaign)) tab = 'relics';
       rebuild();
       return;
     }
@@ -631,6 +671,9 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
       if (action === 'buy') return C.buyOffer(campaign, +arg);
       if (action === 'reroll') return C.reroll(campaign);
       if (action === 'rune') return C.equipRune(campaign, campaign.weapon, +arg);
+      if (action === 'weapon-path') return C.setWeaponPath(campaign, arg);
+      if (action === 'ascend') return C.ascendRelic(campaign, arg as Relic);
+      if (action === 'specialize' && selected) return C.specialize(campaign, selected.id, arg);
       if (action === 'weapon-up') return C.improveWeapon(campaign, campaign.weapon);
       if (action === 'assign') return C.assign(campaign, arg);
       if (action === 'treat') return C.treat(campaign, arg);
@@ -991,13 +1034,13 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     }
     c.update(a, dt, a.role === 'king' ? battle.state.weapon : 'stormbow', false);
     const label = actorLabels.get(a.id)!;
-    projected.set(a.x, a.y + (a.role === 'dragon' ? 4.7 : 2.45), a.z).project(camera);
+    projected.set(a.x, a.y + (isBoss(a.role) ? 4.7 : 2.45), a.z).project(camera);
     const visible =
       projected.z < 1 &&
       Math.abs(projected.x) < 1 &&
       Math.abs(projected.y) < 1 &&
       !(a.hp <= 0 && battle.enemies.includes(a)) &&
-      a.role !== 'dragon' &&
+      !isBoss(a.role) &&
       (!battle.enemies.includes(a) || a.hp < a.maxHp);
     label.hidden = !visible;
     if (visible) {
@@ -1043,14 +1086,24 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
         : `${Math.floor(battle.power)} / 100 · ${touchControls ? 'TAP' : 'SPACE'}`;
     $('#royal-power').style.width = `${battle.power}%`;
     $('#king-decree').classList.toggle('ready', battle.power >= 100);
-    const danger = battle.dangers.find((t) => t.kind !== 'hex');
-    const boss = battle.enemies.find((e) => e.role === 'dragon' && e.hp > 0);
+    const danger = battle.dangers.find(
+      (t) => t.age >= 0 && (t.wall !== undefined || t.kind !== 'hex'),
+    );
+    const boss = battle.enemies.find((e) => isBoss(e.role) && e.hp > 0);
     const attackName =
-      danger?.kind === 'breath'
-        ? 'DRAGONFIRE'
-        : danger?.kind === 'rake'
-          ? 'CLAW GALE'
-          : 'TAIL SWEEP';
+      danger?.style === 'stone'
+        ? danger.launch
+          ? 'FALLING MASONRY'
+          : 'SIEGE IMPACT'
+        : danger?.style === 'blast'
+          ? 'LIT POWDER'
+          : danger?.style === 'crown'
+            ? 'HOLLOW DECREE'
+            : danger?.kind === 'breath'
+              ? 'DRAGONFIRE'
+              : danger?.kind === 'rake'
+                ? 'CLAW GALE'
+                : 'TAIL SWEEP';
     const warning = danger && danger.age < danger.windup;
     const message =
       battle.feedbackTime > 0
@@ -1072,10 +1125,14 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
         ? `${battle.streak} CHAIN \u00b7 +${battle.loot} \u265c`
         : '';
     $('.castle-assault').hidden = battle.phase !== 'battle';
-    const total = encounters[Math.min(2, campaign.encounter)].budget;
+    const total = encounters[Math.min(encounters.length - 1, campaign.encounter)].budget;
     const remaining = battle.enemies.filter((e) => e.hp > 0).length;
     $('.castle-assault span').textContent =
-      battle.spawned >= total ? `${remaining} remaining` : 'Assault';
+      battle.scoutTime > 0
+        ? `${battle.scoutSide} approach`
+        : battle.spawned >= total
+          ? `${remaining} remaining`
+          : `Assault ${battle.packet} / ${encounters[Math.min(campaign.encounter, encounters.length - 1)].packets.length}`;
     $('.castle-assault i').style.width = `${Math.min(100, (battle.spawned / total) * 100)}%`;
     $('#castle-gold').textContent = `${battle.state.gold} \u265c`;
     $('#castle-objective').textContent =
@@ -1089,6 +1146,7 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
             )} · ${battle.kills} invaders defeated · ${battle.state.weapon === 'stormbow' ? 'Stormbow' : 'Sunlance'}`;
     $('.castle-boss').hidden = !boss;
     if (boss) {
+      $('.castle-boss > span').textContent = boss.name;
       const m = $<HTMLMeterElement>('.castle-boss meter');
       m.max = boss.maxHp;
       m.value = boss.hp;
@@ -1096,7 +1154,7 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
         boss.exposed > 0
           ? 'Exposed \u00b7 strike now'
           : boss.hp < boss.maxHp * 0.5
-            ? 'Enraged \u00b7 faster attacks'
+            ? 'Wounded \u00b7 watch for new attacks'
             : 'Hunts knights, then attacks a marked wall';
     }
     const company = app.querySelector('#battle-company');
@@ -1262,8 +1320,8 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
       let mesh = boltMeshes.get(b.id);
       if (!mesh) {
         mesh = new Mesh(
-          b.relay || !b.friendly ? sparkGeometry : boltGeometry,
-          b.friendly ? (b.royal ? gold : blue) : red,
+          b.gravity ? shellGeometry : b.relay || !b.friendly ? sparkGeometry : boltGeometry,
+          b.gravity ? shellMaterial : b.friendly ? (b.royal ? gold : blue) : red,
         );
         boltMeshes.set(b.id, mesh);
         projectileGroup.add(mesh);
@@ -1355,19 +1413,39 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     if (inspection) {
       const { actor, character } = inspection;
       actor.action = inspection.attack
-        ? actor.role === 'dragon'
-          ? 'breath'
-          : actor.role === 'hexcaster'
-            ? 'staff_cast'
-            : ['warden', 'raider', 'bulwark'].includes(actor.role)
-              ? 'sword_slash'
-              : campaign.weapon === 'stormbow'
-                ? 'bow_fire'
-                : 'lance_fire'
+        ? actor.role === 'golem'
+          ? 'fist'
+          : actor.role === 'hollow-king'
+            ? 'decree'
+            : actor.role === 'ram'
+              ? 'ram'
+              : actor.role === 'lancer'
+                ? 'sword_thrust'
+                : actor.role === 'chanter'
+                  ? 'staff_cast'
+                  : actor.role === 'sapper'
+                    ? 'interact'
+                    : actor.role === 'dragon'
+                      ? 'breath'
+                      : actor.role === 'hexcaster'
+                        ? 'staff_cast'
+                        : ['warden', 'raider', 'bulwark', 'reaver', 'banneret'].includes(actor.role)
+                          ? 'sword_slash'
+                          : campaign.weapon === 'stormbow'
+                            ? 'bow_fire'
+                            : 'lance_fire'
         : '';
       actor.actionTime =
         (actor.actionTime + dt) %
-        (actor.role === 'dragon' ? 4 : actor.role === 'hexcaster' ? 1.5 : 1.2);
+        (actor.role === 'dragon'
+          ? 4
+          : actor.role === 'golem'
+            ? 3.6
+            : actor.role === 'ram'
+              ? 1.6
+              : actor.role === 'hexcaster'
+                ? 1.5
+                : 1.2);
       character.update(actor, dt, campaign.weapon);
       renderer.render(inspection.scene, camera);
     } else renderer.render(scene, camera);
@@ -1441,12 +1519,13 @@ export function mountCastle(app: HTMLElement, assets: Assets, foundry: () => voi
     for (const geometry of [
       boltGeometry,
       sparkGeometry,
+      shellGeometry,
       ringGeometry,
       mountGeometry,
       kingHalo.geometry,
     ])
       geometry.dispose();
-    for (const mat of [gold, blue, red, green, mountMaterial]) mat.dispose();
+    for (const mat of [gold, blue, red, green, mountMaterial, shellMaterial]) mat.dispose();
     sun.shadow.map?.dispose();
     assembly?.dispose();
     towerMaterials.clear();

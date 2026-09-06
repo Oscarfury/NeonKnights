@@ -10,7 +10,7 @@ import {
   Vector3,
 } from 'three';
 import type { Assets } from './Assets';
-import { spec, type DefenseKind, type Rank } from '../construction/Catalog';
+import { spec, isWing, type DefenseKind, type Rank } from '../construction/Catalog';
 import type { Defense } from '../construction/DefenseSystem';
 import { towerWing } from '../castle/TowerWing';
 
@@ -30,8 +30,8 @@ export class DefenseView {
     castleModule = false,
   ) {
     this.model =
-      kind === 'tavern' || (castleModule && kind === 'sanctuary')
-        ? towerWing(assets, kind as 'tavern' | 'sanctuary', rank)
+      isWing(kind) && (castleModule || kind !== 'sanctuary')
+        ? towerWing(assets, kind, rank)
         : assets.get(`${kind}-${rank}`).scene.clone(true);
     const clones = new Map<MeshStandardMaterial, MeshStandardMaterial>();
     const generatedMaterials = new Set<MeshStandardMaterial>();

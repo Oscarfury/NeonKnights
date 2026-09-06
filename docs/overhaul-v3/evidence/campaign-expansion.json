@@ -1,0 +1,763 @@
+{
+  "date": "2026-09-06T19:29:08.849343+00:00",
+  "scope": "Playable fifteen-level expansion; root and /next/ share one client",
+  "tests": {
+    "passed": 130,
+    "failed": 0,
+    "command": "npm test"
+  },
+  "build": {
+    "passed": true,
+    "command": "npm run build",
+    "mainBundle": "main-B1zvgkKV.js"
+  },
+  "assets": {
+    "passed": true,
+    "glbs": 29,
+    "revision": "0ea0ed0e85e2",
+    "new": [
+      "campaign-kit",
+      "iron-ram",
+      "mortar-1",
+      "mortar-2",
+      "mortar-3",
+      "procession-golem"
+    ]
+  },
+  "legalSimulation": [
+    {
+      "level": 1,
+      "name": "The First Watch",
+      "phase": "won",
+      "seconds": 23.77,
+      "peak": 4,
+      "bank": 164,
+      "walls": [
+        230,
+        230,
+        230,
+        230
+      ],
+      "knights": [
+        {
+          "id": "aldren",
+          "hp": 118
+        },
+        {
+          "id": "elin",
+          "hp": 95
+        }
+      ],
+      "stats": {
+        "royalDamage": 734,
+        "companyDamage": 321,
+        "defenseDamage": 73,
+        "wallDamage": 0,
+        "bossDamage": 0,
+        "shielded": 10,
+        "rescues": 0,
+        "guardPrevented": 0,
+        "perfectGuards": 0,
+        "royalShots": 35
+      }
+    },
+    {
+      "level": 2,
+      "name": "Shields on the Causeway",
+      "phase": "won",
+      "seconds": 27.5,
+      "peak": 3,
+      "bank": 348,
+      "walls": [
+        230,
+        230,
+        230,
+        230
+      ],
+      "knights": [
+        {
+          "id": "aldren",
+          "hp": 73
+        },
+        {
+          "id": "elin",
+          "hp": 95
+        }
+      ],
+      "stats": {
+        "royalDamage": 744.9000000000001,
+        "companyDamage": 327.9000000000001,
+        "defenseDamage": 29.2,
+        "wallDamage": 0,
+        "bossDamage": 0,
+        "shielded": 10,
+        "rescues": 0,
+        "guardPrevented": 0,
+        "perfectGuards": 0,
+        "royalShots": 48
+      }
+    },
+    {
+      "level": 3,
+      "name": "The Far Bank",
+      "phase": "won",
+      "seconds": 29.98,
+      "peak": 4,
+      "bank": 447,
+      "walls": [
+        230,
+        212,
+        230,
+        230
+      ],
+      "knights": [
+        {
+          "id": "aldren",
+          "hp": 66
+        },
+        {
+          "id": "elin",
+          "hp": 95
+        }
+      ],
+      "stats": {
+        "royalDamage": 787.6,
+        "companyDamage": 336.4000000000002,
+        "defenseDamage": 45,
+        "wallDamage": 18,
+        "bossDamage": 0,
+        "shielded": 10,
+        "rescues": 0,
+        "guardPrevented": 0,
+        "perfectGuards": 0,
+        "royalShots": 54
+      }
+    },
+    {
+      "level": 4,
+      "name": "Sparks at the Gate",
+      "phase": "won",
+      "seconds": 29.83,
+      "peak": 4,
+      "bank": 382,
+      "walls": [
+        230,
+        230,
+        230,
+        230
+      ],
+      "knights": [
+        {
+          "id": "aldren",
+          "hp": 135
+        },
+        {
+          "id": "elin",
+          "hp": 95
+        },
+        {
+          "id": "iona",
+          "hp": 88
+        }
+      ],
+      "stats": {
+        "royalDamage": 857.4000000000002,
+        "companyDamage": 486.60000000000014,
+        "defenseDamage": 0,
+        "wallDamage": 0,
+        "bossDamage": 0,
+        "shielded": 10,
+        "rescues": 0,
+        "guardPrevented": 0,
+        "perfectGuards": 0,
+        "royalShots": 45
+      }
+    },
+    {
+      "level": 5,
+      "name": "The Procession Golem",
+      "phase": "won",
+      "seconds": 24.5,
+      "peak": 5,
+      "bank": 444,
+      "walls": [
+        360,
+        360,
+        360,
+        360
+      ],
+      "knights": [
+        {
+          "id": "aldren",
+          "hp": 91
+        },
+        {
+          "id": "elin",
+          "hp": 95
+        },
+        {
+          "id": "iona",
+          "hp": 109
+        }
+      ],
+      "boss": 0,
+      "stats": {
+        "royalDamage": 1811.9999999999993,
+        "companyDamage": 2174.6000000000004,
+        "defenseDamage": 224.39999999999998,
+        "wallDamage": 0,
+        "bossDamage": 3799.9999999999995,
+        "shielded": 20,
+        "rescues": 0,
+        "guardPrevented": 60,
+        "perfectGuards": 1,
+        "royalShots": 60
+      }
+    },
+    {
+      "level": 6,
+      "name": "Hexfall",
+      "phase": "won",
+      "seconds": 39.72,
+      "peak": 4,
+      "bank": 466,
+      "walls": [
+        360,
+        360,
+        360,
+        360
+      ],
+      "knights": [
+        {
+          "id": "aldren",
+          "hp": 97
+        },
+        {
+          "id": "elin",
+          "hp": 95
+        },
+        {
+          "id": "iona",
+          "hp": 115
+        }
+      ],
+      "stats": {
+        "royalDamage": 1349.999999999999,
+        "companyDamage": 781.0000000000003,
+        "defenseDamage": 52,
+        "wallDamage": 0,
+        "bossDamage": 0,
+        "shielded": 20,
+        "rescues": 0,
+        "guardPrevented": 0,
+        "perfectGuards": 0,
+        "royalShots": 64
+      }
+    },
+    {
+      "level": 7,
+      "name": "Banners in the Rain",
+      "phase": "won",
+      "seconds": 41.15,
+      "peak": 4,
+      "bank": 453,
+      "walls": [
+        360,
+        360,
+        360,
+        360
+      ],
+      "knights": [
+        {
+          "id": "aldren",
+          "hp": 144
+        },
+        {
+          "id": "elin",
+          "hp": 120
+        },
+        {
+          "id": "iona",
+          "hp": 74
+        }
+      ],
+      "stats": {
+        "royalDamage": 1467.1999999999982,
+        "companyDamage": 1100.7999999999995,
+        "defenseDamage": 0,
+        "wallDamage": 0,
+        "bossDamage": 0,
+        "shielded": 30,
+        "rescues": 0,
+        "guardPrevented": 0,
+        "perfectGuards": 0,
+        "royalShots": 73
+      }
+    },
+    {
+      "level": 8,
+      "name": "The Iron Road",
+      "phase": "won",
+      "seconds": 44.05,
+      "peak": 4,
+      "bank": 499,
+      "walls": [
+        360,
+        360,
+        360,
+        360
+      ],
+      "knights": [
+        {
+          "id": "aldren",
+          "hp": 115
+        },
+        {
+          "id": "elin",
+          "hp": 120
+        },
+        {
+          "id": "iona",
+          "hp": 99
+        }
+      ],
+      "stats": {
+        "royalDamage": 1492.2,
+        "companyDamage": 1086.8000000000002,
+        "defenseDamage": 383,
+        "wallDamage": 0,
+        "bossDamage": 0,
+        "shielded": 30,
+        "rescues": 0,
+        "guardPrevented": 0,
+        "perfectGuards": 0,
+        "royalShots": 79
+      }
+    },
+    {
+      "level": 9,
+      "name": "Hunters at Dusk",
+      "phase": "won",
+      "seconds": 45.17,
+      "peak": 4,
+      "bank": 736,
+      "walls": [
+        360,
+        360,
+        360,
+        360
+      ],
+      "knights": [
+        {
+          "id": "aldren",
+          "hp": 132
+        },
+        {
+          "id": "elin",
+          "hp": 120
+        },
+        {
+          "id": "iona",
+          "hp": 140
+        }
+      ],
+      "stats": {
+        "royalDamage": 1661.5999999999997,
+        "companyDamage": 1117.3999999999996,
+        "defenseDamage": 20,
+        "wallDamage": 0,
+        "bossDamage": 0,
+        "shielded": 40,
+        "rescues": 0,
+        "guardPrevented": 0,
+        "perfectGuards": 0,
+        "royalShots": 69
+      }
+    },
+    {
+      "level": 10,
+      "name": "Emberwing",
+      "phase": "won",
+      "seconds": 46.32,
+      "peak": 5,
+      "bank": 704,
+      "walls": [
+        520,
+        422,
+        375,
+        520
+      ],
+      "knights": [
+        {
+          "id": "aldren",
+          "hp": 160
+        },
+        {
+          "id": "elin",
+          "hp": 120
+        },
+        {
+          "id": "iona",
+          "hp": 124
+        }
+      ],
+      "boss": 0,
+      "stats": {
+        "royalDamage": 4326.399999999998,
+        "companyDamage": 4174.599999999998,
+        "defenseDamage": 181,
+        "wallDamage": 243,
+        "bossDamage": 7600.000000000001,
+        "shielded": 20,
+        "rescues": 0,
+        "guardPrevented": 260,
+        "perfectGuards": 3,
+        "royalShots": 124
+      }
+    },
+    {
+      "level": 11,
+      "name": "Broken Standards",
+      "phase": "won",
+      "seconds": 46.13,
+      "peak": 5,
+      "bank": 579,
+      "walls": [
+        520,
+        520,
+        520,
+        520
+      ],
+      "knights": [
+        {
+          "id": "aldren",
+          "hp": 68
+        },
+        {
+          "id": "elin",
+          "hp": 120
+        },
+        {
+          "id": "iona",
+          "hp": 74
+        }
+      ],
+      "stats": {
+        "royalDamage": 3076.3999999999955,
+        "companyDamage": 1271.5999999999988,
+        "defenseDamage": 363,
+        "wallDamage": 0,
+        "bossDamage": 0,
+        "shielded": 50,
+        "rescues": 0,
+        "guardPrevented": 0,
+        "perfectGuards": 0,
+        "royalShots": 107
+      }
+    },
+    {
+      "level": 12,
+      "name": "The Quiet Knives",
+      "phase": "won",
+      "seconds": 49,
+      "peak": 5,
+      "bank": 713,
+      "walls": [
+        520,
+        520,
+        520,
+        520
+      ],
+      "knights": [
+        {
+          "id": "aldren",
+          "hp": 131
+        },
+        {
+          "id": "elin",
+          "hp": 120
+        },
+        {
+          "id": "iona",
+          "hp": 140
+        }
+      ],
+      "stats": {
+        "royalDamage": 2609.0000000000005,
+        "companyDamage": 1258,
+        "defenseDamage": 20,
+        "wallDamage": 0,
+        "bossDamage": 0,
+        "shielded": 30,
+        "rescues": 0,
+        "guardPrevented": 0,
+        "perfectGuards": 0,
+        "royalShots": 68
+      }
+    },
+    {
+      "level": 13,
+      "name": "The Siege Train",
+      "phase": "won",
+      "seconds": 49.93,
+      "peak": 6,
+      "bank": 769,
+      "walls": [
+        520,
+        520,
+        520,
+        498
+      ],
+      "knights": [
+        {
+          "id": "aldren",
+          "hp": 185
+        },
+        {
+          "id": "elin",
+          "hp": 145
+        },
+        {
+          "id": "iona",
+          "hp": 118
+        }
+      ],
+      "stats": {
+        "royalDamage": 3446.199999999999,
+        "companyDamage": 1936.8000000000002,
+        "defenseDamage": 121.00000000000001,
+        "wallDamage": 22,
+        "bossDamage": 0,
+        "shielded": 30,
+        "rescues": 0,
+        "guardPrevented": 0,
+        "perfectGuards": 0,
+        "royalShots": 98
+      }
+    },
+    {
+      "level": 14,
+      "name": "The Last Bell",
+      "phase": "won",
+      "seconds": 54.87,
+      "peak": 6,
+      "bank": 963,
+      "walls": [
+        520,
+        520,
+        520,
+        520
+      ],
+      "knights": [
+        {
+          "id": "aldren",
+          "hp": 185
+        },
+        {
+          "id": "elin",
+          "hp": 145
+        },
+        {
+          "id": "iona",
+          "hp": 112
+        }
+      ],
+      "stats": {
+        "royalDamage": 4107.479999999996,
+        "companyDamage": 2150.5199999999995,
+        "defenseDamage": 150,
+        "wallDamage": 0,
+        "bossDamage": 0,
+        "shielded": 50,
+        "rescues": 0,
+        "guardPrevented": 0,
+        "perfectGuards": 0,
+        "royalShots": 131
+      }
+    },
+    {
+      "level": 15,
+      "name": "The Hollow King",
+      "phase": "won",
+      "seconds": 48.67,
+      "peak": 5,
+      "bank": 547,
+      "walls": [
+        520,
+        469,
+        520,
+        464
+      ],
+      "knights": [
+        {
+          "id": "aldren",
+          "hp": 185
+        },
+        {
+          "id": "elin",
+          "hp": 145
+        },
+        {
+          "id": "iona",
+          "hp": 165
+        }
+      ],
+      "boss": 0,
+      "stats": {
+        "royalDamage": 6535.589999999996,
+        "companyDamage": 5370.159999999999,
+        "defenseDamage": 1233.39,
+        "wallDamage": 106.6,
+        "bossDamage": 11000.000000000004,
+        "shielded": 20,
+        "rescues": 0,
+        "guardPrevented": 273.4,
+        "perfectGuards": 3,
+        "royalShots": 141
+      }
+    }
+  ],
+  "browserEncounters": {
+    "results": [
+      {
+        "level": 1,
+        "phase": "won",
+        "seconds": 23.616666666666607,
+        "peak": 4,
+        "draws": 198,
+        "triangles": 444790,
+        "stats": {
+          "royalDamage": 737,
+          "companyDamage": 304,
+          "defenseDamage": 87,
+          "wallDamage": 0,
+          "bossDamage": 0,
+          "shielded": 10,
+          "rescues": 0,
+          "guardPrevented": 0,
+          "perfectGuards": 0,
+          "royalShots": 34
+        }
+      },
+      {
+        "level": 5,
+        "phase": "won",
+        "seconds": 26.616666666666436,
+        "peak": 5,
+        "draws": 243,
+        "triangles": 528063,
+        "stats": {
+          "royalDamage": 1991.4000000000005,
+          "companyDamage": 2157.1999999999994,
+          "defenseDamage": 224.4,
+          "wallDamage": 0,
+          "bossDamage": 3799.9999999999995,
+          "shielded": 20,
+          "rescues": 0,
+          "guardPrevented": 105,
+          "perfectGuards": 2,
+          "royalShots": 66
+        }
+      },
+      {
+        "level": 8,
+        "phase": "won",
+        "seconds": 44.61666666666542,
+        "peak": 5,
+        "draws": 289,
+        "triangles": 558070,
+        "stats": {
+          "royalDamage": 1508.7999999999997,
+          "companyDamage": 1105.8000000000002,
+          "defenseDamage": 347.4000000000001,
+          "wallDamage": 0,
+          "bossDamage": 0,
+          "shielded": 30,
+          "rescues": 0,
+          "guardPrevented": 0,
+          "perfectGuards": 0,
+          "royalShots": 77
+        }
+      },
+      {
+        "level": 10,
+        "phase": "won",
+        "seconds": 46.333333333331986,
+        "peak": 5,
+        "draws": 397,
+        "triangles": 678728,
+        "stats": {
+          "royalDamage": 4271.799999999997,
+          "companyDamage": 4229.199999999996,
+          "defenseDamage": 181,
+          "wallDamage": 257,
+          "bossDamage": 7600.000000000001,
+          "shielded": 20,
+          "rescues": 0,
+          "guardPrevented": 260,
+          "perfectGuards": 3,
+          "royalShots": 124
+        }
+      },
+      {
+        "level": 15,
+        "phase": "won",
+        "seconds": 50.89999999999839,
+        "peak": 5,
+        "draws": 471,
+        "triangles": 735205,
+        "stats": {
+          "royalDamage": 6650.839999999993,
+          "companyDamage": 5450.069999999998,
+          "defenseDamage": 1395.0900000000001,
+          "wallDamage": 112,
+          "bossDamage": 10999.999999999996,
+          "shielded": 50,
+          "rescues": 0,
+          "guardPrevented": 170,
+          "perfectGuards": 2,
+          "royalShots": 147
+        }
+      }
+    ],
+    "errors": [],
+    "failures": []
+  },
+  "releaseReview": {
+    "completedSave": true,
+    "performance": {
+      "frames": 180,
+      "median": 16.700000000000728,
+      "p95": 16.799999999999272,
+      "draws": 282,
+      "triangles": 457659,
+      "buildings": 8,
+      "actors": 6,
+      "pixelRatio": 0.9710241660404146
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "productionTouch": {
+    "production": true,
+    "viewport": {
+      "width": 412,
+      "height": 915
+    },
+    "openingTavern": true,
+    "recruitedElin": true,
+    "guard": true,
+    "pause": true,
+    "warRoom": true,
+    "checkpoint": 6,
+    "overflow": false,
+    "errors": [],
+    "failed": []
+  },
+  "notes": [
+    "Browser encounter selection used checkpoints earned by the complete legal simulation. Combat used mouse movement, E and Space.",
+    "The initial completed-save reload failure was fixed and independently rechecked in releaseReview.",
+    "Performance fixture: Windows desktop, Chromium, RTX 2080 Ti, 1600x1000, eight rank-III buildings. This is not a low-end-mobile guarantee.",
+    "Later balance is automated; human playtesting remains useful."
+  ]
+}

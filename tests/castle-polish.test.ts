@@ -85,8 +85,10 @@ test('four inner slots and four defense mounts enforce zoning, power and atomic 
   assert.ok(C.build(s, 'tavern', 'west-watch'));
   assert.ok(C.build(s, 'ballista', 'inner-se'));
   C.build(s, 'tavern', 'inner-nw');
-  for (const site of ['inner-ne', 'inner-se', 'inner-sw'] as const)
-    assert.equal(C.build(s, 'sanctuary', site), null);
+  s.encounter = 5;
+  assert.equal(C.build(s, 'sanctuary', 'inner-ne'), null);
+  assert.equal(C.build(s, 'forge', 'inner-se'), null);
+  assert.equal(C.build(s, 'war-room', 'inner-sw'), null);
   assert.equal(C.capacity(s), 0);
   for (const site of ['west-watch', 'east-watch', 'east-court', 'west-court'] as const)
     assert.equal(C.build(s, 'spire', site), null);
@@ -104,7 +106,11 @@ test('legacy sanctuary and full company migrate without charging or removing exi
   s.gold = 2000;
   C.build(s, 'tavern', 'inner-nw');
   C.recruit(s, 'elin');
+  s.encounter = 2;
   C.recruit(s, 'corvin');
+  s.encounter = 5;
+  s.wallTier = 2;
+  s.walls = s.walls.map(() => 360);
   C.build(s, 'sanctuary', 'inner-se', 2);
   s.buildings = s.buildings.filter((b) => b.kind !== 'tavern');
   s.buildings[0].site = 'east-court';
@@ -222,7 +228,7 @@ test('an exposed dragon takes bonus damage while ordinary royal hits preserve it
   assert.equal(e.hp, hp - 130);
 });
 
-test('kill chains give bounded crowns once, expire, and defeat preserves the starting ledger', () => {
+test('kill chains award fixed bounties once, expire, and defeat preserves the starting ledger', () => {
   const b = battle(),
     initial = b.state.gold;
   for (let i = 0; i < 4; i++) {
@@ -232,8 +238,8 @@ test('kill chains give bounded crowns once, expire, and defeat preserves the sta
   }
   assert.equal(b.kills, 4);
   assert.equal(b.streak, 4);
-  assert.equal(b.loot, 10);
-  assert.equal(b.state.gold, initial + 10);
+  assert.equal(b.loot, 8);
+  assert.equal(b.state.gold, initial + 8);
   b.paused = true;
   step(b, 6);
   assert.equal(b.streakTime, 5);

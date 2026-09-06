@@ -4,7 +4,11 @@ export default defineConfig({
   base: '/NeonKnights/',
   build: {
     rollupOptions: {
-      input: { main: resolve('index.html'), next: resolve('next/index.html') },
+      input: {
+        main: resolve('index.html'),
+        next: resolve('next/index.html'),
+        archive: resolve('v2/index.html'),
+      },
       output: { manualChunks: { phaser: ['phaser'], three: ['three'] } },
     },
     chunkSizeWarningLimit: 1600,
